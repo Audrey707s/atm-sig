@@ -4,7 +4,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { SessionUser } from '@/lib/auth/session'
 import type { TaskStatus } from '@/lib/constants/rbac'
-import { getTaskScopeFilter } from '@/lib/tasks/scope'
+import { getVisibleTaskOrgUnitIds } from '@/lib/tasks/scope'
 import { isTaskOverdue } from '@/lib/tasks/deadline'
 
 export type DashboardMetrics = {
@@ -18,9 +18,25 @@ export type DashboardMetrics = {
 }
 
 async function getDashboardScopeFilter(user: SessionUser): Promise<string | null> {
+  // PIC hanya melihat task pribadinya. Role lain melihat seluruh task dalam
+  // scope hierarki organisasi tanpa batas jumlah PIC/task.
   if (user.roleLevel === 2) return `owner_id.eq.${user.id}`
+
   const supabase = await createClient()
-  return getTaskScopeFilter(supabase, user)
+  const { data: orgUnits, error } = await supabase
+    .from('org_units')
+    .select('id, parent_id')
+
+  if (error) throw new Error('Gagal memeriksa cakupan dashboard.')
+  const assignedUnitExists = orgUnits?.some(({ id }) => id === user.orgUnitId)
+  if (!assignedUnitExists) {
+    throw new Error('Penempatan organisasi Anda belum dapat diverifikasi.')
+  }
+
+  const visibleOrgUnitIds = getVisibleTaskOrgUnitIds(user, orgUnits ?? [])
+  return visibleOrgUnitIds.length > 0
+    ? `org_unit_id.in.(${visibleOrgUnitIds.join(',')})`
+    : 'org_unit_id.eq.-1'
 }
 
 export type TaskPerhatian = {
