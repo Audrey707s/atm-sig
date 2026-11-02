@@ -38,4 +38,19 @@ describe('PerformanceOverview (FR-072)', () => {
 
     expect(screen.getAllByText('Belum ada task aktif dalam cakupan Anda.')).toHaveLength(2)
   })
+
+  it('shows every PIC returned by the role hierarchy scope', () => {
+    const owners = Array.from({ length: 6 }, (_, index) => ({
+      id: `user-${index + 1}`,
+      name: `PIC ${index + 1}`,
+      activeTasks: 1,
+      overdueTasks: 0,
+      averageProgress: index * 10,
+    }))
+
+    render(<PerformanceOverview performance={{ owners, orgUnits: [] }} />)
+
+    expect(screen.getByText('PIC 1')).toBeTruthy()
+    expect(screen.getByText('PIC 6')).toBeTruthy()
+  })
 })

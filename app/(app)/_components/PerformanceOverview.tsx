@@ -2,7 +2,6 @@ import type { DashboardPerformance } from '@/lib/dashboard/queries'
 
 type Props = {
   performance: DashboardPerformance
-  showAllOwners?: boolean
 }
 
 function ProgressTrack({ value, label }: { value: number; label: string }) {
@@ -25,19 +24,16 @@ function ProgressTrack({ value, label }: { value: number; label: string }) {
 
 export default function PerformanceOverview({
   performance,
-  showAllOwners = false,
 }: Props) {
-  const owners = showAllOwners ? performance.owners : performance.owners.slice(0, 5)
-
   return (
     <section aria-label="Progress per PIC dan section" className="grid gap-5 lg:grid-cols-2">
       <div className="atm-interactive rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-bold text-slate-900">Progress per PIC</h2>
-        {owners.length === 0 ? (
+        {performance.owners.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">Belum ada task aktif dalam cakupan Anda.</p>
         ) : (
           <ul className="mt-4 space-y-4">
-            {owners.map((owner) => (
+            {performance.owners.map((owner) => (
               <li key={owner.id} className="grid grid-cols-[minmax(5rem,8rem)_1fr_auto] items-center gap-3 text-xs">
                 <span className="truncate font-medium text-slate-700">{owner.name}</span>
                 <ProgressTrack
