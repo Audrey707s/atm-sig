@@ -12,6 +12,7 @@ import {
 import { StatusBadge, ProgressBar, TimeProgress } from '../_components/ui/Badges'
 import Link from 'next/link'
 import PerformanceOverview from '../_components/PerformanceOverview'
+import { resolveDashboardMonth } from '@/lib/dashboard/month'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -47,9 +48,7 @@ function formatDate(iso: string): string {
 
 export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string}>}) {
   const [user,params] = await Promise.all([getSessionUser(),searchParams])
-  const pieces=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit'}).formatToParts(new Date())
-  const defaultMonth=(pieces.find(p=>p.type==='year')?.value??'2026')+'-'+(pieces.find(p=>p.type==='month')?.value??'01')
-  const month=params.month && /^(19|20)\\d\\d-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : defaultMonth
+  const month=resolveDashboardMonth(params.month)
   const [year,monthNumber]=month.split('-').map(Number)
   const nextMonth=monthNumber===12 ? `${year+1}-01` : `${year}-${String(monthNumber+1).padStart(2,'0')}`
   const from=`${month}-01T00:00:00+07:00`,toExclusive=`${nextMonth}-01T00:00:00+07:00`
@@ -138,7 +137,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           <ProgressBar value={metrics.totalTask ? Math.round(metrics.completed / metrics.totalTask * 100) : 0} />
           <p className="mt-2 text-xs text-slate-500">Dihitung hanya dari task yang ditugaskan kepada akun Anda pada periode terpilih.</p>
         </section>
-      ) : performance ? <div className="mb-7"><PerformanceOverview performance={performance} /></div> : null}
+      ) : performance ? <div className="mb-7"><PerformanceOverview performance={performance} showAllOwners={user.roleLevel === 6} /></div> : null}
 
       {/* Tabel task perlu perhatian */}
       <section aria-label="Task perlu perhatian">
