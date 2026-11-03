@@ -71,7 +71,6 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
             className="ml-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
         </label>
         <button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
-        <span className="text-xs text-[var(--color-text-muted)]">KPI task, perhatian, dan kinerja berdasarkan tenggat periode. Pengajuan deadline masih total pending.</span>
       </form>
       {/* Judul halaman */}
       <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 gap-4">
@@ -135,7 +134,6 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
             <span className="font-bold text-[var(--color-brand)]">{metrics.totalTask ? Math.round(metrics.completed / metrics.totalTask * 100) : 0}%</span>
           </div>
           <ProgressBar value={metrics.totalTask ? Math.round(metrics.completed / metrics.totalTask * 100) : 0} />
-          <p className="mt-2 text-xs text-slate-500">Dihitung hanya dari task yang ditugaskan kepada akun Anda pada periode terpilih.</p>
         </section>
       ) : performance ? <div className="mb-7"><PerformanceOverview performance={performance} /></div> : null}
 
