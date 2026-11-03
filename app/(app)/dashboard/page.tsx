@@ -65,17 +65,15 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   return (
     <div className="px-4 py-5 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/dashboard" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
-      <form method="get" action="/dashboard" className="mb-5 flex flex-wrap items-end gap-3">
-        <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
-        <button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
-      </form>
-      {/* Judul halaman */}
-      <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
-            Dashboard
-          </h1>
-        </div>
+      {/* Judul halaman + filter periode */}
+      <section className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 uppercase sm:text-3xl">
+          Dashboard
+        </h1>
+        <form method="get" action="/dashboard" className="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
+          <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
+          <button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
+        </form>
       </section>
 
       {/* Banner peringatan */}
