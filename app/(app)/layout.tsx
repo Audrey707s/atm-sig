@@ -33,7 +33,7 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
       {/* Konten: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <Sidebar user={user} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg-app)]">
+        <main className="atm-workspace min-h-0 min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg-app)]">
           {children}
         </main>
       </div>
