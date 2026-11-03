@@ -108,7 +108,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
     <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/audit-log" tabs={REPORT_TABS} />
       <header>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Catatan Audit</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Catatan Audit</h1>
       </header>
 
       {/* Filter form */}
