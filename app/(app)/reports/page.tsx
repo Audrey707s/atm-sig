@@ -54,7 +54,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
 
   // Buat query string untuk tombol export (FR-091)
   const exportQs = new URLSearchParams({
-    ...(selectedMonth ? {month:selectedMonth} : {}),
+    ...(selectedFrom ? {from:selectedFrom} : {}),
+    ...(selectedTo ? {to:selectedTo} : {}),
     ...(filters.orgUnitId !== null ? { orgUnit: String(filters.orgUnitId) } : {}),
   }).toString()
 
