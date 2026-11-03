@@ -42,8 +42,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
     ? new Date(Date.UTC(Number(selectedMonth.slice(0,4)), Number(selectedMonth.slice(5,7)), 0)).toISOString().slice(0,10)
     : null
   const filters = parseReportFilters({
-    dateFrom: selectedFrom,
-    dateTo: selectedTo,
+    dateFrom: selectedFrom ?? undefined,
+    dateTo: selectedTo ?? undefined,
     orgUnitId: singleParam(params.orgUnit),
   })
   const page = Math.max(1, Math.min(100000, Number(singleParam(params.page) ?? '1') || 1))
