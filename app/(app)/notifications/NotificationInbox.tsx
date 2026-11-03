@@ -202,7 +202,6 @@ export default function NotificationInbox({
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">NOTIFIKASI</h1>
-          <p className="mt-1 text-xs text-slate-500">Notifikasi pribadi untuk akun Anda.</p>
         </div>
         <button
           type="button"
@@ -248,7 +247,6 @@ export default function NotificationInbox({
           <p className="text-sm font-medium text-slate-700">
             {unreadOnly ? 'Tidak ada notifikasi yang belum dibaca.' : 'Belum ada notifikasi.'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Notifikasi baru akan muncul di sini.</p>
         </div>
       ) : (
         <ul aria-label="Daftar notifikasi" aria-busy={isPending} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
