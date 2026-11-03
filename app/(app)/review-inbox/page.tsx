@@ -63,7 +63,7 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/review-inbox" tabs={APPROVAL_TABS} roleLevel={user.roleLevel} />
       <header>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Review Task</h1>
