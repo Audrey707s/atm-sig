@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getReviewInboxFilter } from '@/lib/tasks/review-permissions'
 import { getTaskFilterOptions } from '@/lib/tasks/queries'
 import WorkspaceTabs, { APPROVAL_TABS } from '../_components/WorkspaceTabs'
+import TableFilterMenu from '../_components/TableFilterMenu'
 
 export const metadata: Metadata = { title: 'Inbox Review Task' }
 
@@ -93,14 +94,13 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
-              <tr><th className="px-4 py-3">TANGGAL</th><th className="px-4 py-3">TUGAS</th><th className="px-4 py-3">SEKSI</th><th className="px-4 py-3">KEMAJUAN</th><th className="px-4 py-3">TENGGAT</th><th className="px-4 py-3">AKSI</th></tr>
-              <tr className="border-t border-slate-200 bg-white align-top">
-                <th className="px-3 py-2"><input form="review-table-filter" type="month" name="month" defaultValue={month ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
-                <th className="px-3 py-2"><input form="review-table-filter" type="search" name="search" defaultValue={search} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
-                <th className="px-3 py-2"><select form="review-table-filter" name="section" defaultValue={section ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"><option value="">Semua seksi</option>{filterOptions.sections.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></th>
-                <th className="px-3 py-2"><input form="review-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
-                <th className="px-3 py-2"><input form="review-table-filter" type="month" name="dueMonth" defaultValue={dueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
-                <th className="px-3 py-2"></th>
+              <tr>
+                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL"><input form="review-table-filter" type="month" name="month" defaultValue={month ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TUGAS"><input form="review-table-filter" type="search" name="search" defaultValue={search} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="SEKSI"><select form="review-table-filter" name="section" defaultValue={section ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"><option value="">Semua seksi</option>{filterOptions.sections.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="KEMAJUAN"><input form="review-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TENGGAT"><input form="review-table-filter" type="month" name="dueMonth" defaultValue={dueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></TableFilterMenu></th>
+                <th className="px-4 py-3">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
