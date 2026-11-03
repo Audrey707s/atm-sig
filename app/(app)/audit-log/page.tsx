@@ -121,14 +121,12 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center shadow-sm">
           <span aria-hidden="true" className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-500">⌕</span>
           <h2 className="mt-4 text-sm font-semibold text-slate-900">Belum ada catatan yang cocok</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Coba ubah aksi, objek, atau periode untuk melihat catatan lainnya.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Riwayat perubahan</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Urutan terbaru · {entries.length} catatan di halaman ini</p>
             </div>
             <div className="flex items-center gap-2">
               <button form="audit-table-filter" type="submit" className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
@@ -217,10 +215,6 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
         </nav>
       )}
 
-      <p className="text-xs text-slate-400">
-        Entri ditampilkan dalam urutan terbaru terlebih dahulu. Halaman {filters.page} · {entries.length} entri.
-        Catatan audit hanya dapat dibaca.
-      </p>
     </div>
   )
 }
