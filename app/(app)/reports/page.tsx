@@ -35,9 +35,12 @@ function MetricCard({ label, value }: { label: string; value: string | number })
 export default async function ReportsPage({ searchParams }: { searchParams: SearchParams }) {
   const [user, params] = await Promise.all([getSessionUser(), searchParams])
   requireRole(user, 'Staff/PIC')
-  const selectedFrom=singleParam(params.from)
-  const selectedTo=singleParam(params.to)
-  if (Boolean(selectedFrom)!==Boolean(selectedTo)) throw new Error('Tanggal awal dan akhir harus dipilih bersama.')
+  const selectedMonthRaw = singleParam(params.month)
+  const selectedMonth = selectedMonthRaw && /^\d{4}-(0[1-9]|1[0-2])$/.test(selectedMonthRaw) ? selectedMonthRaw : null
+  const selectedFrom = selectedMonth ? `${selectedMonth}-01` : null
+  const selectedTo = selectedMonth
+    ? new Date(Date.UTC(Number(selectedMonth.slice(0,4)), Number(selectedMonth.slice(5,7)), 0)).toISOString().slice(0,10)
+    : null
   const filters = parseReportFilters({
     dateFrom: selectedFrom,
     dateTo: selectedTo,
@@ -51,8 +54,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
 
   // Buat query string untuk tombol export (FR-091)
   const exportQs = new URLSearchParams({
-    ...(selectedFrom ? {from:selectedFrom} : {}),
-    ...(selectedTo ? {to:selectedTo} : {}),
+    ...(selectedMonth ? {month:selectedMonth} : {}),
     ...(filters.orgUnitId !== null ? { orgUnit: String(filters.orgUnitId) } : {}),
   }).toString()
 
@@ -90,67 +92,32 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
         </div>
       </header>
 
-      <form
-        method="get"
-        action="/reports"
-        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr_auto]"
-      >
-        <label className="text-xs font-medium text-slate-700">
-          Dibuat mulai
-          <input
-            type="date"
-            name="from"
-            defaultValue={selectedFrom??''}
-            className="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-red-600 focus:ring-red-600"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-700">
-          Dibuat sampai
-          <input
-            type="date"
-            name="to"
-            defaultValue={selectedTo??''}
-            required
-            className="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-red-600 focus:ring-red-600"
-          />
-        </label>
-        {user.roleLevel > 2 && <label className="text-xs font-medium text-slate-700">
-          Seksi
-          <select
-            name="orgUnit"
-            defaultValue={filters.orgUnitId?.toString() ?? ''}
-            className="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-red-600 focus:ring-red-600"
-          >
-            <option value="">Semua seksi dalam cakupan</option>
-            {options.sections.map((orgUnit) => (
-              <option key={orgUnit.id} value={orgUnit.id}>
-                {orgUnit.name}
-              </option>
-            ))}
-          </select>
-        </label>}
-        <button
-          type="submit"
-          className="self-end rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
-        >
-          Terapkan
-        </button>
-      </form>
-
       <section aria-label="Daftar detail tugas" className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <form id="report-table-filter" method="get" action="/reports" />
         <h2 className="border-b border-slate-200 px-4 py-4 text-base font-semibold text-slate-900">Daftar Rincian Tugas</h2>
-        <table className="w-full min-w-[820px] text-left text-sm">
-          <thead className="bg-slate-50 text-slate-600"><tr><th className="px-4 py-3">Tugas</th><th className="px-4 py-3">Penanggung jawab</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Kemajuan</th><th className="px-4 py-3">Tenggat</th><th className="px-4 py-3">Detail</th></tr></thead>
+        <table className="w-full min-w-[980px] text-left text-sm">
+          <thead className="bg-slate-50 text-slate-600">
+            <tr><th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Tugas</th><th className="px-4 py-3">Penanggung jawab</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Kemajuan</th><th className="px-4 py-3">Tenggat</th><th className="px-4 py-3">Detail</th></tr>
+            <tr className="border-t border-slate-200 bg-white align-top">
+              <th className="px-3 py-2"><input form="report-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Semua tugas</th>
+              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai cakupan</th>
+              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Semua status</th>
+              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
+              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="orgUnit" defaultValue={filters.orgUnitId?.toString() ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{options.sections.map(orgUnit=><option key={orgUnit.id} value={orgUnit.id}>{orgUnit.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Tanggal lengkap</span>}</th>
+              <th className="px-3 py-2"><div className="flex gap-1"><button form="report-table-filter" className="rounded bg-red-600 px-2 py-1 text-[10px] font-semibold text-white">Terapkan</button><a href="/reports" className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset</a></div></th>
+            </tr>
+          </thead>
           <tbody>
             {tasks.items.map(task=><tr key={task.id} className="border-t border-slate-100">
-              <td className="px-4 py-3 font-medium">{task.title}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(task.createdAt)}</td><td className="px-4 py-3 font-medium">{task.title}</td>
               <td className="px-4 py-3">{task.ownerName}</td>
               <td className="px-4 py-3">{taskStatusLabel(task.status)}</td>
               <td className="px-4 py-3">{task.progressPct}%</td>
               <td className="px-4 py-3">{formatDate(task.dueDate)}</td>
               <td className="px-4 py-3"><a className="font-semibold text-red-700 hover:underline" href={`/tasks/${task.id}`}>Lihat progres & lampiran</a></td>
             </tr>)}
-            {tasks.items.length===0&&<tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Tidak ada tugas dalam periode yang dipilih.</td></tr>}
+            {tasks.items.length===0&&<tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Tidak ada tugas dalam periode yang dipilih.</td></tr>}
           </tbody>
         </table>
         <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
