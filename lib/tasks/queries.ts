@@ -39,6 +39,9 @@ export type TaskFilters = {
   dateTo?: string | null
   createdFrom?: string | null
   createdTo?: string | null
+  dueFrom?: string | null
+  dueTo?: string | null
+  progressPct?: number | null
   page?: number
   pageSize?: number
 }
@@ -234,7 +237,13 @@ function validateTaskFilters(filters: TaskFilters): TaskFilters {
   const createdFrom = parseDateOnly(filters.createdFrom)
   const createdTo = parseDateOnly(filters.createdTo)
   if (createdFrom && createdTo && createdFrom > createdTo) throw new Error('Periode pembuatan tugas tidak valid.')
-  return { ...filters, dateFrom, dateTo, createdFrom, createdTo, search: filters.search?.trim() || null }
+  const dueFrom = parseDateOnly(filters.dueFrom)
+  const dueTo = parseDateOnly(filters.dueTo)
+  if (dueFrom && dueTo && dueFrom > dueTo) throw new Error('Periode tenggat tugas tidak valid.')
+  if (filters.progressPct !== undefined && filters.progressPct !== null && (!Number.isInteger(filters.progressPct) || filters.progressPct < 0 || filters.progressPct > 100)) {
+    throw new Error('Filter kemajuan harus berupa angka 0 sampai 100.')
+  }
+  return { ...filters, dateFrom, dateTo, createdFrom, createdTo, dueFrom, dueTo, search: filters.search?.trim() || null }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -331,6 +340,9 @@ export async function getTaskList(
 
   if (filters.createdFrom) query = query.gte('created_at', `${filters.createdFrom}T00:00:00.000+07:00`)
   if (filters.createdTo) query = query.lte('created_at', `${filters.createdTo}T23:59:59.999+07:00`)
+  if (filters.dueFrom) query = query.gte('due_date', `${filters.dueFrom}T00:00:00.000+07:00`)
+  if (filters.dueTo) query = query.lte('due_date', `${filters.dueTo}T23:59:59.999+07:00`)
+  if (filters.progressPct !== undefined && filters.progressPct !== null) query = query.eq('progress_pct', filters.progressPct)
   if (filters.dateFrom) {
     query = query.gte('due_date', `${filters.dateFrom}T00:00:00.000+07:00`)
   }
