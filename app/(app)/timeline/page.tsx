@@ -30,13 +30,12 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
   const sectionId = parsedSection && Number.isSafeInteger(parsedSection) && parsedSection > 0 ? parsedSection : null
   const ownerId = params.owner && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(params.owner) ? params.owner : null
   // Opsi filter dan daftar task independen — jalankan paralel.
-  const [options, { items, total }] = await Promise.all([
+  const [options, { items }] = await Promise.all([
     getTaskFilterOptions(user),
     getAllTaskList(user, { ownerId, orgUnitId: sectionId, dateFrom: first, dateTo: last }),
   ])
   const dayCount = getMonthDayCount(month)
   const days = Array.from({ length: dayCount }, (_, index) => index + 1)
-  const active = items.filter((task) => task.status !== 'Done')
   const workloads = getActiveTaskWorkloads(items)
   const taskGroups = [...new Map(items.map((task) => [task.ownerId, { id: task.ownerId, name: task.ownerName, tasks: [] as typeof items }])).values()]
   for (const task of items) taskGroups.find((group) => group.id === task.ownerId)?.tasks.push(task)
@@ -45,7 +44,7 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
   return <main className="mx-auto max-w-[1600px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
     <WorkspaceTabs current="/timeline" tabs={WORK_TABS} roleLevel={user.roleLevel} />
     <nav className="flex gap-2 text-xs font-semibold" aria-label="Tampilan task"><Link href="/kanban" className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Kanban</Link><Link href="/timeline" aria-current="page" className="rounded-lg bg-red-50 px-3 py-2 text-red-700">Timeline Gantt</Link></nav>
-    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-7 text-white shadow-sm sm:px-8"><div className="relative flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-300">Jadwal Pekerjaan</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">Linimasa Tugas</h1><p className="mt-2 text-sm text-slate-300">Lihat jadwal mulai, tenggat, dan pekerjaan aktif per bulan.</p></div><span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs">{total} tugas · {active.length} aktif</span></div></header>
+    <header><h1 className="text-2xl font-bold tracking-tight text-slate-900">Linimasa Tugas</h1></header>
     <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3"><input className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" type="month" name="month" defaultValue={month}/><select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="section" defaultValue={params.section ?? ''}><option value="">Semua seksi</option>{options.sections.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}</select><div className="flex gap-2"><select className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 text-sm" name="owner" defaultValue={params.owner ?? ''}><option value="">Semua PIC</option>{options.owners.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}</select><button className="rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700">Terapkan</button></div></form>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-label="Grafik Gantt task"><div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-4"><div><h2 className="text-sm font-bold text-slate-900">Jadwal per PIC</h2><p className="mt-1 text-xs text-slate-500">Bar menunjukkan rentang tanggal inklusif dan warna merah menandai task lewat.</p></div><span className="text-xs text-slate-500">{new Intl.DateTimeFormat('id-ID',{month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(monthDate(first))}</span></div>
       <div className="overflow-x-auto"><div className="min-w-[1100px]"><div className="grid grid-cols-[220px_1fr] border-b border-slate-200 bg-slate-50"><div className="px-4 py-2 text-xs font-semibold text-slate-600">Task / PIC</div><div className="grid" style={{gridTemplateColumns:`repeat(${dayCount}, minmax(24px, 1fr))`}}>{days.map((day)=><div key={day} className={`border-l border-slate-100 py-2 text-center text-[10px] ${[1,8,15,22,29].includes(day)?'font-bold text-slate-700':'text-slate-400'}`}>{day}</div>)}</div></div>
