@@ -1,4 +1,5 @@
 import WorkspaceTabs, { WORK_TABS } from '../_components/WorkspaceTabs'
+import TableFilterMenu from '../_components/TableFilterMenu'
 // FR-029 — Halaman Daftar Task
 // Sesuai Stitch mockup 06_daftar_task: tabel task dengan filter, search, status badge
 
@@ -174,25 +175,15 @@ export default async function TasksPage({
           </div>
           <table className="w-full min-w-[1160px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 tracking-wider bg-slate-50/60">
-                <th className="py-3 px-4 font-semibold" scope="col">TANGGAL</th>
-                <th className="py-3 px-4 font-semibold" scope="col">TUGAS</th>
-                <th className="py-3 px-4 font-semibold" scope="col">PIC</th>
-                <th className="py-3 px-4 font-semibold" scope="col">SEKSI</th>
-                <th className="py-3 px-4 font-semibold" scope="col">TENGGAT</th>
-                <th className="py-3 px-4 font-semibold" scope="col">PRIORITAS</th>
-                <th className="py-3 px-4 font-semibold" scope="col">KEMAJUAN</th>
-                <th className="py-3 px-4 font-semibold" scope="col">STATUS</th>
-              </tr>
-              <tr className="border-b border-slate-200 bg-white align-top">
-                <th className="px-3 py-2"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</th>
-                <th className="px-3 py-2"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:null}</th>
-                <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:null}</th>
-                <th className="px-3 py-2"><input form="task-table-filter" type="month" name="dueMonth" defaultValue={dueMonthFilter ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></th>
-                <th className="px-3 py-2"><input form="task-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progressFilter ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></th>
+              <tr className="border-b border-slate-200 bg-slate-50/60 text-[11px] font-semibold tracking-wider text-slate-500">
+                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TUGAS"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="PIC">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-xs text-slate-500">Akun Anda</span>}</TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="SEKSI">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:<span className="text-xs text-slate-500">Seksi Anda</span>}</TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TENGGAT"><input form="task-table-filter" type="month" name="dueMonth" defaultValue={dueMonthFilter ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="PRIORITAS"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="KEMAJUAN"><input form="task-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progressFilter ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="STATUS"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></TableFilterMenu></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
