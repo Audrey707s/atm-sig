@@ -123,13 +123,14 @@ export default async function TasksPage({
       <WorkspaceTabs current={isMine ? '/tasks?mine=1' : '/tasks'} tabs={WORK_TABS} roleLevel={user.roleLevel} />
       {/* Judul + tombol buat task */}
       <div className="flex items-center justify-between mb-5">
-        <div>
+        <div className="flex flex-wrap items-stretch gap-3">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
             {isMine ? 'Tugas Saya' : 'Tugas Tim'}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {total} tugas ditemukan
-          </p>
+          <div className="atm-count-card" aria-label={`${total} tugas ditemukan`}>
+            <span className="atm-count-card__value">{total}</span>
+            <span className="atm-count-card__label">Tugas ditemukan</span>
+          </div>
         </div>
         {user.roleLevel >= 2 && (
           <Link
@@ -167,7 +168,7 @@ export default async function TasksPage({
           <div className="overflow-x-auto">
           <form id="task-table-filter" action="/tasks" method="get" />
           <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Daftar Tugas</h2>
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">Daftar Tugas</h2>
             <div className="flex items-center gap-2">
               <button form="task-table-filter" type="submit" className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
               <Link href={isMine?"/tasks?mine=1":"/tasks"} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</Link>
