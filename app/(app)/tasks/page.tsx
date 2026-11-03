@@ -123,14 +123,13 @@ export default async function TasksPage({
       <WorkspaceTabs current={isMine ? '/tasks?mine=1' : '/tasks'} tabs={WORK_TABS} roleLevel={user.roleLevel} />
       {/* Judul + tombol buat task */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex flex-wrap items-stretch gap-3">
+        <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
             {isMine ? 'Tugas Saya' : 'Tugas Tim'}
           </h1>
-          <div className="atm-count-card" aria-label={`${total} tugas ditemukan`}>
-            <span className="atm-count-card__value">{total}</span>
-            <span className="atm-count-card__label">Tugas ditemukan</span>
-          </div>
+          <p className="mt-2 text-sm font-semibold text-slate-600" aria-label={`${total} tugas ditemukan`}>
+            <span className="tabular-nums text-[var(--color-brand)]">{total}</span> tugas ditemukan
+          </p>
         </div>
         {user.roleLevel >= 2 && (
           <Link
