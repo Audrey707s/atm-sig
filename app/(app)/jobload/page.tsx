@@ -21,7 +21,7 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
       <WorkspaceTabs current="/jobload" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1></div>
-        <form method="get" action="/jobload" className="flex items-end gap-2"><label className="text-sm text-[var(--color-text-secondary)]">Bulan<input type="month" name="month" defaultValue={month} className="ml-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /></label><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
+        <form method="get" action="/jobload" className="flex items-end gap-2"><input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
       </div>
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"><p className="text-sm text-[var(--color-text-secondary)]">Total penugasan PIC dalam periode</p><p className="mt-1 text-3xl font-bold text-[var(--color-text-primary)]">{total}</p></div>
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
