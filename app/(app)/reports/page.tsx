@@ -4,6 +4,7 @@ import WorkspaceTabs, { REPORT_TABS } from '../_components/WorkspaceTabs'
 import type { Metadata } from 'next'
 import { getSessionUser, requireRole } from '@/lib/auth/session'
 import { parseReportFilters } from '@/lib/reports/queries'
+import { TASK_STATUSES, type TaskStatus } from '@/lib/constants/rbac'
 
 export const metadata: Metadata = { title: 'Laporan' }
 
@@ -41,6 +42,17 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
   const selectedTo = selectedMonth
     ? new Date(Date.UTC(Number(selectedMonth.slice(0,4)), Number(selectedMonth.slice(5,7)), 0)).toISOString().slice(0,10)
     : null
+  const selectedStatusRaw = singleParam(params.status)
+  const selectedStatus = selectedStatusRaw && TASK_STATUSES.includes(selectedStatusRaw as TaskStatus) ? selectedStatusRaw as TaskStatus : null
+  const selectedOwnerRaw = singleParam(params.owner)
+  const selectedOwner = selectedOwnerRaw && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(selectedOwnerRaw) ? selectedOwnerRaw : null
+  const selectedSearch = (singleParam(params.search) ?? '').trim().slice(0,100)
+  const selectedProgressRaw = singleParam(params.progress)
+  const selectedProgress = selectedProgressRaw !== undefined && /^\d{1,3}$/.test(selectedProgressRaw) && Number(selectedProgressRaw) <= 100 ? Number(selectedProgressRaw) : null
+  const selectedDueMonthRaw = singleParam(params.dueMonth)
+  const selectedDueMonth = selectedDueMonthRaw && /^\d{4}-(0[1-9]|1[0-2])$/.test(selectedDueMonthRaw) ? selectedDueMonthRaw : null
+  const dueFrom = selectedDueMonth ? `${selectedDueMonth}-01` : null
+  const dueTo = selectedDueMonth ? new Date(Date.UTC(Number(selectedDueMonth.slice(0,4)),Number(selectedDueMonth.slice(5,7)),0)).toISOString().slice(0,10) : null
   const filters = parseReportFilters({
     dateFrom: selectedFrom ?? undefined,
     dateTo: selectedTo ?? undefined,
@@ -48,10 +60,19 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
   })
   const page = Math.max(1, Math.min(100000, Number(singleParam(params.page) ?? '1') || 1))
   const [tasks,options] = await Promise.all([
-    getTaskList(user,{createdFrom:selectedFrom||null,createdTo:selectedTo||null,orgUnitId:filters.orgUnitId,ownerId:user.roleLevel === 2 ? user.id : undefined,page,pageSize:50}),
+    getTaskList(user,{createdFrom:selectedFrom||null,createdTo:selectedTo||null,dueFrom,dueTo,status:selectedStatus,progressPct:selectedProgress,search:selectedSearch||null,orgUnitId:filters.orgUnitId,ownerId:user.roleLevel === 2 ? user.id : selectedOwner,page,pageSize:50}),
     getTaskFilterOptions(user),
   ])
 
+  const listQs = new URLSearchParams({
+    ...(selectedMonth ? {month:selectedMonth} : {}),
+    ...(selectedSearch ? {search:selectedSearch} : {}),
+    ...(selectedOwner ? {owner:selectedOwner} : {}),
+    ...(filters.orgUnitId !== null ? {orgUnit:String(filters.orgUnitId)} : {}),
+    ...(selectedStatus ? {status:selectedStatus} : {}),
+    ...(selectedProgress !== null ? {progress:String(selectedProgress)} : {}),
+    ...(selectedDueMonth ? {dueMonth:selectedDueMonth} : {}),
+  })
   // Buat query string untuk tombol export (FR-091)
   const exportQs = new URLSearchParams({
     ...(selectedFrom ? {from:selectedFrom} : {}),
@@ -102,18 +123,18 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
             <a href="/reports" className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</a>
           </div>
         </div>
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1240px] text-left text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr><th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Tugas</th><th className="px-4 py-3">Penanggung jawab</th><th className="px-4 py-3">Seksi</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Kemajuan</th><th className="px-4 py-3">Tenggat</th><th className="px-4 py-3">Detail</th></tr>
             <tr className="border-t border-slate-200 bg-white align-top">
               <th className="px-3 py-2"><input form="report-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Semua tugas</th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai cakupan</th>
-              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="orgUnit" defaultValue={filters.orgUnitId?.toString() ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{options.sections.map(orgUnit=><option key={orgUnit.id} value={orgUnit.id}>{orgUnit.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Seksi Anda</span>}</th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Semua status</th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
-              <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Buka detail</th>
+              <th className="px-3 py-2"><input form="report-table-filter" type="search" name="search" defaultValue={selectedSearch} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="owner" defaultValue={selectedOwner ?? ''} aria-label="Filter penanggung jawab" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{options.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:null}</th>
+              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="orgUnit" defaultValue={filters.orgUnitId?.toString() ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{options.sections.map(orgUnit=><option key={orgUnit.id} value={orgUnit.id}>{orgUnit.name}</option>)}</select>:null}</th>
+              <th className="px-3 py-2"><select form="report-table-filter" name="status" defaultValue={selectedStatus ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua status</option>{TASK_STATUSES.map(status=><option key={status} value={status}>{taskStatusLabel(status)}</option>)}</select></th>
+              <th className="px-3 py-2"><input form="report-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={selectedProgress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+              <th className="px-3 py-2"><input form="report-table-filter" type="month" name="dueMonth" defaultValue={selectedDueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -132,8 +153,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
         <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
           <span>Halaman {page} · {tasks.total} tugas</span>
           <div className="flex gap-3">
-            {page>1&&<a className="font-semibold text-red-700" href={`/reports?${new URLSearchParams({...Object.fromEntries(new URLSearchParams(exportQs)),page:String(page-1)})}`}>Sebelumnya</a>}
-            {page*50<tasks.total&&<a className="font-semibold text-red-700" href={`/reports?${new URLSearchParams({...Object.fromEntries(new URLSearchParams(exportQs)),page:String(page+1)})}`}>Berikutnya</a>}
+            {page>1&&<a className="font-semibold text-red-700" href={`/reports?${new URLSearchParams({...Object.fromEntries(listQs),page:String(page-1)})}`}>Sebelumnya</a>}
+            {page*50<tasks.total&&<a className="font-semibold text-red-700" href={`/reports?${new URLSearchParams({...Object.fromEntries(listQs),page:String(page+1)})}`}>Berikutnya</a>}
           </div>
         </div>
       </section>
