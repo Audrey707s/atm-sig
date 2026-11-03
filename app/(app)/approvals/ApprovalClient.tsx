@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { approveDeadlineChange } from '@/lib/tasks/actions'
 import type { PendingDeadlineRequest } from '@/lib/tasks/queries'
+import TableFilterMenu from '../_components/TableFilterMenu'
 
 type Props = { requests: PendingDeadlineRequest[] }
 
@@ -25,12 +26,14 @@ export default function ApprovalClient({ requests }: Props) {
   const [taskSearch, setTaskSearch] = useState('')
   const [picSearch, setPicSearch] = useState('')
   const [section, setSection] = useState('')
-  const [deadlineMonth, setDeadlineMonth] = useState('')
+  const [oldDeadlineMonth, setOldDeadlineMonth] = useState('')
+  const [newDeadlineMonth, setNewDeadlineMonth] = useState('')
   const [appliedMonth, setAppliedMonth] = useState('')
   const [appliedTaskSearch, setAppliedTaskSearch] = useState('')
   const [appliedPicSearch, setAppliedPicSearch] = useState('')
   const [appliedSection, setAppliedSection] = useState('')
-  const [appliedDeadlineMonth, setAppliedDeadlineMonth] = useState('')
+  const [appliedOldDeadlineMonth, setAppliedOldDeadlineMonth] = useState('')
+  const [appliedNewDeadlineMonth, setAppliedNewDeadlineMonth] = useState('')
   const sections = Array.from(new Set(requests.map(request => request.orgUnitName))).sort((a,b)=>a.localeCompare(b,'id'))
   const visibleRequests = requests.filter(request => {
     if (view === 'pending' ? request.status !== 'Menunggu approval' : request.status === 'Menunggu approval') return false
@@ -38,7 +41,8 @@ export default function ApprovalClient({ requests }: Props) {
     if (appliedTaskSearch && !request.taskTitle.toLocaleLowerCase('id').includes(appliedTaskSearch.toLocaleLowerCase('id'))) return false
     if (appliedPicSearch && !request.requesterName.toLocaleLowerCase('id').includes(appliedPicSearch.toLocaleLowerCase('id'))) return false
     if (appliedSection && request.orgUnitName !== appliedSection) return false
-    if (appliedDeadlineMonth && request.oldDueDate.slice(0,7) !== appliedDeadlineMonth && request.newDueDate.slice(0,7) !== appliedDeadlineMonth) return false
+    if (appliedOldDeadlineMonth && request.oldDueDate.slice(0,7) !== appliedOldDeadlineMonth) return false
+    if (appliedNewDeadlineMonth && request.newDueDate.slice(0,7) !== appliedNewDeadlineMonth) return false
     return true
   })
 
@@ -93,8 +97,8 @@ export default function ApprovalClient({ requests }: Props) {
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base font-semibold text-slate-900">Daftar Pengajuan Tenggat</h2>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={()=>{setAppliedMonth(month);setAppliedTaskSearch(taskSearch);setAppliedPicSearch(picSearch);setAppliedSection(section);setAppliedDeadlineMonth(deadlineMonth)}} className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
-            <button type="button" onClick={()=>{setMonth('');setTaskSearch('');setPicSearch('');setSection('');setDeadlineMonth('');setAppliedMonth('');setAppliedTaskSearch('');setAppliedPicSearch('');setAppliedSection('');setAppliedDeadlineMonth('')}} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</button>
+            <button type="button" onClick={()=>{setAppliedMonth(month);setAppliedTaskSearch(taskSearch);setAppliedPicSearch(picSearch);setAppliedSection(section);setAppliedOldDeadlineMonth(oldDeadlineMonth);setAppliedNewDeadlineMonth(newDeadlineMonth)}} className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
+            <button type="button" onClick={()=>{setMonth('');setTaskSearch('');setPicSearch('');setSection('');setOldDeadlineMonth('');setNewDeadlineMonth('');setAppliedMonth('');setAppliedTaskSearch('');setAppliedPicSearch('');setAppliedSection('');setAppliedOldDeadlineMonth('');setAppliedNewDeadlineMonth('')}} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</button>
           </div>
         </div>
         {visibleRequests.length === 0 ? (
@@ -104,26 +108,16 @@ export default function ApprovalClient({ requests }: Props) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1240px] text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 font-semibold" scope="col">Tanggal</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Task</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">PIC</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Seksi</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Deadline lama</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Deadline baru</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Alasan</th>
-                  <th className="px-4 py-3 font-semibold" scope="col">Status / Aksi</th>
-                </tr>
-                <tr className="border-t border-slate-200 bg-white align-top normal-case tracking-normal">
-                  <th className="px-3 py-2"><input type="month" value={month} onChange={event=>setMonth(event.target.value)} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                  <th className="px-3 py-2"><input type="search" value={taskSearch} onChange={event=>setTaskSearch(event.target.value)} placeholder="Cari task" aria-label="Cari task" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                  <th className="px-3 py-2"><input type="search" value={picSearch} onChange={event=>setPicSearch(event.target.value)} placeholder="Cari PIC" aria-label="Cari PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                  <th className="px-3 py-2"><select value={section} onChange={event=>setSection(event.target.value)} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{sections.map(name=><option key={name} value={name}>{name}</option>)}</select></th>
-                  <th className="px-3 py-2"></th>
-                  <th className="px-3 py-2"><input type="month" value={deadlineMonth} onChange={event=>setDeadlineMonth(event.target.value)} aria-label="Filter bulan dan tahun deadline baru" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                  <th className="px-3 py-2" aria-label="Tanpa filter alasan"></th>
-                  <th className="px-3 py-2"></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="Tanggal"><input type="month" value={month} onChange={event=>setMonth(event.target.value)} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="Task"><input type="search" value={taskSearch} onChange={event=>setTaskSearch(event.target.value)} placeholder="Cari task" aria-label="Cari task" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="PIC"><input type="search" value={picSearch} onChange={event=>setPicSearch(event.target.value)} placeholder="Cari PIC" aria-label="Cari PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="Seksi"><select value={section} onChange={event=>setSection(event.target.value)} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case"><option value="">Semua seksi</option>{sections.map(name=><option key={name} value={name}>{name}</option>)}</select></TableFilterMenu></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="Deadline lama"><input type="month" value={oldDeadlineMonth} onChange={event=>setOldDeadlineMonth(event.target.value)} aria-label="Filter bulan dan tahun deadline lama" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                  <th className="px-4 py-3"><TableFilterMenu label="Deadline baru"><input type="month" value={newDeadlineMonth} onChange={event=>setNewDeadlineMonth(event.target.value)} aria-label="Filter bulan dan tahun deadline baru" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                  <th className="px-4 py-3 font-semibold">Alasan</th>
+                  <th className="px-4 py-3 font-semibold">Status / Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
