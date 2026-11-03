@@ -130,7 +130,10 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
               <h2 className="text-sm font-semibold text-slate-900">Riwayat perubahan</h2>
               <p className="mt-0.5 text-xs text-slate-500">Urutan terbaru · {entries.length} catatan di halaman ini</p>
             </div>
-            <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">Halaman {filters.page}</span>
+            <div className="flex items-center gap-2">
+              <button form="audit-table-filter" type="submit" className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
+              <Link href="/audit-log" className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</Link>
+            </div>
           </div>
           <form id="audit-table-filter" method="get" action="/audit-log" />
           <div className="overflow-x-auto">
@@ -150,7 +153,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
                 <th className="px-3 py-2"><input form="audit-table-filter" name="object" defaultValue={filters.objectPrefix ?? ''} placeholder="Cari objek" aria-label="Filter objek" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai pengguna</th>
                 <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Perubahan awal</th>
-                <th className="px-3 py-2"><div className="flex gap-1"><button form="audit-table-filter" className="rounded bg-red-600 px-2 py-1 text-[10px] font-semibold text-white">Terapkan</button><Link href="/audit-log" className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset</Link></div></th>
+                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Perubahan akhir</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
