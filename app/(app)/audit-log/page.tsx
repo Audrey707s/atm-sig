@@ -107,21 +107,8 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
   return (
     <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/audit-log" tabs={REPORT_TABS} />
-      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-7 text-white shadow-sm sm:px-8">
-        <div aria-hidden="true" className="absolute -right-12 -top-24 h-64 w-64 rounded-full border-[32px] border-white/5" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-300">Kontrol & transparansi</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Catatan audit</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              Telusuri riwayat perubahan data dan peran dalam cakupan akses Anda.
-            </p>
-          </div>
-          <div className="flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-slate-100">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-400" />
-            Catatan terlindungi · hanya baca
-          </div>
-        </div>
+      <header>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Catatan Audit</h1>
       </header>
 
       {/* Filter form */}
