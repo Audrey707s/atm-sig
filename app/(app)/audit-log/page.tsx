@@ -82,12 +82,18 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
   const [user, params] = await Promise.all([getSessionUser(), searchParams])
   requireRole(user, 'Manager')
 
+  const selectedMonthRaw = singleParam(params.month)
+  const selectedMonth = selectedMonthRaw && /^\d{4}-(0[1-9]|1[0-2])$/.test(selectedMonthRaw) ? selectedMonthRaw : null
+  const selectedFrom = selectedMonth ? `${selectedMonth}-01` : undefined
+  const selectedTo = selectedMonth
+    ? new Date(Date.UTC(Number(selectedMonth.slice(0,4)), Number(selectedMonth.slice(5,7)), 0)).toISOString().slice(0,10)
+    : undefined
   const filters = parseAuditFilters({
     action: singleParam(params.action),
     object: singleParam(params.object),
-    from:   singleParam(params.from),
-    to:     singleParam(params.to),
-    page:   singleParam(params.page),
+    from: selectedFrom,
+    to: selectedTo,
+    page: singleParam(params.page),
   })
 
   const { entries, hasMore } = await getAuditLogs(user, filters)
@@ -96,8 +102,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
   const baseQs = new URLSearchParams({
     ...(filters.action       ? { action: filters.action }             : {}),
     ...(filters.objectPrefix ? { object: filters.objectPrefix }       : {}),
-    ...(filters.dateFrom     ? { from: filters.dateFrom }             : {}),
-    ...(filters.dateTo       ? { to: filters.dateTo }                 : {}),
+    ...(selectedMonth ? { month: selectedMonth } : {}),
   })
   const prevQs = new URLSearchParams(baseQs)
   prevQs.set('page', String(filters.page - 1))
@@ -110,79 +115,6 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Catatan Audit</h1>
       </header>
-
-      {/* Filter form */}
-      <form
-        id="audit-filter-form"
-        method="get"
-        action="/audit-log"
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-      >
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Filter catatan</h2>
-            <p className="mt-1 text-xs text-slate-500">Persempit hasil berdasarkan aksi, objek, atau periode.</p>
-          </div>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">Waktu Jakarta</span>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.35fr_1.35fr_1fr_1fr_auto]">
-        {/* Action */}
-        <label className="text-xs font-semibold text-slate-700">
-          Aksi
-          <select
-            name="action"
-            defaultValue={filters.action ?? ''}
-            className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 shadow-sm focus:border-red-600 focus:ring-red-600"
-          >
-            <option value="">Semua aksi</option>
-            {KNOWN_AUDIT_ACTIONS.map((a) => (
-              <option key={a} value={a}>{AUDIT_ACTION_LABELS[a] ?? a}</option>
-            ))}
-          </select>
-        </label>
-        {/* Object prefix */}
-        <label className="text-xs font-semibold text-slate-700">
-          Objek (prefix)
-          <input
-            type="text"
-            name="object"
-            id="audit-filter-object"
-            defaultValue={filters.objectPrefix ?? ''}
-            placeholder="mis. tasks: atau users:"
-            className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-red-600 focus:ring-red-600"
-          />
-        </label>
-        {/* Date from */}
-        <label className="text-xs font-semibold text-slate-700">
-          Dari tanggal
-          <input
-            type="date"
-            name="from"
-            id="audit-filter-from"
-            defaultValue={filters.dateFrom ?? ''}
-            className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 shadow-sm focus:border-red-600 focus:ring-red-600"
-          />
-        </label>
-        {/* Date to */}
-        <label className="text-xs font-semibold text-slate-700">
-          Sampai tanggal
-          <input
-            type="date"
-            name="to"
-            id="audit-filter-to"
-            defaultValue={filters.dateTo ?? ''}
-            className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 shadow-sm focus:border-red-600 focus:ring-red-600"
-          />
-        </label>
-        <button
-          type="submit"
-          id="audit-filter-submit"
-          className="self-end rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
-        >
-          Terapkan
-        </button>
-        </div>
-      </form>
 
       {/* Results */}
       {entries.length === 0 ? (
@@ -200,16 +132,25 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
             </div>
             <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">Halaman {filters.page}</span>
           </div>
+          <form id="audit-table-filter" method="get" action="/audit-log" />
           <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm" aria-label="Tabel audit log">
             <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] uppercase tracking-wide text-slate-500">
               <tr>
                 <th scope="col" className="px-4 py-3 w-40">Waktu</th>
-                <th scope="col" className="px-4 py-3 w-32">Aksi</th>
+                <th scope="col" className="px-4 py-3 w-40">Aksi</th>
                 <th scope="col" className="px-4 py-3">Objek</th>
                 <th scope="col" className="px-4 py-3 w-36">Pengguna</th>
                 <th scope="col" className="px-4 py-3">Nilai Lama</th>
                 <th scope="col" className="px-4 py-3">Nilai Baru</th>
+              </tr>
+              <tr className="border-t border-slate-200 bg-white align-top normal-case tracking-normal">
+                <th className="px-3 py-2"><input form="audit-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+                <th className="px-3 py-2"><select form="audit-table-filter" name="action" defaultValue={filters.action ?? ''} aria-label="Filter aksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua aksi</option>{KNOWN_AUDIT_ACTIONS.map(action=><option key={action} value={action}>{AUDIT_ACTION_LABELS[action] ?? action}</option>)}</select></th>
+                <th className="px-3 py-2"><input form="audit-table-filter" name="object" defaultValue={filters.objectPrefix ?? ''} placeholder="Cari objek" aria-label="Filter objek" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai pengguna</th>
+                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Perubahan awal</th>
+                <th className="px-3 py-2"><div className="flex gap-1"><button form="audit-table-filter" className="rounded bg-red-600 px-2 py-1 text-[10px] font-semibold text-white">Terapkan</button><Link href="/audit-log" className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset</Link></div></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
