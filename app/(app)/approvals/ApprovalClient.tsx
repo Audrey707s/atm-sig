@@ -120,10 +120,10 @@ export default function ApprovalClient({ requests }: Props) {
                   <th className="px-3 py-2"><input type="search" value={taskSearch} onChange={event=>setTaskSearch(event.target.value)} placeholder="Cari task" aria-label="Cari task" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                   <th className="px-3 py-2"><input type="search" value={picSearch} onChange={event=>setPicSearch(event.target.value)} placeholder="Cari PIC" aria-label="Cari PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                   <th className="px-3 py-2"><select value={section} onChange={event=>setSection(event.target.value)} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{sections.map(name=><option key={name} value={name}>{name}</option>)}</select></th>
-                  <th className="px-3 py-2"><input type="month" value={deadlineMonth} onChange={event=>setDeadlineMonth(event.target.value)} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                   <th className="px-3 py-2"></th>
+                  <th className="px-3 py-2"><input type="month" value={deadlineMonth} onChange={event=>setDeadlineMonth(event.target.value)} aria-label="Filter bulan dan tahun deadline baru" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                   <th className="px-3 py-2" aria-label="Tanpa filter alasan"></th>
-                  <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai status</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
