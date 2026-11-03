@@ -21,7 +21,16 @@ export default function ApprovalClient({ requests }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
   const [view, setView] = useState<'pending' | 'history'>('pending')
-  const visibleRequests = requests.filter(request => view === 'pending' ? request.status === 'Menunggu approval' : request.status !== 'Menunggu approval')
+  const [month, setMonth] = useState('')
+  const [taskSearch, setTaskSearch] = useState('')
+  const [picSearch, setPicSearch] = useState('')
+  const visibleRequests = requests.filter(request => {
+    if (view === 'pending' ? request.status !== 'Menunggu approval' : request.status === 'Menunggu approval') return false
+    if (month && request.createdAt.slice(0, 7) !== month) return false
+    if (taskSearch && !request.taskTitle.toLocaleLowerCase('id').includes(taskSearch.toLocaleLowerCase('id'))) return false
+    if (picSearch && !request.requesterName.toLocaleLowerCase('id').includes(picSearch.toLocaleLowerCase('id'))) return false
+    return true
+  })
 
   async function decide(requestId: string, decision: 'Disetujui' | 'Ditolak') {
     setBusyId(requestId)
@@ -52,7 +61,6 @@ export default function ApprovalClient({ requests }: Props) {
         <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Approval Perubahan Deadline
         </h1>
-        <p className="mt-1 text-sm text-slate-500">Pengajuan perubahan deadline dari Staff/PIC</p>
       </header>
 
       {feedback && (
@@ -78,21 +86,32 @@ export default function ApprovalClient({ requests }: Props) {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left text-sm">
+            <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4 font-semibold" scope="col">Task</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">PIC</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Deadline lama</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Deadline baru</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Alasan</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Status / Aksi</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Tanggal</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Task</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">PIC</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Deadline lama</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Deadline baru</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Alasan</th>
+                  <th className="px-4 py-3 font-semibold" scope="col">Status / Aksi</th>
+                </tr>
+                <tr className="border-t border-slate-200 bg-white align-top normal-case tracking-normal">
+                  <th className="px-3 py-2"><input type="month" value={month} onChange={event=>setMonth(event.target.value)} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+                  <th className="px-3 py-2"><input type="search" value={taskSearch} onChange={event=>setTaskSearch(event.target.value)} placeholder="Cari task" aria-label="Cari task" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+                  <th className="px-3 py-2"><input type="search" value={picSearch} onChange={event=>setPicSearch(event.target.value)} placeholder="Cari PIC" aria-label="Cari PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
+                  <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
+                  <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
+                  <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Teks pengajuan</th>
+                  <th className="px-3 py-2"><button type="button" onClick={()=>{setMonth('');setTaskSearch('');setPicSearch('')}} className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset filter</button></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {visibleRequests.map((request) => (
                   <tr key={request.id} className="align-top hover:bg-slate-50">
-                    <td className="px-5 py-4 font-medium text-slate-900">{request.taskTitle}</td>
+                    <td className="whitespace-nowrap px-4 py-4 text-slate-600">{formatDate(request.createdAt)}</td>
+                    <td className="px-4 py-4 font-medium text-slate-900">{request.taskTitle}</td>
                     <td className="px-5 py-4 text-slate-600">{request.requesterName}</td>
                     <td className="whitespace-nowrap px-5 py-4 text-slate-600">{formatDate(request.oldDueDate)}</td>
                     <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-900">{formatDate(request.newDueDate)}</td>
