@@ -152,12 +152,20 @@ export default async function TasksPage({
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
           <form id="task-table-filter" action="/tasks" method="get" />
-          <table className="w-full min-w-[1040px] border-collapse text-left text-xs">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Daftar Tugas</h2>
+            <div className="flex items-center gap-2">
+              <button form="task-table-filter" type="submit" className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Terapkan</button>
+              <Link href={isMine?"/tasks?mine=1":"/tasks"} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</Link>
+            </div>
+          </div>
+          <table className="w-full min-w-[1160px] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 tracking-wider bg-slate-50/60">
                 <th className="py-3 px-4 font-semibold" scope="col">TANGGAL</th>
                 <th className="py-3 px-4 font-semibold" scope="col">TUGAS</th>
                 <th className="py-3 px-4 font-semibold" scope="col">PIC</th>
+                <th className="py-3 px-4 font-semibold" scope="col">SEKSI</th>
                 <th className="py-3 px-4 font-semibold" scope="col">TENGGAT</th>
                 <th className="py-3 px-4 font-semibold" scope="col">PRIORITAS</th>
                 <th className="py-3 px-4 font-semibold" scope="col">KEMAJUAN</th>
@@ -165,12 +173,13 @@ export default async function TasksPage({
               </tr>
               <tr className="border-b border-slate-200 bg-white align-top">
                 <th className="px-3 py-2"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</th>
-                <th className="px-3 py-2 space-y-1"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{user.roleLevel>=3&&<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>}</th>
+                <th className="px-3 py-2"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Akun saya</span>}</th>
+                <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Seksi Anda</span>}</th>
                 <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
                 <th className="px-3 py-2"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></th>
                 <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
-                <th className="px-3 py-2"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select><div className="mt-1 flex gap-1"><button form="task-table-filter" className="rounded bg-red-600 px-2 py-1 text-[10px] font-semibold text-white">Terapkan</button><Link href={isMine?"/tasks?mine=1":"/tasks"} className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset</Link></div></th>
+                <th className="px-3 py-2"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -185,11 +194,11 @@ export default async function TasksPage({
                     >
                       {task.title}
                     </Link>
-                    <p className="text-slate-400 text-[10px] mt-0.5">{task.orgUnitName}</p>
                   </td>
                   <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                     {task.ownerName}
                   </td>
+                  <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">{task.orgUnitName}</td>
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <span
                       className={task.isOverdue ? 'text-red-600 font-medium' : 'text-slate-600'}
