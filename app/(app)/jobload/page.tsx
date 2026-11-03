@@ -17,19 +17,18 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
   const workload=await getPeriodWorkloads(user,`${month}-01T00:00:00+07:00`,`${nextMonth}-01T00:00:00+07:00`)
   const total=workload.rows.reduce((sum,row)=>sum+row.total,0)
   return (
-    <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/jobload" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Jumlah tugas per penanggung jawab selama bulan yang dipilih, termasuk tugas selesai.</p></div>
+        <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1></div>
         <form method="get" action="/jobload" className="flex items-end gap-2"><label className="text-sm text-[var(--color-text-secondary)]">Bulan<input type="month" name="month" defaultValue={month} className="ml-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /></label><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
       </div>
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"><p className="text-sm text-[var(--color-text-secondary)]">Total penugasan PIC dalam periode</p><p className="mt-1 text-3xl font-bold text-[var(--color-text-primary)]">{total}</p><p className="mt-2 text-xs text-[var(--color-text-muted)]">Tugas yang dialihkan dapat dihitung untuk masing-masing penanggung jawab pada periode yang sama.</p></div>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"><p className="text-sm text-[var(--color-text-secondary)]">Total penugasan PIC dalam periode</p><p className="mt-1 text-3xl font-bold text-[var(--color-text-primary)]">{total}</p></div>
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-[var(--color-bg-app)] text-[var(--color-text-secondary)]"><tr>{['PIC','Total Job','Carry-over','Baru','Selesai','Belum Selesai','Overdue','Completion Rate'].map(x=><th key={x} className="px-3 py-3">{x}</th>)}</tr></thead>
           <tbody>{workload.rows.map(row=><tr key={row.ownerId} className="border-t border-[var(--color-border)] text-[var(--color-text-primary)]"><td className="px-3 py-3 font-medium">{row.ownerName}</td>{[row.total,row.carryOver,row.newTasks,row.completed,row.outstanding,row.overdue].map((n,i)=><td key={i} className="px-3 py-3 tabular-nums">{n}</td>)}<td className="px-3 py-3 tabular-nums">{row.completionRate}%</td></tr>)}{!workload.rows.length&&<tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--color-text-muted)]">Tidak ada pekerjaan dalam periode ini.</td></tr>}</tbody>
         </table>
       </div>
-      <p className="text-xs text-[var(--color-text-muted)]">Data yang ditampilkan mengikuti cakupan akses pengguna.</p>
     </main>
   )
 }
