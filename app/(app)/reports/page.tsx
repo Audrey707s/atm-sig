@@ -1,6 +1,7 @@
 import { taskStatusLabel } from '@/lib/tasks/status-labels'
 import { getTaskFilterOptions, getTaskList } from '@/lib/tasks/queries'
 import WorkspaceTabs, { REPORT_TABS } from '../_components/WorkspaceTabs'
+import TableFilterMenu from '../_components/TableFilterMenu'
 import type { Metadata } from 'next'
 import { getSessionUser, requireRole } from '@/lib/auth/session'
 import { parseReportFilters } from '@/lib/reports/queries'
@@ -125,16 +126,15 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
         </div>
         <table className="w-full min-w-[1240px] text-left text-sm">
           <thead className="bg-slate-50 text-slate-600">
-            <tr><th className="px-4 py-3">Tanggal</th><th className="px-4 py-3">Tugas</th><th className="px-4 py-3">Penanggung jawab</th><th className="px-4 py-3">Seksi</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Kemajuan</th><th className="px-4 py-3">Tenggat</th><th className="px-4 py-3">Detail</th></tr>
-            <tr className="border-t border-slate-200 bg-white align-top">
-              <th className="px-3 py-2"><input form="report-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-              <th className="px-3 py-2"><input form="report-table-filter" type="search" name="search" defaultValue={selectedSearch} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="owner" defaultValue={selectedOwner ?? ''} aria-label="Filter penanggung jawab" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{options.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:null}</th>
-              <th className="px-3 py-2">{user.roleLevel>2?<select form="report-table-filter" name="orgUnit" defaultValue={filters.orgUnitId?.toString() ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{options.sections.map(orgUnit=><option key={orgUnit.id} value={orgUnit.id}>{orgUnit.name}</option>)}</select>:null}</th>
-              <th className="px-3 py-2"><select form="report-table-filter" name="status" defaultValue={selectedStatus ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua status</option>{TASK_STATUSES.map(status=><option key={status} value={status}>{taskStatusLabel(status)}</option>)}</select></th>
-              <th className="px-3 py-2"><input form="report-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={selectedProgress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-              <th className="px-3 py-2"><input form="report-table-filter" type="month" name="dueMonth" defaultValue={selectedDueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-              <th className="px-3 py-2"></th>
+            <tr>
+              <th className="px-4 py-3"><TableFilterMenu label="Tanggal"><input form="report-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Tugas"><input form="report-table-filter" type="search" name="search" defaultValue={selectedSearch} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Penanggung jawab">{user.roleLevel>2?<select form="report-table-filter" name="owner" defaultValue={selectedOwner ?? ''} aria-label="Filter penanggung jawab" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{options.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-xs text-slate-500">Akun Anda</span>}</TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Seksi">{user.roleLevel>2?<select form="report-table-filter" name="orgUnit" defaultValue={filters.orgUnitId?.toString() ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{options.sections.map(orgUnit=><option key={orgUnit.id} value={orgUnit.id}>{orgUnit.name}</option>)}</select>:<span className="text-xs text-slate-500">Seksi Anda</span>}</TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Status"><select form="report-table-filter" name="status" defaultValue={selectedStatus ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua status</option>{TASK_STATUSES.map(status=><option key={status} value={status}>{taskStatusLabel(status)}</option>)}</select></TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Kemajuan"><input form="report-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={selectedProgress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+              <th className="px-4 py-3"><TableFilterMenu label="Tenggat"><input form="report-table-filter" type="month" name="dueMonth" defaultValue={selectedDueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
+              <th className="px-4 py-3">Detail</th>
             </tr>
           </thead>
           <tbody>
