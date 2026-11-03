@@ -149,9 +149,9 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
                 <th className="px-3 py-2"><input form="audit-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2"><select form="audit-table-filter" name="action" defaultValue={filters.action ?? ''} aria-label="Filter aksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua aksi</option>{KNOWN_AUDIT_ACTIONS.map(action=><option key={action} value={action}>{AUDIT_ACTION_LABELS[action] ?? action}</option>)}</select></th>
                 <th className="px-3 py-2"><input form="audit-table-filter" name="object" defaultValue={filters.objectPrefix ?? ''} placeholder="Cari objek" aria-label="Filter objek" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Sesuai pengguna</th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Perubahan awal</th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Perubahan akhir</th>
+                <th className="px-3 py-2"></th>
+                <th className="px-3 py-2"></th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
