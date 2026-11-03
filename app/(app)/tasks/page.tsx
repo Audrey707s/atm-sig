@@ -19,6 +19,8 @@ type SearchParams = {
   owner?: string
   mine?: string
   month?: string
+  dueMonth?: string
+  progress?: string
   page?: string
 }
 
@@ -70,6 +72,12 @@ export default async function TasksPage({
   const createdToFilter = monthFilter
     ? new Date(Date.UTC(Number(monthFilter.slice(0, 4)), Number(monthFilter.slice(5, 7)), 0)).toISOString().slice(0, 10)
     : null
+  const dueMonthFilter = params.dueMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.dueMonth) ? params.dueMonth : null
+  const dueFromFilter = dueMonthFilter ? `${dueMonthFilter}-01` : null
+  const dueToFilter = dueMonthFilter
+    ? new Date(Date.UTC(Number(dueMonthFilter.slice(0, 4)), Number(dueMonthFilter.slice(5, 7)), 0)).toISOString().slice(0, 10)
+    : null
+  const progressFilter = params.progress !== undefined && /^\d{1,3}$/.test(params.progress) && Number(params.progress) <= 100 ? Number(params.progress) : null
   const page = parseInt(params.page ?? '1', 10)
 
   const [{ items: tasks, total }, filterOptions] = await Promise.all([
@@ -81,6 +89,9 @@ export default async function TasksPage({
       ownerId: ownerFilter,
       createdFrom: createdFromFilter,
       createdTo: createdToFilter,
+      dueFrom: dueFromFilter,
+      dueTo: dueToFilter,
+      progressPct: progressFilter,
       page,
       pageSize: 20,
     }),
@@ -99,6 +110,8 @@ export default async function TasksPage({
     if (merged.owner && !isMine) qs.set('owner', merged.owner)
     if (isMine) qs.set('mine', '1')
     if (merged.month) qs.set('month', merged.month)
+    if (merged.dueMonth) qs.set('dueMonth', merged.dueMonth)
+    if (merged.progress) qs.set('progress', merged.progress)
     if (merged.page && merged.page !== '1') qs.set('page', merged.page)
     const str = qs.toString()
     return `/tasks${str ? `?${str}` : ''}`
@@ -176,9 +189,9 @@ export default async function TasksPage({
                 <th className="px-3 py-2"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Akun saya</span>}</th>
                 <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Seksi Anda</span>}</th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
+                <th className="px-3 py-2"><input form="task-table-filter" type="month" name="dueMonth" defaultValue={dueMonthFilter ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
+                <th className="px-3 py-2"><input form="task-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progressFilter ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
                 <th className="px-3 py-2"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></th>
               </tr>
             </thead>
