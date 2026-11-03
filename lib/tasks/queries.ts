@@ -469,6 +469,7 @@ export type PendingDeadlineRequest = {
   taskId: string
   taskTitle: string
   requesterName: string
+  orgUnitName: string
   oldDueDate: string
   newDueDate: string
   reason: string
@@ -491,7 +492,8 @@ export async function getPendingDeadlineRequests(
       requester:users!deadline_change_requests_requested_by_fkey ( name ),
       task:tasks!deadline_change_requests_task_id_fkey (
         title,
-        owner:users!tasks_owner_id_fkey ( name )
+        owner:users!tasks_owner_id_fkey ( name ),
+        org_unit:org_units!tasks_org_unit_id_fkey ( name )
       )
     `)
     .order('created_at', { ascending: true })
@@ -506,6 +508,8 @@ export async function getPendingDeadlineRequests(
       typeof request.task.title !== 'string' ||
       !isRecord(request.task.owner) ||
       typeof request.task.owner.name !== 'string' ||
+      !isRecord(request.task.org_unit) ||
+      typeof request.task.org_unit.name !== 'string' ||
       typeof request.requester.name !== 'string'
     ) {
       throw new Error('Informasi task atau PIC pada pengajuan deadline tidak valid.')
@@ -516,6 +520,7 @@ export async function getPendingDeadlineRequests(
       taskId: request.task_id,
       taskTitle: request.task.title,
       requesterName: request.requester.name,
+      orgUnitName: request.task.org_unit.name,
       oldDueDate: request.old_due_date,
       newDueDate: request.new_due_date,
       reason: request.reason,
