@@ -37,11 +37,13 @@ export default async function KanbanPage({ searchParams }: { searchParams: Promi
   return <main className="mx-auto max-w-[1800px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
     <WorkspaceTabs current="/kanban" tabs={WORK_TABS} roleLevel={user.roleLevel} />
     <header><h1 className="text-2xl font-bold tracking-tight text-slate-900">Papan Tugas</h1></header>
-    <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-5">
+    <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="section" defaultValue={params.section ?? ''}><option value="">Semua seksi</option>{options.sections.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
       <select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="owner" defaultValue={params.owner ?? ''}><option value="">Semua PIC</option>{options.owners.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
       <select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="priority" defaultValue={params.priority ?? ''}><option value="">Semua prioritas</option><option value="tinggi">Tinggi</option><option value="sedang">Sedang</option><option value="rendah">Rendah</option></select>
-      <input className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" type="date" aria-label="Mulai periode" name="from" defaultValue={validDate(params.from) ?? ''}/><div className="flex gap-2"><input className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 text-sm" type="date" aria-label="Akhir periode" name="to" defaultValue={validDate(params.to) ?? ''}/><button className="rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700">Terapkan</button><Link href="/kanban" className="flex items-center rounded-lg border border-slate-200 px-3 text-xs text-slate-600">Atur ulang</Link></div>
+      <input className="min-h-10 min-w-0 rounded-lg border border-slate-300 px-3 text-sm" type="date" aria-label="Mulai periode" name="from" defaultValue={validDate(params.from) ?? ''}/>
+      <input className="min-h-10 min-w-0 rounded-lg border border-slate-300 px-3 text-sm" type="date" aria-label="Akhir periode" name="to" defaultValue={validDate(params.to) ?? ''}/>
+      <div className="flex min-w-0 gap-2"><button className="min-h-10 flex-1 rounded-lg bg-red-600 px-3 text-sm font-semibold text-white hover:bg-red-700">Terapkan</button><Link href="/kanban" className="flex min-h-10 flex-1 items-center justify-center rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</Link></div>
     </form>
     <KanbanBoard tasks={items} user={user}/>
   </main>
