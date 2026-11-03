@@ -61,10 +61,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
       <WorkspaceTabs current="/reports" tabs={REPORT_TABS} roleLevel={user.roleLevel} />
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">LAPORAN TUGAS</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {user.roleLevel === 2 ? null : 'Seluruh tugas yang dapat diakses, beserta status, kemajuan, dan lampiran. '}Kosongkan tanggal untuk menampilkan semua periode.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">LAPORAN TUGAS</h1>
         </div>
         {/* Tombol Export — FR-091 */}
         <div className="flex shrink-0 gap-2">
