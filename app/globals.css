@@ -176,7 +176,7 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
 
 .atm-workspace h1 {
   display: inline-flex;
-  min-height: 2.9rem;
+  min-height: 2.55rem;
   align-items: center;
   font-family: var(--font-display);
   font-weight: 850;
@@ -186,9 +186,9 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
   background: #FFFFFF;
   border: 1px solid #F3C3C6;
   border-left: 4px solid #EB232D;
-  border-radius: .75rem;
-  padding: .62rem .9rem;
-  box-shadow: 0 5px 14px -10px rgba(113,24,32,.55);
+  border-radius: .65rem;
+  padding: .48rem .75rem;
+  box-shadow: 0 4px 12px -10px rgba(113,24,32,.5);
   transform: translateY(0);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
@@ -219,7 +219,9 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
 }
 .atm-summary-card {
   width: fit-content;
-  min-width: 15rem;
+  min-width: 12.5rem;
+  gap: .6rem;
+  padding: .5rem .65rem;
 }
 .atm-count-card__value,
 .atm-summary-card__accent {
@@ -237,9 +239,11 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
   line-height: 2.35rem;
 }
 .atm-summary-card__accent {
-  min-height: 2.5rem;
-  padding: 0 .55rem;
-  font-size: .72rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0 .45rem;
+  border-radius: .5rem;
+  font-size: .66rem;
   letter-spacing: .05em;
 }
 .atm-count-card__label,
@@ -253,11 +257,11 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
 }
 .atm-count-card__label { max-width: 5.5rem; }
 .atm-summary-card__value {
-  margin-top: .1rem;
+  margin-top: .05rem;
   color: #111827;
-  font-size: 1.7rem;
+  font-size: 1.45rem;
   font-weight: 850;
-  line-height: 1.8rem;
+  line-height: 1.5rem;
   font-variant-numeric: tabular-nums;
 }
 @media (hover:hover) and (pointer:fine) {
@@ -333,4 +337,32 @@ html[data-theme='dark'] :is(.atm-count-card__label,.atm-summary-card__label) {
 html[data-theme='dark'] .atm-summary-card__value { color: #FFFFFF; }
 html[data-theme='dark'] .atm-workspace table > thead > tr > th {
   border-bottom-color: rgba(217,90,101,.38);
+}
+
+
+/* Workload table: fixed visual rhythm and clear spreadsheet-like guides. */
+.atm-jobload-table th,
+.atm-jobload-table td {
+  border-right: 1px solid #F1D9DC;
+  vertical-align: middle;
+}
+.atm-jobload-table th:last-child,
+.atm-jobload-table td:last-child {
+  border-right: 0;
+}
+.atm-jobload-table tbody tr + tr td {
+  border-top: 1px solid #E9EEF4;
+}
+.atm-jobload-table tbody tr:nth-child(even) {
+  background: #FFFAFA;
+}
+html[data-theme='dark'] .atm-jobload-table th,
+html[data-theme='dark'] .atm-jobload-table td {
+  border-right-color: #4A343A;
+}
+html[data-theme='dark'] .atm-jobload-table tbody tr + tr td {
+  border-top-color: #334155;
+}
+html[data-theme='dark'] .atm-jobload-table tbody tr:nth-child(even) {
+  background: #221F22;
 }
