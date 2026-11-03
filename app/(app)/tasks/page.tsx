@@ -18,8 +18,7 @@ type SearchParams = {
   section?: string
   owner?: string
   mine?: string
-  from?: string
-  to?: string
+  month?: string
   page?: string
 }
 
@@ -66,8 +65,11 @@ export default async function TasksPage({
     : null
   const isMine = user.roleLevel < 3 || params.mine === '1'
   const ownerFilter = isMine ? user.id : params.owner || null
-  const dateFromFilter = params.from || null
-  const dateToFilter = params.to || null
+  const monthFilter = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : null
+  const createdFromFilter = monthFilter ? `${monthFilter}-01` : null
+  const createdToFilter = monthFilter
+    ? new Date(Date.UTC(Number(monthFilter.slice(0, 4)), Number(monthFilter.slice(5, 7)), 0)).toISOString().slice(0, 10)
+    : null
   const page = parseInt(params.page ?? '1', 10)
 
   const [{ items: tasks, total }, filterOptions] = await Promise.all([
@@ -77,8 +79,8 @@ export default async function TasksPage({
       search: searchFilter,
       orgUnitId: sectionFilter,
       ownerId: ownerFilter,
-      dateFrom: dateFromFilter,
-      dateTo: dateToFilter,
+      createdFrom: createdFromFilter,
+      createdTo: createdToFilter,
       page,
       pageSize: 20,
     }),
@@ -96,8 +98,7 @@ export default async function TasksPage({
     if (merged.section) qs.set('section', merged.section)
     if (merged.owner && !isMine) qs.set('owner', merged.owner)
     if (isMine) qs.set('mine', '1')
-    if (merged.from) qs.set('from', merged.from)
-    if (merged.to) qs.set('to', merged.to)
+    if (merged.month) qs.set('month', merged.month)
     if (merged.page && merged.page !== '1') qs.set('page', merged.page)
     const str = qs.toString()
     return `/tasks${str ? `?${str}` : ''}`
@@ -130,113 +131,6 @@ export default async function TasksPage({
         )}
       </div>
 
-      {/* Filter bar */}
-      <div className="mb-5 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <form action="/tasks" method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {isMine&&<input type="hidden" name="mine" value="1" />}
-          <label className="text-xs font-medium text-slate-600">
-            Cari tugas
-            <input
-              type="search"
-              name="search"
-              maxLength={100}
-              defaultValue={searchFilter ?? ''}
-              placeholder="Judul tugas"
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-                         focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
-            />
-          </label>
-          <label className="text-xs font-medium text-slate-600">
-            Status
-            <select
-              name="status"
-              defaultValue={statusFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-                         focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </label>
-          {user.roleLevel>=3&&<label className="text-xs font-medium text-slate-600">
-            Seksi
-            <select
-              name="section"
-              defaultValue={sectionFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-                         focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
-            >
-              <option value="">Semua seksi</option>
-              {filterOptions.sections.map((section) => (
-                <option key={section.id} value={section.id}>{section.name}</option>
-              ))}
-            </select>
-          </label>}
-          {user.roleLevel>=3&&<label className="text-xs font-medium text-slate-600">
-            Penanggung Jawab
-            <select
-              name="owner"
-              defaultValue={ownerFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-                         focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
-            >
-              <option value="">Semua PIC</option>
-              {filterOptions.owners.map((owner) => (
-                <option key={owner.id} value={owner.id}>{owner.name}</option>
-              ))}
-            </select>
-          </label>}
-          <label className="text-xs font-medium text-slate-600">
-            Prioritas
-            <select
-              name="priority"
-              defaultValue={priorityFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-                         focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
-            >
-              <option value="">Semua prioritas</option>
-              <option value="rendah">Rendah</option>
-              <option value="sedang">Sedang</option>
-              <option value="tinggi">Tinggi</option>
-            </select>
-          </label>
-          <label className="text-xs font-medium text-slate-600">
-            Periode mulai
-            <input
-              type="date"
-              name="from"
-              defaultValue={dateFromFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-xs font-medium text-slate-600">
-            Periode sampai
-            <input
-              type="date"
-              name="to"
-              defaultValue={dateToFilter ?? ''}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            />
-          </label>
-          <div className="flex items-end gap-2">
-            <button
-              type="submit"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: 'var(--color-brand)' }}
-            >
-              Terapkan filter
-            </button>
-            <Link
-              href={isMine?"/tasks?mine=1":"/tasks"}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-            >
-              Reset
-            </Link>
-          </div>
-        </form>
-      </div>
-
       {/* Tabel task */}
       {tasks.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
@@ -257,9 +151,11 @@ export default async function TasksPage({
       ) : (
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+          <form id="task-table-filter" action="/tasks" method="get" />
+          <table className="w-full min-w-[1040px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-400 tracking-wider bg-slate-50/60">
+              <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 tracking-wider bg-slate-50/60">
+                <th className="py-3 px-4 font-semibold" scope="col">TANGGAL</th>
                 <th className="py-3 px-4 font-semibold" scope="col">TUGAS</th>
                 <th className="py-3 px-4 font-semibold" scope="col">PIC</th>
                 <th className="py-3 px-4 font-semibold" scope="col">TENGGAT</th>
@@ -267,10 +163,20 @@ export default async function TasksPage({
                 <th className="py-3 px-4 font-semibold" scope="col">KEMAJUAN</th>
                 <th className="py-3 px-4 font-semibold" scope="col">STATUS</th>
               </tr>
+              <tr className="border-b border-slate-200 bg-white align-top">
+                <th className="px-3 py-2"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</th>
+                <th className="px-3 py-2 space-y-1"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{user.roleLevel>=3&&<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>}</th>
+                <th className="px-3 py-2">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-[10px] font-normal text-slate-400">Akun saya</span>}</th>
+                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
+                <th className="px-3 py-2"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></th>
+                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
+                <th className="px-3 py-2"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select><div className="mt-1 flex gap-1"><button form="task-table-filter" className="rounded bg-red-600 px-2 py-1 text-[10px] font-semibold text-white">Terapkan</button><Link href={isMine?"/tasks?mine=1":"/tasks"} className="rounded border border-slate-300 px-2 py-1 text-[10px] font-normal text-slate-600">Reset</Link></div></th>
+              </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">{formatDate(task.createdAt)}</td>
                   <td className="py-3.5 px-4 whitespace-nowrap max-w-xs">
                     <Link
                       href={`/tasks/${task.id}`}
