@@ -76,11 +76,6 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
       <WorkspaceTabs current="/review-inbox" tabs={APPROVAL_TABS} roleLevel={user.roleLevel} />
       <header>
         <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Review Task</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          {user.roleLevel >= 5
-            ? 'Semua task berstatus Review ditampilkan untuk pengawasan dan keputusan GM/Super Admin.'
-            : 'Task berstatus Review yang menunggu keputusan Anda. Hanya reviewer yang ditetapkan dapat memutuskan.'}
-        </p>
       </header>
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm" aria-label="Daftar tinjauan tugas">
         <form id="review-table-filter" action="/review-inbox" method="get" />
