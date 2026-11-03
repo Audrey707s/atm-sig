@@ -36,7 +36,7 @@ export default async function KanbanPage({ searchParams }: { searchParams: Promi
   ])
   return <main className="mx-auto max-w-[1800px] space-y-5 px-4 py-6 sm:px-6 lg:px-8">
     <WorkspaceTabs current="/kanban" tabs={WORK_TABS} roleLevel={user.roleLevel} />
-    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-7 text-white shadow-sm sm:px-8"><div className="relative flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-300">Pekerjaan Tim</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">Papan Tugas</h1><p className="mt-2 text-sm text-slate-300">Pantau dan kelola tugas tim berdasarkan tahap pelaksanaan.</p></div><span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs">{total} tugas dalam filter</span></div></header>
+    <header><h1 className="text-2xl font-bold tracking-tight text-slate-900">Papan Tugas</h1></header>
     <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-5">
       <select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="section" defaultValue={params.section ?? ''}><option value="">Semua seksi</option>{options.sections.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
       <select className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" name="owner" defaultValue={params.owner ?? ''}><option value="">Semua PIC</option>{options.owners.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
