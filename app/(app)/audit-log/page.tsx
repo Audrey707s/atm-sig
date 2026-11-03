@@ -1,4 +1,5 @@
 import WorkspaceTabs, { REPORT_TABS } from '../_components/WorkspaceTabs'
+import TableFilterMenu from '../_components/TableFilterMenu'
 // T-504 — Tampilan Audit Log — FR-092
 // Hanya role Manager+ yang dapat mengakses halaman ini.
 // Data read-only: tidak ada tombol ubah/hapus.
@@ -138,20 +139,12 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Sea
           <table className="w-full min-w-[900px] text-left text-sm" aria-label="Tabel audit log">
             <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] uppercase tracking-wide text-slate-500">
               <tr>
-                <th scope="col" className="px-4 py-3 w-40">Waktu</th>
-                <th scope="col" className="px-4 py-3 w-40">Aksi</th>
-                <th scope="col" className="px-4 py-3">Objek</th>
-                <th scope="col" className="px-4 py-3 w-36">Pengguna</th>
+                <th scope="col" className="w-40 px-4 py-3"><TableFilterMenu label="Waktu"><input form="audit-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                <th scope="col" className="w-40 px-4 py-3"><TableFilterMenu label="Aksi"><select form="audit-table-filter" name="action" defaultValue={filters.action ?? ''} aria-label="Filter aksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case"><option value="">Semua aksi</option>{KNOWN_AUDIT_ACTIONS.map(action=><option key={action} value={action}>{AUDIT_ACTION_LABELS[action] ?? action}</option>)}</select></TableFilterMenu></th>
+                <th scope="col" className="px-4 py-3"><TableFilterMenu label="Objek"><input form="audit-table-filter" name="object" defaultValue={filters.objectPrefix ?? ''} placeholder="Cari objek" aria-label="Filter objek" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal normal-case" /></TableFilterMenu></th>
+                <th scope="col" className="w-36 px-4 py-3">Pengguna</th>
                 <th scope="col" className="px-4 py-3">Nilai Lama</th>
                 <th scope="col" className="px-4 py-3">Nilai Baru</th>
-              </tr>
-              <tr className="border-t border-slate-200 bg-white align-top normal-case tracking-normal">
-                <th className="px-3 py-2"><input form="audit-table-filter" type="month" name="month" defaultValue={selectedMonth ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2"><select form="audit-table-filter" name="action" defaultValue={filters.action ?? ''} aria-label="Filter aksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua aksi</option>{KNOWN_AUDIT_ACTIONS.map(action=><option key={action} value={action}>{AUDIT_ACTION_LABELS[action] ?? action}</option>)}</select></th>
-                <th className="px-3 py-2"><input form="audit-table-filter" name="object" defaultValue={filters.objectPrefix ?? ''} placeholder="Cari objek" aria-label="Filter objek" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></th>
-                <th className="px-3 py-2"></th>
-                <th className="px-3 py-2"></th>
-                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
