@@ -206,7 +206,7 @@ export default function TaskTemplateManager({
     <div className="w-full space-y-6 px-4 pt-5 pb-6 sm:px-6 lg:px-8">
       <header className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
         <h1 className="text-xl font-bold text-slate-900">{mode==='categories'?'Kategori Tugas':'Tugas Berulang'}</h1>
-        <p className="mt-1 text-sm text-slate-600">{mode==='categories'?(canManageCategories?'Kelola kategori tugas untuk setiap seksi dalam cakupan Anda.':'Kategori tugas aktif dari section akun Anda. Data ini hanya dapat dilihat.'):'Atur tugas yang otomatis dibuat setiap minggu atau bulan sesuai jadwal penugasan.'}</p>
+        {mode!=='categories'&&<p className="mt-1 text-sm text-slate-600">Atur tugas yang otomatis dibuat setiap minggu atau bulan sesuai jadwal penugasan.</p>}
       </header>
       {mode==='categories'&&canManageCategories&&<section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-slate-900">Tambah kategori</h2>
