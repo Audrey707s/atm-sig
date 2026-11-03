@@ -66,10 +66,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
     <div className="px-4 py-5 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/dashboard" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       <form method="get" action="/dashboard" className="mb-5 flex flex-wrap items-end gap-3">
-        <label className="text-sm text-[var(--color-text-secondary)]">Periode tenggat
-          <input type="month" name="month" defaultValue={month}
-            className="ml-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
-        </label>
+        <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
         <button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
       </form>
       {/* Judul halaman */}
@@ -78,9 +75,6 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           <h1 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
             Dashboard
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isPic ? 'Ringkasan task pribadi Anda' : 'Ringkasan task Department of Accounting'}
-          </p>
         </div>
       </section>
 
