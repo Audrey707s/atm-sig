@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Inbox Review Task' }
 
 /** Review inbox scoped by the authenticated user, not a generic task list.
  * The existing review detail endpoint re-checks permissions for every action. */
-type SearchParams = { month?: string; search?: string; section?: string }
+type SearchParams = { month?: string; search?: string; section?: string; progress?: string; dueMonth?: string }
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
@@ -21,6 +21,8 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
   const month = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : null
   const search = typeof params.search === 'string' ? params.search.trim().slice(0, 100) : ''
   const section = params.section && /^\d+$/.test(params.section) ? Number(params.section) : null
+  const progress = params.progress !== undefined && /^\d{1,3}$/.test(params.progress) && Number(params.progress) <= 100 ? Number(params.progress) : null
+  const dueMonth = params.dueMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.dueMonth) ? params.dueMonth : null
   requireRole(user, 'Manager')
 
   const [supabase, filterOptions] = await Promise.all([createClient(), getTaskFilterOptions(user)])
@@ -42,6 +44,12 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
     }
     if (search) query = query.ilike('title', `%${search}%`)
     if (section) query = query.eq('org_unit_id', section)
+    if (progress !== null) query = query.eq('progress_pct', progress)
+    if (dueMonth) {
+      const [dueYear, dueMonthNumber] = dueMonth.split('-').map(Number)
+      const nextDueMonth = dueMonthNumber === 12 ? `${dueYear + 1}-01` : `${dueYear}-${String(dueMonthNumber + 1).padStart(2, '0')}`
+      query = query.gte('due_date', `${dueMonth}-01T00:00:00+07:00`).lt('due_date', `${nextDueMonth}-01T00:00:00+07:00`)
+    }
     const reviewFilter = getReviewInboxFilter(user)
     if (reviewFilter?.startsWith('reviewer_id.eq.') && !reviewFilter.includes(',')) {
       query = query.eq('reviewer_id', user.id)
@@ -90,9 +98,9 @@ export default async function ReviewInboxPage({ searchParams }: { searchParams: 
                 <th className="px-3 py-2"><input form="review-table-filter" type="month" name="month" defaultValue={month ?? ''} aria-label="Filter bulan dan tahun" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
                 <th className="px-3 py-2"><input form="review-table-filter" type="search" name="search" defaultValue={search} placeholder="Cari tugas" aria-label="Cari tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
                 <th className="px-3 py-2"><select form="review-table-filter" name="section" defaultValue={section ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"><option value="">Semua seksi</option>{filterOptions.sections.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">0–100%</th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Tanggal lengkap</th>
-                <th className="px-3 py-2 text-[10px] font-normal text-slate-400">Buka detail</th>
+                <th className="px-3 py-2"><input form="review-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progress ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
+                <th className="px-3 py-2"><input form="review-table-filter" type="month" name="dueMonth" defaultValue={dueMonth ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs" /></th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
