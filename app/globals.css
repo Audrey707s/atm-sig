@@ -175,16 +175,75 @@ html[data-theme='dark'] :is(.bg-slate-100,.bg-gray-100,.bg-gray-50\/60) { backgr
 }
 
 .atm-workspace h1 {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
   font-family: var(--font-display);
   font-weight: 900;
   letter-spacing: -0.035em;
-  color: #111827;
+  color: #8B1720;
   text-wrap: balance;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.95),
-    0 2px 0 rgba(148,163,184,.36),
-    0 5px 12px rgba(15,23,42,.12);
-  transform: perspective(500px) rotateX(.35deg);
+  background: #FFFFFF;
+  border: 1px solid #FA8F95;
+  border-left: 6px solid #EB232D;
+  border-radius: .9rem;
+  padding: .72rem 1.05rem;
+  box-shadow:
+    0 5px 0 #FA8F95,
+    0 11px 20px -14px rgba(139,23,32,.55);
+  text-shadow: 0 1px 0 #FFFFFF, 0 2px 0 rgba(250,143,149,.45);
+  transform: translateY(0);
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .atm-workspace h1:hover {
+    transform: translateY(-2px);
+    border-color: #EB232D;
+    box-shadow:
+      0 7px 0 #FA8F95,
+      0 15px 24px -15px rgba(139,23,32,.6);
+  }
+}
+
+.atm-count-card {
+  display: inline-flex;
+  min-width: 9.5rem;
+  align-items: center;
+  gap: .7rem;
+  border: 1px solid #EB232D;
+  border-radius: .9rem;
+  background: #FA8F95;
+  color: #70131B;
+  padding: .55rem .85rem;
+  box-shadow: 0 5px 0 #EB232D, 0 11px 20px -15px rgba(139,23,32,.5);
+  transition: transform 170ms ease, box-shadow 170ms ease;
+}
+.atm-count-card__value {
+  display: grid;
+  min-width: 2.2rem;
+  place-items: center;
+  border-radius: .65rem;
+  background: #FFFFFF;
+  color: #EB232D;
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 2.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.atm-count-card__label {
+  max-width: 5rem;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+@media (hover:hover) and (pointer:fine) {
+  .atm-count-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 #EB232D, 0 15px 24px -15px rgba(139,23,32,.55);
+  }
 }
 
 .atm-workspace table {
@@ -230,8 +289,22 @@ html[data-theme='dark'] {
   --table-row-hover: #2A2228;
 }
 html[data-theme='dark'] .atm-workspace h1 {
-  color: #F8FAFC;
-  text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 6px 14px rgba(0,0,0,.28);
+  color: #FFD7DA;
+  background: #2A2024;
+  border-color: #C95B65;
+  border-left-color: #EB5965;
+  box-shadow: 0 5px 0 #9E3F49, 0 12px 20px -14px rgba(0,0,0,.65);
+  text-shadow: 0 2px 0 rgba(0,0,0,.45);
+}
+html[data-theme='dark'] .atm-count-card {
+  background: #A94D57;
+  border-color: #E77B84;
+  color: #FFFFFF;
+  box-shadow: 0 5px 0 #74313A, 0 12px 20px -14px rgba(0,0,0,.65);
+}
+html[data-theme='dark'] .atm-count-card__value {
+  background: #2A2024;
+  color: #FFD7DA;
 }
 html[data-theme='dark'] .atm-workspace table > thead > tr > th {
   border-bottom-color: rgba(217,90,101,.38);
