@@ -24,7 +24,7 @@ export default async function KanbanPage({ searchParams }: { searchParams: Promi
   const dateFrom = validDate(params.from)
   const dateTo = validDate(params.to)
   // Opsi filter dan daftar task independen — jalankan paralel.
-  const [options, { items, total }] = await Promise.all([
+  const [options, { items }] = await Promise.all([
     getTaskFilterOptions(user),
     getAllTaskList(user, {
       ownerId,
