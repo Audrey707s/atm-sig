@@ -31,8 +31,26 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
         </div>
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-        <table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-[var(--color-bg-app)] text-[var(--color-text-secondary)]"><tr>{['PIC','Total Job','Carry-over','Baru','Selesai','Belum Selesai','Overdue','Completion Rate'].map(x=><th key={x} className="px-3 py-3">{x}</th>)}</tr></thead>
-          <tbody>{workload.rows.map(row=><tr key={row.ownerId} className="border-t border-[var(--color-border)] text-[var(--color-text-primary)]"><td className="px-3 py-3 font-medium">{row.ownerName}</td>{[row.total,row.carryOver,row.newTasks,row.completed,row.outstanding,row.overdue].map((n,i)=><td key={i} className="px-3 py-3 tabular-nums">{n}</td>)}<td className="px-3 py-3 tabular-nums">{row.completionRate}%</td></tr>)}{!workload.rows.length&&<tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--color-text-muted)]">Tidak ada pekerjaan dalam periode ini.</td></tr>}</tbody>
+        <table className="atm-jobload-table w-full min-w-[900px] table-fixed text-sm">
+          <thead className="text-[var(--color-text-secondary)]">
+            <tr>
+              {['PIC','Total Job','Carry-over','Baru','Selesai','Belum Selesai','Overdue','Completion Rate'].map((label,index)=>
+                <th key={label} className={`px-4 py-3.5 ${index === 0 ? 'text-left' : 'text-center'}`}>{label}</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {workload.rows.map(row=>
+              <tr key={row.ownerId} className="text-[var(--color-text-primary)]">
+                <td className="px-4 py-3.5 text-left font-semibold">{row.ownerName}</td>
+                {[row.total,row.carryOver,row.newTasks,row.completed,row.outstanding,row.overdue].map((n,i)=>
+                  <td key={i} className="px-4 py-3.5 text-center tabular-nums">{n}</td>
+                )}
+                <td className="px-4 py-3.5 text-center tabular-nums">{row.completionRate}%</td>
+              </tr>
+            )}
+            {!workload.rows.length&&<tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--color-text-muted)]">Tidak ada pekerjaan dalam periode ini.</td></tr>}
+          </tbody>
         </table>
       </div>
     </main>
