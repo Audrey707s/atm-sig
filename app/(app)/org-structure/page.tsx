@@ -29,7 +29,6 @@ export default async function OrganizationStructurePage() {
   return <main className="w-full space-y-5 px-4 pt-5 pb-6 sm:px-6 lg:px-8">
     <WorkspaceTabs current="/org-structure" tabs={MASTER_TABS} roleLevel={user.roleLevel} />
     <header><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Struktur Organisasi</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Urutan departemen, unit, dan seksi sesuai hierarki organisasi.</p>
     </header>
     {user.roleLevel === 6 ? <OrgManagement units={ordered} /> : <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
       <table className="w-full min-w-[480px] text-left text-sm">
