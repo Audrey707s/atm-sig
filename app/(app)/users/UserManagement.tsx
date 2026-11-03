@@ -181,9 +181,6 @@ export default function UserManagement({
           <h1 id="users-heading" className="text-xl font-bold tracking-tight text-slate-900">
             MASTER DATA USERS
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {canManageUsers ? 'Kelola akun pada cakupan organisasi Anda. User baru dimulai sebagai Spectator.' : 'Daftar pengguna aktif dan penempatannya dalam section Anda. Data ini hanya dapat dilihat.'}
-          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
