@@ -103,6 +103,18 @@ describe('updateSession (FR-001)', () => {
     )
   })
 
+  it('allows a Spectator to open their own profile', async () => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
+    profileResult.data = { status: 'aktif', role: { level: 1 } }
+
+    const response = await updateSession(
+      new NextRequest('https://atm.example/account'),
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('location')).toBeNull()
+  })
+
   it('redirects roles below Manager away from performance analytics', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
     profileResult.data = { status: 'aktif', role: { level: 2 } }

@@ -71,12 +71,13 @@ export default function TopHeader({ user, unreadCount = 0 }: Props) {
             <p className="text-xs font-medium tracking-tight text-white">{user.name}</p>
             <p className="atm-eyebrow !text-[10px] !text-white/75">{user.role}</p>
           </div>
-          <div
+          <Link
+            href="/account"
             className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/15 font-[family-name:var(--font-mono)] text-[11px] font-semibold text-white"
-            aria-label={`Avatar ${user.name}`}
+            aria-label={`Buka profil ${user.name}`}
           >
             {initials}
-          </div>
+          </Link>
           <LogoutButton compact />
         </div>
       </div>

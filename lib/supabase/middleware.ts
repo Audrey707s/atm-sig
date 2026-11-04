@@ -11,7 +11,7 @@ function requiredRoleLevel(pathname: string): number | null {
   if (pathname === '/master-data' || pathname.startsWith('/master-data/')) return 2
   if (pathname === '/task-templates' || pathname.startsWith('/task-templates/')) return 2
   if (pathname === '/tasks/recurring' || pathname.startsWith('/tasks/recurring/')) return 2
-  if (pathname === '/account' || pathname.startsWith('/account/')) return 2
+  if (pathname === '/account' || pathname.startsWith('/account/')) return 1
   if (pathname === '/users' || pathname.startsWith('/users/')) return 3
   return null
 }
