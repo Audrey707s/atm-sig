@@ -434,10 +434,17 @@ html[data-theme='light'] .atm-nav-link[aria-current='page'] { background: #fff; 
 
 /* One content rail for every authenticated page. Page-level max-width and
    auto margins previously produced different left gaps between modules. */
-.atm-workspace > :where(main, section, div) {
+.atm-workspace { --workspace-gutter: 1rem; }
+@media (min-width: 640px) { .atm-workspace { --workspace-gutter: 1.5rem; } }
+@media (min-width: 1024px) { .atm-workspace { --workspace-gutter: 2rem; } }
+
+.atm-workspace > :where(main, section, div),
+.atm-page-transition > :where(main, section, div) {
   width: 100%;
   max-width: none !important;
   margin-inline: 0 !important;
+  padding-inline: var(--workspace-gutter) !important;
+  box-sizing: border-box;
 }
 
 /* ---------- Auth ---------- */
