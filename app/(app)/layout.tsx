@@ -9,6 +9,8 @@ import { getUnreadNotificationCount } from '@/lib/notifications/queries'
 import { Suspense, type ReactNode } from 'react'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { PROFILE_AVATAR_BUCKET, PROFILE_AVATAR_TTL_SECONDS } from '@/lib/account/avatar'
 
 export const metadata: Metadata = {
   title: {
@@ -22,13 +24,17 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
   // Keep it out of the static prerender so client components can safely render relative time.
   await connection()
   const user = await getSessionUser()
-  // Notification availability must not prevent the primary workspace from loading.
-  const unreadCount = await getUnreadNotificationCount(user.id).catch(() => 0)
+  const supabase = await createClient()
+  // Optional shell data must not prevent the primary workspace from loading.
+  const [unreadCount, avatar] = await Promise.all([
+    getUnreadNotificationCount(user.id).catch(() => 0),
+    supabase.storage.from(PROFILE_AVATAR_BUCKET).createSignedUrl(`${user.id}/avatar`, PROFILE_AVATAR_TTL_SECONDS).then(({ data }) => data?.signedUrl ?? '').catch(() => ''),
+  ])
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Top Header merah */}
-      <TopHeader user={user} unreadCount={unreadCount} />
+      <TopHeader user={user} unreadCount={unreadCount} avatarUrl={avatar} />
 
       {/* Konten: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">

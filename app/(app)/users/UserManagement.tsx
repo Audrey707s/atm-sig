@@ -179,7 +179,7 @@ export default function UserManagement({
       <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 id="users-heading" className="text-xl font-bold tracking-tight text-slate-900">
-            MASTER DATA USERS
+            Organisasi Pengguna
           </h1>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

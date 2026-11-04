@@ -9,16 +9,9 @@ import ThemeToggle from '@/app/_components/ThemeToggle'
 import JakartaClock from './JakartaClock'
 import Link from 'next/link'
 import LogoutButton from './LogoutButton'
+import ProfileAvatar from './ProfileAvatar'
 
-type Props = { user: SessionUser; unreadCount?: number }
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase() ?? '')
-    .join('')
-}
+type Props = { user: SessionUser; unreadCount?: number; avatarUrl?: string }
 
 function getTodayLabel(): string {
   return new Intl.DateTimeFormat('id-ID', {
@@ -30,8 +23,7 @@ function getTodayLabel(): string {
   }).format(new Date())
 }
 
-export default function TopHeader({ user, unreadCount = 0 }: Props) {
-  const initials = getInitials(user.name)
+export default function TopHeader({ user, unreadCount = 0, avatarUrl = '' }: Props) {
   const today = getTodayLabel()
 
   return (
@@ -71,12 +63,8 @@ export default function TopHeader({ user, unreadCount = 0 }: Props) {
             <p className="text-xs font-medium tracking-tight text-white">{user.name}</p>
             <p className="atm-eyebrow !text-[10px] !text-white/75">{user.role}</p>
           </div>
-          <Link
-            href="/account"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/15 font-[family-name:var(--font-mono)] text-[11px] font-semibold text-white"
-            aria-label={`Buka profil ${user.name}`}
-          >
-            {initials}
+          <Link href="/account" className="rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-white" aria-label={`Buka profil ${user.name}`}>
+            <ProfileAvatar name={user.name} src={avatarUrl} className="h-8 w-8 text-[11px]" />
           </Link>
           <LogoutButton compact />
         </div>

@@ -1,4 +1,4 @@
-import WorkspaceTabs, { MASTER_TABS } from '../_components/WorkspaceTabs'
+import WorkspaceTabs, { MASTER_USER_TABS } from '../_components/WorkspaceTabs'
 import type { Metadata } from 'next'
 import { getSessionUser } from '@/lib/auth/session'
 import { ROLE_LEVELS, ROLES } from '@/lib/constants/rbac'
@@ -10,7 +10,7 @@ import {
 import UserManagement from './UserManagement'
 
 export const metadata: Metadata = {
-  title: 'Master Data Users',
+  title: 'Organisasi Pengguna',
 }
 
 export default async function UsersPage() {
@@ -20,7 +20,7 @@ export default async function UsersPage() {
     return (
       <section className="p-6 sm:p-8" aria-labelledby="users-heading">
         <h1 id="users-heading" className="text-xl font-bold text-slate-900">
-          Master Data Users
+          Organisasi Pengguna
         </h1>
         <p className="mt-3 text-sm text-slate-600" role="alert">
           Anda tidak berwenang mengakses data pengguna.
@@ -63,7 +63,7 @@ export default async function UsersPage() {
   }
 
   return (
-    <><div className="px-4 pt-5 sm:px-6 lg:px-8"><WorkspaceTabs current="/users" tabs={MASTER_TABS} roleLevel={user.roleLevel} /></div><UserManagement
+    <><div className="px-4 pt-5 sm:px-6 lg:px-8"><WorkspaceTabs current="/users" tabs={MASTER_USER_TABS} roleLevel={user.roleLevel} /></div><UserManagement
       currentUserId={user.id}
       currentUserRole={user.role}
       users={data.users}
