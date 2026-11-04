@@ -472,6 +472,9 @@ html[data-theme='light'] .atm-nav-link[aria-current='page'] { background: #fff; 
 .atm-link:hover { color: var(--color-interactive-soft); text-decoration-color: currentColor; }
 html[data-theme='light'] .atm-link:hover { color: var(--color-interactive); }
 
+/* Auth wordmark keeps the original white-on-dark treatment. */
+html[data-theme='dark'] .atm-wordmark-dark { color: #fff !important; }
+
 /* Segmented theme switch */
 .atm-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9999px; border: 1px solid var(--color-border-strong); background: var(--color-bg-input); }
 .atm-seg button { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 9999px; color: var(--color-text-muted); transition: background-color 160ms ease, color 160ms ease; }
