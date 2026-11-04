@@ -30,18 +30,15 @@ export const APPROVAL_TABS: Tab[] = [
   { label: 'Persetujuan Tenggat', icon: 'calendar', href: '/approvals', minLevel: 4 },
 ]
 export const MASTER_TABS: Tab[] = [
-  { label: 'Pengguna', icon: 'user', href: '/users' },
-  { label: 'Kategori Tasks', icon: 'master', href: '/task-templates' },
-  { label: 'Struktur Organisasi', icon: 'structure', href: '/org-structure', minLevel: 4 },
-]
-export const PIC_MASTER_TABS: Tab[] = [
-  { label: 'Pengguna', icon: 'user', href: '/master-data' },
-  { label: 'Kategori Tasks', icon: 'master', href: '/task-templates' },
-]
-export const MASTER_USER_TABS: Tab[] = [
   { label: 'Pengguna', icon: 'user', href: '/account' },
   { label: 'Organisasi', icon: 'structure', href: '/users', minLevel: 3 },
+  { label: 'Kategori Tasks', icon: 'master', href: '/task-templates', minLevel: 2 },
 ]
+export const PIC_MASTER_TABS: Tab[] = [
+  { label: 'Pengguna', icon: 'user', href: '/account' },
+  { label: 'Kategori Tasks', icon: 'master', href: '/task-templates' },
+]
+export const MASTER_USER_TABS: Tab[] = MASTER_TABS
 export const REPORT_TABS: Tab[] = [
   { label: 'Laporan Task', icon: 'reports', href: '/reports' },
   { label: 'Catatan Audit', icon: 'audit', href: '/audit-log', minLevel: 3 },

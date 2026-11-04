@@ -269,6 +269,10 @@ input[type='month'], input[type='date'] { color-scheme: inherit; }
 @keyframes atm-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes atm-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(25,214,0,.45); } 60% { box-shadow: 0 0 0 6px rgba(25,214,0,0); } }
 @keyframes atm-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes atm-page-turn {
+  from { opacity: .45; transform: perspective(1000px) translate3d(10px, 0, 0) rotateY(-1.25deg); }
+  to { opacity: 1; transform: perspective(1000px) translate3d(0, 0, 0) rotateY(0); }
+}
 
 .atm-appear { animation: atm-enter 520ms var(--ease-out) both; }
 .atm-stagger > * { animation: atm-enter 520ms var(--ease-out) both; }
@@ -277,7 +281,7 @@ input[type='month'], input[type='date'] { color-scheme: inherit; }
 .atm-stagger > *:nth-child(4) { animation-delay: 150ms; }
 .atm-stagger > *:nth-child(5) { animation-delay: 200ms; }
 .atm-stagger > *:nth-child(6) { animation-delay: 250ms; }
-.atm-workspace > * { animation: atm-enter 380ms var(--ease-out) both; }
+.atm-page-transition { transform-origin: left center; animation: atm-page-turn 220ms var(--ease-out) both; }
 
 .atm-interactive { transition: transform 200ms var(--ease-out), border-color 200ms ease, background-color 200ms ease; }
 @media (hover: hover) and (pointer: fine) {

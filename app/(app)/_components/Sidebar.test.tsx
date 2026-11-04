@@ -14,7 +14,7 @@ function user(roleLevel: number): SessionUser {
 describe('sidebar navigation R.03', () => {
   it('renders menu icons and labels without duplicated decorative text', () => {
     render(<Sidebar user={user(6)} />)
-    for (const label of ['Dashboard', 'Pekerjaan', 'Persetujuan', 'Laporan', 'Master User', 'Master Data']) {
+    for (const label of ['Dashboard', 'Pekerjaan', 'Persetujuan', 'Laporan', 'Master Data']) {
       const link = screen.getByRole('link', { name: label })
       expect(link.querySelector('svg')).not.toBeNull()
       expect(link.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
@@ -23,8 +23,7 @@ describe('sidebar navigation R.03', () => {
   it('keeps Spectator navigation restricted to Pekerjaan', () => {
     render(<Sidebar user={user(1)} />)
     expect(screen.getByRole('link', { name: 'Pekerjaan' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Master User' })).toBeTruthy()
-    expect(screen.queryByRole('link', { name: 'Master Data' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Master Data' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Persetujuan' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull()
   })
@@ -34,12 +33,12 @@ describe('sidebar navigation R.03', () => {
   })
   it('routes Manager master data to the user and category workspace', () => {
     render(<Sidebar user={user(3)} />)
-    const masterUser = screen.getByRole('link', { name: 'Master User' })
-    expect(masterUser.getAttribute('href')).toBe('/account')
+    const masterData = screen.getByRole('link', { name: 'Master Data' })
+    expect(masterData.getAttribute('href')).toBe('/account')
   })
   it('shows personal workspace features to Staff/PIC', () => {
     render(<Sidebar user={user(2)} />)
-    for (const label of ['Dashboard', 'Pekerjaan', 'Laporan', 'Master User', 'Master Data']) {
+    for (const label of ['Dashboard', 'Pekerjaan', 'Laporan', 'Master Data']) {
       expect(screen.getByRole('link', { name: label })).toBeTruthy()
     }
     expect(screen.queryByRole('link', { name: 'Akun' })).toBeNull()

@@ -14,6 +14,7 @@ import Link from 'next/link'
 import PerformanceOverview from '../_components/PerformanceOverview'
 import { resolveDashboardMonth } from '@/lib/dashboard/month'
 import CountUp from '@/app/_components/CountUp'
+import DashboardWelcome from './DashboardWelcome'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -76,9 +77,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       <WorkspaceTabs current="/dashboard" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       {/* Judul halaman + filter periode */}
       <section className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="">
-          Dashboard
-        </h1>
+        <DashboardWelcome name={user.name} />
         <form method="get" action="/dashboard" className="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
           <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-full border px-4 py-2 text-sm" />
           <button className="atm-cta !w-auto !py-2">Terapkan</button>

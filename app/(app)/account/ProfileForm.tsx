@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useActionState, useEffect, useRef, useState } from 'react'
+import { FormEvent, useActionState, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateMyProfile, type ProfileActionState } from '@/lib/account/actions'
@@ -8,25 +8,6 @@ import { PROFILE_AVATAR_BUCKET } from '@/lib/account/avatar'
 import ProfileAvatar from '../_components/ProfileAvatar'
 
 const initialState: ProfileActionState = { status: 'idle' }
-
-function WelcomeTyping({ name }: { name: string }) {
-  const text = `Welcome, ${name}`
-  const [visible, setVisible] = useState('')
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const reducedTimer = window.setTimeout(() => setVisible(text), 0)
-      return () => window.clearTimeout(reducedTimer)
-    }
-    let index = 0
-    const timer = window.setInterval(() => {
-      index += 1
-      setVisible(text.slice(0, index))
-      if (index >= text.length) window.clearInterval(timer)
-    }, 55)
-    return () => window.clearInterval(timer)
-  }, [text])
-  return <h1 aria-label={text}>{visible}<span aria-hidden="true" className="ml-0.5 inline-block h-[.9em] w-0.5 animate-pulse bg-[var(--color-brand)] align-[-.05em]" /></h1>
-}
 
 export default function ProfileForm({ userId, initialName, email, role, unitName, avatarUrl }: {
   userId: string; initialName: string; email: string; role: string; unitName: string; avatarUrl: string
@@ -82,7 +63,6 @@ export default function ProfileForm({ userId, initialName, email, role, unitName
   }
 
   return <>
-    <header className="mb-6 flex min-h-14 items-center"><WelcomeTyping key={displayName} name={displayName} /></header>
     <section className="atm-card overflow-hidden">
       <div className="h-24 bg-[linear-gradient(105deg,var(--color-brand),#ff8f89)] sm:h-28" />
       <div className="px-5 pb-6 sm:px-7">
