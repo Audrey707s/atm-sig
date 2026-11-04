@@ -17,6 +17,8 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
   const nextMonth=mon===12 ? `${year+1}-01` : `${year}-${String(mon+1).padStart(2,'0')}`
   const workload=await getPeriodWorkloads(user,`${month}-01T00:00:00+07:00`,`${nextMonth}-01T00:00:00+07:00`)
   const total=workload.rows.reduce((sum,row)=>sum+row.total,0)
+  const completed=workload.rows.reduce((sum,row)=>sum+row.completed,0)
+  const completionRate=total > 0 ? Math.round((completed / total) * 100) : 0
   return (
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/jobload" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
@@ -24,11 +26,19 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
         <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1></div>
         <form method="get" action="/jobload" className="flex items-end gap-2"><input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
       </div>
-      <div className="atm-card atm-spotlight atm-interactive w-full max-w-60 p-4 sm:p-5" aria-label={`Total penugasan: ${total}`}>
-        <p className="atm-eyebrow">Total Penugasan</p>
-        <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
-          <CountUp value={total} />
-        </p>
+      <div className="flex flex-wrap gap-4">
+        <div className="atm-card atm-spotlight atm-interactive w-full max-w-60 p-4 sm:p-5" aria-label={`Total penugasan: ${total}`}>
+          <p className="atm-eyebrow">Total Penugasan</p>
+          <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
+            <CountUp value={total} />
+          </p>
+        </div>
+        <div className="atm-card atm-spotlight atm-interactive w-full max-w-60 p-4 sm:p-5" aria-label={`Completion rate: ${completionRate} persen`}>
+          <p className="atm-eyebrow">Completion Rate</p>
+          <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
+            <CountUp value={completionRate} />%
+          </p>
+        </div>
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <table className="atm-jobload-table w-full min-w-[900px] table-fixed text-sm">
