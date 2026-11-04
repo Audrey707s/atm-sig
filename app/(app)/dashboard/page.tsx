@@ -13,26 +13,35 @@ import { StatusBadge, ProgressBar, TimeProgress } from '../_components/ui/Badges
 import Link from 'next/link'
 import PerformanceOverview from '../_components/PerformanceOverview'
 import { resolveDashboardMonth } from '@/lib/dashboard/month'
+import CountUp from '@/app/_components/CountUp'
 
 export const metadata: Metadata = { title: 'Dashboard' }
+
+type MetricTone = 'blocked' | 'revisi' | 'review' | 'progress' | 'done'
 
 function MetricCard({
   label,
   value,
-  color,
+  tone,
 }: {
   label: string
   value: number
-  color?: string
+  tone?: MetricTone
 }) {
   return (
-    <div className="atm-interactive atm-appear bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-      <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
-      <p
-        className="atm-metric-value text-3xl font-bold tabular-nums"
-        style={{ color: color ?? 'var(--color-text-primary)', '--atm-metric-dark': ({ '#ea580c': '#e8cda7', '#dc2626': '#dfafbb', '#7c3aed': '#c7b3da', '#2563eb': '#a6c3df' } as Record<string, string>)[color ?? ''] ?? '#e7eaf0' } as React.CSSProperties}
-      >
-        {value}
+    <div className="atm-card atm-spotlight atm-interactive p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="atm-eyebrow">{label}</p>
+        {tone && (
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: `var(--st-${tone}-dot)` }}
+          />
+        )}
+      </div>
+      <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
+        <CountUp value={value} />
       </p>
     </div>
   )
@@ -67,30 +76,21 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       <WorkspaceTabs current="/dashboard" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       {/* Judul halaman + filter periode */}
       <section className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 uppercase sm:text-3xl">
+        <h1 className="">
           Dashboard
         </h1>
         <form method="get" action="/dashboard" className="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
-          <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" />
-          <button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
+          <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-full border px-4 py-2 text-sm" />
+          <button className="atm-cta !w-auto !py-2">Terapkan</button>
         </form>
       </section>
 
       {/* Banner peringatan */}
       {showAlert && (
         <section className="mb-6">
-          <div
-            className="atm-notice rounded-lg px-4 py-3 flex items-center gap-3 shadow-sm"
-            style={{ backgroundColor: '#fef9c3', border: '1px solid #fde047' }}
-            role="alert"
-          >
-            <div
-              className="w-5 h-5 rounded-full text-white flex items-center justify-center shrink-0"
-              style={{ backgroundColor: '#eab308' }}
-            >
-              <span className="text-xs font-bold leading-none">!</span>
-            </div>
-            <p className="text-xs font-medium leading-relaxed" style={{ color: '#854d0e' }}>
+          <div className="atm-notice flex items-center gap-3 rounded-lg px-4 py-3" role="alert">
+            <span aria-hidden="true" className="atm-live-indicator shrink-0 !bg-[var(--st-revisi-dot)]" style={{ animation: 'none' }} />
+            <p className="text-sm font-medium leading-relaxed">
               {metrics.tertinggal > 0 && (
                 <>{metrics.tertinggal} task melewati checkpoint dengan progress tertinggal. </>
               )}
@@ -104,23 +104,23 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
 
       {/* Metric cards */}
       <section
-        className={`grid grid-cols-1 min-[400px]:grid-cols-2 ${isPic ? 'lg:grid-cols-3' : 'xl:grid-cols-5'} gap-3 sm:gap-4 mb-7`}
+        className={`grid grid-cols-1 min-[400px]:grid-cols-2 ${isPic ? 'lg:grid-cols-3' : 'xl:grid-cols-5'} atm-stagger gap-3 sm:gap-4 mb-7`}
         aria-label="Ringkasan metrics"
       >
         <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} />
         {isPic ? <>
-          <MetricCard label="Selesai" value={metrics.completed} color="#2563eb" />
-          <MetricCard label="Pending" value={metrics.pending} color="#ea580c" />
+          <MetricCard label="Selesai" value={metrics.completed} tone="done" />
+          <MetricCard label="Pending" value={metrics.pending} tone="revisi" />
         </> : <>
-          <MetricCard label="Tertinggal" value={metrics.tertinggal} color="#ea580c" />
-          <MetricCard label="Blocked" value={metrics.blocked} color="#dc2626" />
-          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} color="#7c3aed" />
-          <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} color="#2563eb" />
+          <MetricCard label="Tertinggal" value={metrics.tertinggal} tone="revisi" />
+          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
+          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
+          <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" />
         </>}
       </section>
 
       {isPic ? (
-        <section className="mb-7 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" aria-label="Progress penyelesaian task pribadi">
+        <section className="atm-card mb-7 p-5" aria-label="Progress penyelesaian task pribadi">
           <div className="mb-2 flex items-center justify-between text-sm">
             <h2 className="font-semibold text-slate-800">Progress Penyelesaian Saya</h2>
             <span className="font-bold text-[var(--color-brand)]">{metrics.totalTask ? Math.round(metrics.completed / metrics.totalTask * 100) : 0}%</span>
@@ -131,21 +131,21 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
 
       {/* Tabel task perlu perhatian */}
       <section aria-label="Task perlu perhatian">
-        <h2 className="text-sm font-bold text-slate-800 mb-3 tracking-normal">
+        <h2 className="atm-eyebrow mb-3 !text-[var(--color-text-secondary)]">
           Task Perlu Perhatian
         </h2>
 
         {tasksPerhatian.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
+          <div className="atm-card p-12 text-center">
             <p className="text-sm text-slate-400">
               Tidak ada task yang memerlukan perhatian saat ini.
             </p>
           </div>
         ) : (
-          <div className="atm-appear bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
+          <div className="atm-card atm-appear overflow-x-auto">
             <table className="w-full min-w-[690px] text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-400 tracking-wider">
+                <tr>
                   <th className="py-3 px-4 font-semibold" scope="col">TASK</th>
                   <th className="py-3 px-4 font-semibold" scope="col">PIC</th>
                   <th className="py-3 px-4 font-semibold" scope="col">TENGGAT</th>
@@ -194,7 +194,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           <div className="mt-3 text-right">
             <Link
               href="/tasks"
-              className="text-xs text-[var(--color-brand)] hover:underline font-medium"
+              className="atm-link text-xs font-medium"
             >
               Lihat semua task →
             </Link>

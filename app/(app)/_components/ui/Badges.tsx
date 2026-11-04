@@ -5,13 +5,13 @@ import type { TaskStatus } from '@/lib/constants/rbac'
 
 // =================== STATUS BADGE ===================
 
-const STATUS_STYLES: Record<TaskStatus, { bg: string; text: string; label: string }> = {
-  'To do':      { bg: '#F3F4F6', text: '#6B7280', label: 'Belum Dimulai'      },
-  'In progress':{ bg: '#EFF6FF', text: '#2563EB', label: 'Dalam Pengerjaan' },
-  'Blocked':    { bg: '#FEF2F2', text: '#DC2626', label: 'Terhambat'     },
-  'Review':     { bg: '#F5F3FF', text: '#7C3AED', label: 'Menunggu Tinjauan'      },
-  'Revisi':     { bg: '#FFFBEB', text: '#D97706', label: 'Perlu Revisi'      },
-  'Done':       { bg: '#F0FDF4', text: '#16A34A', label: 'Selesai'        },
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  'To do': 'Belum Dimulai',
+  'In progress': 'Dalam Pengerjaan',
+  'Blocked': 'Terhambat',
+  'Review': 'Menunggu Tinjauan',
+  'Revisi': 'Perlu Revisi',
+  'Done': 'Selesai',
 }
 
 type StatusBadgeProps = {
@@ -20,14 +20,10 @@ type StatusBadgeProps = {
 }
 
 export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
-  const { bg, text, label } = STATUS_STYLES[status]
   const statusClass = { 'To do': 'todo', 'In progress': 'progress', Blocked: 'blocked', Review: 'review', Revisi: 'revisi', Done: 'done' }[status]
   return (
-    <span
-      className={`atm-status-${statusClass} inline-block text-[11px] font-medium px-3 py-1 rounded-full ${className}`}
-      style={{ backgroundColor: bg, color: text }}
-    >
-      {label}
+    <span className={`atm-pill atm-status-${statusClass} ${className}`}>
+      {STATUS_LABELS[status]}
     </span>
   )
 }
@@ -36,11 +32,7 @@ export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
 
 type Priority = 'rendah' | 'sedang' | 'tinggi'
 
-const PRIORITY_STYLES: Record<Priority, { bg: string; text: string; label: string }> = {
-  rendah: { bg: '#F0FDF4', text: '#16A34A', label: 'Rendah' },
-  sedang: { bg: '#FFFBEB', text: '#D97706', label: 'Sedang' },
-  tinggi: { bg: '#FEF2F2', text: '#DC2626', label: 'Tinggi' },
-}
+const PRIORITY_LABELS: Record<Priority, string> = { rendah: 'Rendah', sedang: 'Sedang', tinggi: 'Tinggi' }
 
 type PriorityBadgeProps = {
   priority: Priority
@@ -48,13 +40,9 @@ type PriorityBadgeProps = {
 }
 
 export function PriorityBadge({ priority, className = '' }: PriorityBadgeProps) {
-  const { bg, text, label } = PRIORITY_STYLES[priority]
   return (
-    <span
-      className={`atm-priority-${priority} inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${className}`}
-      style={{ backgroundColor: bg, color: text }}
-    >
-      {label}
+    <span className={`atm-pill atm-priority-${priority} ${className}`}>
+      {PRIORITY_LABELS[priority]}
     </span>
   )
 }
@@ -68,10 +56,10 @@ type ProgressBarProps = {
 }
 
 function progressColor(value: number, isOverdue?: boolean): string {
-  if (isOverdue) return '#DC2626'
-  if (value >= 100) return '#16A34A'
-  if (value >= 80) return '#F59E0B'
-  return '#3B82F6'
+  if (isOverdue) return 'var(--st-blocked-dot)'
+  if (value >= 100) return 'var(--st-done-dot)'
+  if (value >= 80) return 'var(--st-revisi-dot)'
+  return 'var(--st-progress-dot)'
 }
 
 export function ProgressBar({ value, className = '', showLabel = true }: ProgressBarProps) {
@@ -80,14 +68,14 @@ export function ProgressBar({ value, className = '', showLabel = true }: Progres
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className="w-24 bg-slate-100 rounded-full overflow-hidden" style={{ height: '6px' }}>
+      <div className="atm-progress-track w-24" style={{ height: '6px' }}>
         <div
           className="atm-progress-fill h-full rounded-full"
           style={{ width: `${clamped}%`, backgroundColor: color }}
         />
       </div>
       {showLabel && (
-        <span className="text-xs text-slate-700 font-medium min-w-[2.5rem]">
+        <span className="min-w-[2.5rem] font-[family-name:var(--font-mono)] text-xs font-medium tabular-nums text-slate-700">
           {clamped}%
         </span>
       )}
@@ -108,15 +96,14 @@ export function TimeProgress({ timePct, isOverdue, className = '' }: TimeProgres
   if (isOverdue) {
     return (
       <span
-        className={`atm-overdue inline-block text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${className}`}
-        style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}
+        className={`atm-pill atm-overdue ${className}`}
       >
         Lewat
       </span>
     )
   }
   return (
-    <span className={`text-xs text-slate-600 font-medium ${className}`}>
+    <span className={`font-[family-name:var(--font-mono)] text-xs font-medium tabular-nums text-slate-600 ${className}`}>
       {Math.round(timePct)}%
     </span>
   )

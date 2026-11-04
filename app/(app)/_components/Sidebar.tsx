@@ -30,15 +30,15 @@ export default function Sidebar({ user }: { user: SessionUser }) {
   return (
     <aside
       className="w-full shrink-0 select-none border-b md:w-[var(--sidebar-width)] md:border-b-0 md:border-r"
-      style={{ backgroundColor: 'var(--color-bg-sidebar)', borderColor: 'var(--color-border)' }}
+      style={{ backgroundColor: 'var(--color-bg-sidebar)', borderColor: 'var(--color-hairline)' }}
     >
-      <nav aria-label="Navigasi utama" className="flex gap-4 overflow-x-auto px-3 py-2 md:h-full md:flex-col md:gap-5 md:overflow-y-auto md:px-3 md:py-5">
+      <nav aria-label="Navigasi utama" className="flex gap-4 overflow-x-auto px-3 py-2 md:h-full md:flex-col md:gap-6 md:overflow-y-auto md:px-3 md:py-6">
         {GROUPS.map((group) => {
           const available = group.items.filter(item => user.roleLevel >= item.minLevel && (item.maxLevel === undefined || user.roleLevel <= item.maxLevel))
           if (available.length === 0) return null
           return (
             <div key={group.heading} className="shrink-0 md:w-full">
-              <p className="hidden px-3 pb-2 text-[10px] font-bold tracking-[.15em] text-[var(--color-text-muted)] md:block">
+              <p className="atm-eyebrow hidden px-3 pb-2 !text-[10px] md:block">
                 {group.heading}
               </p>
               <ul className="flex gap-1 md:flex-col">
@@ -47,7 +47,7 @@ export default function Sidebar({ user }: { user: SessionUser }) {
                   return (
                     <li key={item.href} className="shrink-0">
                       <Link href={item.href} aria-current={active ? 'page' : undefined}
-                        className={`flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:text-sm md:w-full ${active ? 'bg-[var(--color-brand-light)] text-[var(--color-brand)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-brand-muted)] hover:text-[var(--color-text-primary)]'}`}>
+                        className="atm-nav-link min-h-10 px-3 py-2 text-xs font-medium tracking-tight sm:text-sm md:w-full">
                         <NavIcon name={item.icon} className="h-[18px] w-[18px] shrink-0" />
                         <span>{item.label}</span>
                       </Link>

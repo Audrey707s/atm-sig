@@ -22,6 +22,8 @@ vi.mock('@supabase/ssr', () => ({
 
 describe('updateSession (FR-001)', () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
     getUser.mockReset()
     signOut.mockReset().mockResolvedValue({ error: null })
     profileResult.data = { status: 'aktif', role: { level: 6 } }
@@ -87,9 +89,9 @@ describe('updateSession (FR-001)', () => {
     )
   })
 
-  it('redirects roles below Manager away from the dashboard', async () => {
+  it('redirects roles below Staff/PIC away from the dashboard', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
-    profileResult.data = { status: 'aktif', role: { level: 2 } }
+    profileResult.data = { status: 'aktif', role: { level: 1 } }
 
     const response = await updateSession(
       new NextRequest('https://atm.example/dashboard'),
@@ -115,9 +117,9 @@ describe('updateSession (FR-001)', () => {
     )
   })
 
-  it('redirects roles below SM away from user management', async () => {
+  it('redirects roles below Manager away from user management', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
-    profileResult.data = { status: 'aktif', role: { level: 3 } }
+    profileResult.data = { status: 'aktif', role: { level: 2 } }
 
     const response = await updateSession(
       new NextRequest('https://atm.example/users'),

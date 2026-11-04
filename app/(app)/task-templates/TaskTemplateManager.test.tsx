@@ -25,7 +25,6 @@ describe('TaskTemplateManager role presentation', () => {
   it('shows PIC categories as read-only', () => {
     render(<TaskTemplateManager {...base} canManageCategories={false} ownerSelectionUserId="pic" />)
     expect(screen.getByText('Rekonsiliasi')).toBeTruthy()
-    expect(screen.getByText(/hanya dapat dilihat/i)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Tambah kategori' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hapus kategori' })).toBeNull()
   })

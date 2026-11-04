@@ -1,7 +1,7 @@
 'use client'
 
 // D-030 — Top Header navigasi ATM (sesuai Stitch mockup 04_dashboard)
-// Header merah SIG dengan logo, nama aplikasi, tanggal, dan info user
+// Header netral (Sanity-style): blur + hairline, logo, tanggal, tema, notifikasi, akun
 
 import { type SessionUser } from '@/lib/auth/session'
 import ATMWordmark from '@/app/_components/ATMWordmark'
@@ -30,68 +30,49 @@ function getTodayLabel(): string {
   }).format(new Date())
 }
 
-// Warna avatar berdasarkan hash nama
-const AVATAR_COLORS = [
-  '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
-  '#EC4899', '#14B8A6', '#F97316', '#06B6D4',
-]
-
-function avatarColor(name: string): string {
-  let hash = 0
-  for (const c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-
 export default function TopHeader({ user, unreadCount = 0 }: Props) {
   const initials = getInitials(user.name)
   const today = getTodayLabel()
-  const bgColor = avatarColor(user.name)
 
   return (
     <header
-      className="flex shrink-0 items-center justify-between gap-2 px-3 shadow-sm sm:px-6"
-      style={{
-        backgroundColor: 'var(--color-brand)',
-        height: 'var(--header-height)',
-      }}
+      className="atm-header relative z-20 flex shrink-0 items-center justify-between gap-2 px-3 sm:px-6"
+      style={{ height: 'var(--header-height)' }}
     >
-      {/* Wordmark saja: tanpa icon checklist, badge putih, atau teks duplikat. */}
-      <div className="flex min-w-0 shrink-0 items-center">
-        <ATMWordmark variant="light" className="w-[96px] sm:w-[116px]" />
+      <div className="flex min-w-0 shrink-0 items-center gap-3">
+        <Link href="/dashboard" aria-label="ATM — beranda" className="rounded-md transition-opacity hover:opacity-80">
+          <ATMWordmark variant="dark" className="w-[88px] sm:w-[104px]" />
+        </Link>
+        <span aria-hidden="true" className="hidden h-4 w-px bg-[var(--color-border-strong)] md:block" />
+        <span className="atm-eyebrow hidden md:inline">Accounting Task Manager</span>
       </div>
 
-      {/* Kanan: Appearance, tanggal, dan akun */}
-      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-4">
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
+        <JakartaClock />
+        <span className="atm-eyebrow hidden lg:inline">{today}</span>
+        <ThemeToggle />
         <Link
           href="/notifications"
           aria-label={unreadCount > 0 ? `Notifikasi: ${unreadCount} belum dibaca` : 'Buka notifikasi'}
-          className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white transition-colors hover:bg-black/15 focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="atm-ghost-btn relative h-9 w-9 shrink-0"
         >
-          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-[#a81c29]">
+            <span className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-brand)] px-1 font-[family-name:var(--font-mono)] text-[10px] font-semibold text-white ring-2 ring-[var(--color-bg-app)]">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </Link>
-        <JakartaClock />
-        <ThemeToggle onBrand />
-        {/* Tanggal */}
-        <div className="hidden rounded-md px-3.5 py-1.5 text-xs font-medium text-red-50 sm:block">
-          {today}
-        </div>
 
-        {/* Info user + avatar + logout */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 border-l border-[var(--color-border)] pl-2 sm:gap-3 sm:pl-3">
           <div className="hidden text-right leading-tight sm:block">
-            <p className="text-xs font-bold text-white">{user.name}</p>
-            <p className="text-[11px] text-red-200">{user.role}</p>
+            <p className="text-xs font-medium tracking-tight text-[var(--color-text-primary)]">{user.name}</p>
+            <p className="atm-eyebrow !text-[10px]">{user.role}</p>
           </div>
           <div
-            className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shadow sm:h-8 sm:w-8"
-            style={{ backgroundColor: bgColor }}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-bg-raised)] font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[var(--color-text-primary)]"
             aria-label={`Avatar ${user.name}`}
           >
             {initials}

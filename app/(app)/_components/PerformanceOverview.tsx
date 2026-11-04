@@ -7,7 +7,7 @@ type Props = {
 function ProgressTrack({ value, label }: { value: number; label: string }) {
   return (
     <div
-      className="h-2 overflow-hidden rounded-full bg-slate-100"
+      className="atm-progress-track h-1.5"
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}
@@ -15,8 +15,8 @@ function ProgressTrack({ value, label }: { value: number; label: string }) {
       aria-valuenow={value}
     >
       <div
-        className="atm-progress-fill h-full rounded-full bg-red-600"
-        style={{ width: `${value}%`, '--atm-progress-dark': '#dfafbb' } as React.CSSProperties}
+        className="atm-progress-fill h-full rounded-full"
+        style={{ width: `${value}%`, backgroundColor: 'var(--color-brand)' }}
       />
     </div>
   )
@@ -26,9 +26,9 @@ export default function PerformanceOverview({
   performance,
 }: Props) {
   return (
-    <section aria-label="Progress per PIC dan section" className="grid gap-5 lg:grid-cols-2">
-      <div className="atm-interactive rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-900">Progress per PIC</h2>
+    <section aria-label="Progress per PIC dan section" className="atm-stagger grid gap-4 lg:grid-cols-2">
+      <div className="atm-card atm-spotlight p-5">
+        <h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">Progress per PIC</h2>
         {performance.owners.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">Belum ada task aktif dalam cakupan Anda.</p>
         ) : (
@@ -40,7 +40,7 @@ export default function PerformanceOverview({
                   value={owner.averageProgress}
                   label={`Progress rata-rata ${owner.name}`}
                 />
-                <span className="whitespace-nowrap text-slate-600">
+                <span className="whitespace-nowrap font-[family-name:var(--font-mono)] text-[11px] tabular-nums text-slate-600">
                   {owner.averageProgress}% · {owner.activeTasks} aktif
                 </span>
                 {owner.overdueTasks > 0 && (
@@ -54,8 +54,8 @@ export default function PerformanceOverview({
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-900">Progress per Section/Unit</h2>
+      <div className="atm-card atm-spotlight p-5">
+        <h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">Progress per Section/Unit</h2>
         {performance.orgUnits.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">Belum ada task aktif dalam cakupan Anda.</p>
         ) : (
@@ -67,7 +67,7 @@ export default function PerformanceOverview({
                   value={orgUnit.averageProgress}
                   label={`Progress rata-rata ${orgUnit.name}`}
                 />
-                <span className="whitespace-nowrap text-slate-600">
+                <span className="whitespace-nowrap font-[family-name:var(--font-mono)] text-[11px] tabular-nums text-slate-600">
                   {orgUnit.averageProgress}% · {orgUnit.activeTasks} aktif
                 </span>
                 {orgUnit.overdueTasks > 0 && (

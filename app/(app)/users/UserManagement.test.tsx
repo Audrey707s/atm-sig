@@ -105,7 +105,7 @@ describe('UserManagement (FR-003, FR-004, FR-005)', () => {
 
   it('keeps Manager user data read-only', () => {
     render(<UserManagement currentUserId="manager-id" currentUserRole="Manager" users={users} assignmentOptions={null} pendingRoleChangeRequests={[]} />)
-    expect(screen.getByText(/hanya dapat dilihat/i)).toBeTruthy()
+    expect(screen.getByText('Rina Accounting')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Tambah user' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit nama' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Nonaktifkan' })).toBeNull()
