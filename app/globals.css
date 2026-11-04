@@ -424,6 +424,14 @@ html[data-theme='light'] .atm-nav-link[aria-current='page'] { background: #fff; 
   background-size: 200% 100%; animation: atm-shimmer 1.6s linear infinite;
 }
 
+/* One content rail for every authenticated page. Page-level max-width and
+   auto margins previously produced different left gaps between modules. */
+.atm-workspace > :where(main, section, div) {
+  width: 100%;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+
 /* ---------- Auth ---------- */
 .atm-auth { background: var(--color-bg-app); }
 .atm-auth-grid {
