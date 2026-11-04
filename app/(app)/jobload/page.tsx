@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getSessionUser, requireRole } from '@/lib/auth/session'
 import { getPeriodWorkloads } from '@/lib/dashboard/period-workload'
 import WorkspaceTabs, { DASHBOARD_TABS } from '../_components/WorkspaceTabs'
+import CountUp from '@/app/_components/CountUp'
 
 export const metadata: Metadata = { title: 'Beban Kerja Periode' }
 
@@ -23,12 +24,11 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
         <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1></div>
         <form method="get" action="/jobload" className="flex items-end gap-2"><input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
       </div>
-      <div className="atm-summary-card" aria-label={`Total penugasan PIC dalam periode: ${total}`}>
-        <div className="atm-summary-card__accent" aria-hidden="true">PIC</div>
-        <div>
-          <p className="atm-summary-card__label">Total penugasan dalam periode</p>
-          <p className="atm-summary-card__value">{total}</p>
-        </div>
+      <div className="atm-card atm-spotlight atm-interactive w-full max-w-60 p-4 sm:p-5" aria-label={`Total penugasan: ${total}`}>
+        <p className="atm-eyebrow">Total Penugasan</p>
+        <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
+          <CountUp value={total} />
+        </p>
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <table className="atm-jobload-table w-full min-w-[900px] table-fixed text-sm">
