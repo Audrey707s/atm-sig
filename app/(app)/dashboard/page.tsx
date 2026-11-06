@@ -73,11 +73,11 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   const cardHref=(key:string)=>`/dashboard?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${key}`
   const [metrics, tasksPerhatian, performance] = await Promise.all([
     attentionMode === 'all' ? getDashboardMetrics(user) : getDashboardMetrics(user,from,toExclusive),
-    attentionMode === 'all' ? getTasksPerluPerhatian(user,10) : getTasksPerluPerhatian(user,10,from,toExclusive),
-    isPic ? Promise.resolve(null) : attentionMode === 'all' ? getDashboardPerformance(user,new Date()) : getDashboardPerformance(user,new Date(),from,toExclusive),
+    attentionMode === 'all' ? getTasksPerluPerhatian(user,100000,undefined,undefined,card) : getTasksPerluPerhatian(user,100000,from,toExclusive,card),
+    isPic ? Promise.resolve(null) : attentionMode === 'all' ? getDashboardPerformance(user,new Date(),undefined,undefined,card) : getDashboardPerformance(user,new Date(),from,toExclusive,card),
   ])
 
-  const filteredTasks = tasksPerhatian.filter(task => card==='total' || (card==='todo' && task.status==='To do') || (card==='overdue' && task.isOverdue) || (card==='blocked' && task.status==='Blocked') || (card==='review' && task.status==='Review') || (card==='done' && task.status==='Done'))
+  const filteredTasks = tasksPerhatian
   const showAlert =
     metrics.tertinggal > 0 || metrics.blocked > 0
 
@@ -133,7 +133,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
           <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
           <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" href={cardHref("todo")} active={card==="todo"} />
-          <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" />
+          <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" href={cardHref('deadline')} active={card==='deadline'} />
         </>}
       </section>
 
@@ -149,9 +149,9 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
 
       {/* Tabel task perlu perhatian */}
       <section aria-label="Task perlu perhatian">
-        <h2 className="atm-eyebrow mb-3 !text-[var(--color-text-secondary)]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">
           Task Perlu Perhatian <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
-        </h2>
+        </h2><div className="flex gap-2"><a className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=xls`}>Export Excel</a><a className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=pdf`}>Export PDF</a></div></div>
 
         {filteredTasks.length === 0 ? (
           <div className="atm-card p-12 text-center">
