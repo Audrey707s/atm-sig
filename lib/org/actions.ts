@@ -21,14 +21,26 @@ export async function saveOrgUnit(input:OrgInput):Promise<{data?:{id:number};err
     if(input.type==='department'&&input.parentId!==null)return {error:'Department tidak boleh memiliki induk.'}
     if(input.type!=='department'&&(!Number.isInteger(input.parentId)||Number(input.parentId)<=0))return {error:'Induk wajib dipilih.'}
     if(input.id!==undefined&&(!Number.isInteger(input.id)||input.id<=0))return {error:'ID organisasi tidak valid.'}
+    const {data:units,error:unitsError}=await supabase.from('org_units').select('id,type,parent_id')
+    if(unitsError)return {error:`Gagal memeriksa struktur: ${unitsError.message}`}
+    if(input.type!=='department'){
+      const parent=units?.find(u=>u.id===input.parentId)
+      if(!parent||parent.type!==(input.type==='section'?'unit':'department'))return {error:'Induk tidak sesuai hierarki: Unit harus di bawah Departemen dan Seksi di bawah Unit.'}
+    }
+    if(input.id!==undefined){
+      if(input.id===input.parentId)return {error:'Unit tidak dapat menjadi induknya sendiri.'}
+      const descendants=new Set<number>([input.id]);let size=0
+      while(size!==descendants.size){size=descendants.size;for(const u of units??[])if(u.parent_id!==null&&descendants.has(u.parent_id))descendants.add(u.id)}
+      if(input.parentId!==null&&descendants.has(input.parentId))return {error:'Induk tidak boleh merupakan turunan unit yang diedit.'}
+    }
     const q=input.id===undefined
       ? supabase.from('org_units').insert({name,type:input.type,parent_id:input.parentId}).select('id').single()
       : supabase.from('org_units').update({name,type:input.type,parent_id:input.parentId}).eq('id',input.id).select('id').single()
     const {data,error}=await q
-    if(error||!data)return {error:'Gagal menyimpan. Periksa hak akses, hirarki, dan referensi aktif.'}
-    revalidatePath('/org-structure');revalidatePath('/users')
+    if(error||!data)return {error:error?.message??'Gagal menyimpan unit organisasi.'}
+    revalidatePath('/org-structure');revalidatePath('/organizations');revalidatePath('/organizations');revalidatePath('/users')
     return {data:{id:data.id}}
-  }catch {return {error:'Penyimpanan organisasi tidak berhasil.'}}
+  }catch(e) {return {error:e instanceof Error?e.message:'Penyimpanan organisasi tidak berhasil.'}}
 }
 
 export async function deleteOrgUnit(id:number):Promise<{data?:{success:true};error?:string}> {
