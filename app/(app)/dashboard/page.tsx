@@ -109,13 +109,14 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
 
       {/* Metric cards */}
       <section
-        className={`grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-5 atm-stagger gap-3 sm:gap-4 mb-7`}
+        className={`grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-6 atm-stagger gap-3 sm:gap-4 mb-7`}
         aria-label={`Ringkasan metrics ${attentionMode === 'all' ? 'akumulatif' : 'per bulan'}`}
       >
         <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} />
         {isPic ? <>
           <MetricCard label="Selesai" value={metrics.completed} tone="done" />
-          <MetricCard label="Pending" value={metrics.pending} tone="revisi" />
+          <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" />
+          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
           <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
         </> : <>
