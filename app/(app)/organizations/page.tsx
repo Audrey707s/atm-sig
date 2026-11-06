@@ -21,7 +21,6 @@ export default async function OrganizationsPage() {
   const people=(members??[]) as Member[]
   const roleNames=new Map((roles??[]).map(r=>[r.id,r.name]))
   const peopleById=new Map(people.map(p=>[p.id,p]))
-  const unitById=new Map(units.map(u=>[u.id,u]))
   const ordered:Array<Unit & {depth:number}>=[]
   const visited=new Set<number>()
   function visit(unit:Unit,depth:number){

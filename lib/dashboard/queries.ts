@@ -95,6 +95,7 @@ export function calcTimePct(
 export function buildDashboardPerformance(
   tasks: readonly DashboardPerformanceSource[],
   now = new Date(),
+  includeDone = false,
 ): DashboardPerformance {
   const ownerStats = new Map<string, {
     id: string
@@ -112,7 +113,7 @@ export function buildDashboardPerformance(
   }>()
 
   for (const task of tasks) {
-    if (task.status === 'Done') continue
+    if (task.status === 'Done' && !includeDone) continue
 
     const overdue = isTaskOverdue(task.dueDate, task.status, now)
     const owner = ownerStats.get(task.ownerId) ?? {
@@ -165,6 +166,7 @@ async function getDashboardPerformanceSources(
   user: SessionUser,
   from?: string,
   toExclusive?: string,
+  card = 'total',
 ): Promise<DashboardPerformanceSource[]> {
   const supabase = await createClient()
   const scopeFilter = await getDashboardScopeFilter(user)
@@ -194,6 +196,7 @@ async function getDashboardPerformanceSources(
     if (!data) throw new Error('Data progress dashboard tidak tersedia.')
 
     for (const row of data) {
+      if (!matchesDashboardCard({status:row.status,dueDate:row.due_date},card)) continue
       const owner = row.users as { name: string } | null
       const orgUnit = row.org_units as { name: string } | null
       if (!owner || !orgUnit) {
@@ -219,9 +222,10 @@ export async function getDashboardPerformance(
   now = new Date(),
   from?: string,
   toExclusive?: string,
+  card = 'total',
 ): Promise<DashboardPerformance> {
-  const tasks = await getDashboardPerformanceSources(user,from,toExclusive)
-  return buildDashboardPerformance(tasks, now)
+  const tasks = await getDashboardPerformanceSources(user,from,toExclusive,card)
+  return buildDashboardPerformance(tasks, now, card === 'done')
 }
 
 /**
@@ -280,11 +284,24 @@ export async function getDashboardMetrics(user: SessionUser, from?: string, toEx
  * - Status Blocked atau Review lebih dari 3 hari
  * Sesuai Stitch mockup 04_dashboard tabel "Task Perlu Perhatian"
  */
+export function matchesDashboardCard(task:{status:TaskStatus;dueDate:string},card:string):boolean {
+  switch(card){
+    case 'todo': return task.status==='To do'
+    case 'blocked': return task.status==='Blocked'
+    case 'review': return task.status==='Review'
+    case 'done': return task.status==='Done'
+    case 'overdue': return isTaskOverdue(task.dueDate,task.status)
+    case 'deadline': return false // Deadline requests are not task statuses.
+    default: return true
+  }
+}
+
 export async function getTasksPerluPerhatian(
   user: SessionUser,
   limit = 10,
   from?: string,
   toExclusive?: string,
+  card = 'total',
 ): Promise<TaskPerhatian[]> {
   const supabase = await createClient()
   const scopeFilter = await getDashboardScopeFilter(user)
@@ -299,7 +316,6 @@ export async function getTasksPerluPerhatian(
   for (let offset=0;offset<100000;offset+=pageSize) {
     let query = supabase.from('tasks')
       .select('id,title,status,progress_pct,start_date,due_date,users!tasks_owner_id_fkey(name)')
-      .not('status','eq','Done')
       .order('due_date',{ascending:true})
       .range(offset,offset+pageSize-1)
     if (from) query = query.gte('due_date',from)
@@ -313,6 +329,16 @@ export async function getTasksPerluPerhatian(
   }
 
   const now = new Date()
+  const pendingDeadlineIds=new Set<string>()
+  if(card==='deadline'){
+    for(let i=0;i<tasks.length;i+=100){
+      const ids=tasks.slice(i,i+100).map(t=>t.id)
+      if(!ids.length)continue
+      const {data,error}=await supabase.from('deadline_change_requests').select('task_id').eq('status','Menunggu approval').in('task_id',ids)
+      if(error)throw new Error('Gagal memuat pengajuan tenggat untuk filter dashboard.')
+      for(const request of data??[])pendingDeadlineIds.add(request.task_id)
+    }
+  }
 
   const result: TaskPerhatian[] = tasks
     .map((t) => {
@@ -331,7 +357,7 @@ export async function getTasksPerluPerhatian(
       }
     })
     // Filter: hanya yang memerlukan perhatian
-    .filter((t) => t.isOverdue || t.timePct >= 80 || t.status === 'Blocked' || t.status === 'Review')
+    .filter((t) => card==='total' ? (t.isOverdue || t.timePct >= 80 || t.status === 'Blocked' || t.status === 'Review') : card==='deadline' ? pendingDeadlineIds.has(t.id) : matchesDashboardCard({status:t.status,dueDate:t.dueDate},card))
     .slice(0, limit)
 
   return result
