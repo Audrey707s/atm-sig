@@ -150,7 +150,16 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       <section aria-label="Task perlu perhatian">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">
           Task Perlu Perhatian <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
-        </h2><div className="flex gap-2"><a className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=xls`}>Export Excel</a><a className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=pdf`}>Export PDF</a></div></div>
+        </h2><div className="flex shrink-0 gap-2">
+          <a id="btn-dashboard-export-xls" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=xls`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+            <svg className="h-3.5 w-3.5 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v6m0 0l-3-3m3 3l3-3M4 8l8-8 8 8" /></svg>
+            Excel (.xls)
+          </a>
+          <a id="btn-dashboard-export-pdf" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+            <svg className="h-3.5 w-3.5 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            PDF
+          </a>
+        </div></div>
 
         {filteredTasks.length === 0 ? (
           <div className="atm-card p-12 text-center">
