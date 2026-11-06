@@ -3,7 +3,6 @@ import { getSessionUser } from '@/lib/auth/session'
 import { resolveDashboardMonth } from '@/lib/dashboard/month'
 import { getTasksPerluPerhatian } from '@/lib/dashboard/queries'
 
-export const dynamic='force-dynamic'
 const labels:Record<string,string>={total:'Task Perlu Perhatian',todo:'Belum Dimulai',overdue:'Melewati Tenggat',blocked:'Blocked',review:'Menunggu Review',done:'Selesai',deadline:'Pengajuan Deadline'}
 const escapeXml=(value:string)=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')
 const safeAscii=(value:string)=>value.normalize('NFKD').replace(/[^\x20-\x7e]/g,'?').replace(/[()\\]/g,' ')
