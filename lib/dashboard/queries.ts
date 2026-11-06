@@ -329,6 +329,16 @@ export async function getTasksPerluPerhatian(
   }
 
   const now = new Date()
+  const pendingDeadlineIds=new Set<string>()
+  if(card==='deadline'){
+    for(let i=0;i<tasks.length;i+=100){
+      const ids=tasks.slice(i,i+100).map(t=>t.id)
+      if(!ids.length)continue
+      const {data,error}=await supabase.from('deadline_change_requests').select('task_id').eq('status','Menunggu approval').in('task_id',ids)
+      if(error)throw new Error('Gagal memuat pengajuan tenggat untuk filter dashboard.')
+      for(const request of data??[])pendingDeadlineIds.add(request.task_id)
+    }
+  }
 
   const result: TaskPerhatian[] = tasks
     .map((t) => {
@@ -347,7 +357,7 @@ export async function getTasksPerluPerhatian(
       }
     })
     // Filter: hanya yang memerlukan perhatian
-    .filter((t) => card==='total' ? (t.isOverdue || t.timePct >= 80 || t.status === 'Blocked' || t.status === 'Review') : matchesDashboardCard({status:t.status,dueDate:t.dueDate},card))
+    .filter((t) => card==='total' ? (t.isOverdue || t.timePct >= 80 || t.status === 'Blocked' || t.status === 'Review') : card==='deadline' ? pendingDeadlineIds.has(t.id) : matchesDashboardCard({status:t.status,dueDate:t.dueDate},card))
     .slice(0, limit)
 
   return result
