@@ -122,15 +122,15 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       >
         <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} href={cardHref("total")} active={card==="total"} />
         {isPic ? <>
-          <MetricCard label="Selesai" value={metrics.completed} tone="done" />
+          <MetricCard label="Selesai" value={metrics.completed} tone="done" href={cardHref("done")} active={card==="done"} />
           <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" href={cardHref("todo")} active={card==="todo"} />
           <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" href={cardHref("review")} active={card==="review"} />
           <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" href={cardHref("overdue")} active={card==="overdue"} />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" href={cardHref("blocked")} active={card==="blocked"} />
         </> : <>
-          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
-          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
-          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
+          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" href={cardHref("overdue")} active={card==="overdue"} />
+          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" href={cardHref("blocked")} active={card==="blocked"} />
+          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" href={cardHref("review")} active={card==="review"} />
           <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" href={cardHref("todo")} active={card==="todo"} />
           <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" href={cardHref('deadline')} active={card==='deadline'} />
         </>}
