@@ -95,6 +95,7 @@ export function calcTimePct(
 export function buildDashboardPerformance(
   tasks: readonly DashboardPerformanceSource[],
   now = new Date(),
+  includeDone = false,
 ): DashboardPerformance {
   const ownerStats = new Map<string, {
     id: string
@@ -112,7 +113,7 @@ export function buildDashboardPerformance(
   }>()
 
   for (const task of tasks) {
-    if (task.status === 'Done') continue
+    if (task.status === 'Done' && !includeDone) continue
 
     const overdue = isTaskOverdue(task.dueDate, task.status, now)
     const owner = ownerStats.get(task.ownerId) ?? {
@@ -224,7 +225,7 @@ export async function getDashboardPerformance(
   card = 'total',
 ): Promise<DashboardPerformance> {
   const tasks = await getDashboardPerformanceSources(user,from,toExclusive,card)
-  return buildDashboardPerformance(tasks, now)
+  return buildDashboardPerformance(tasks, now, card === 'done')
 }
 
 /**
