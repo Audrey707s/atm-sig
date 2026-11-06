@@ -24,13 +24,18 @@ function MetricCard({
   label,
   value,
   tone,
+  href,
+  active = false,
 }: {
   label: string
   value: number
   tone?: MetricTone
+  href?: string
+  active?: boolean
 }) {
   return (
-    <div className="atm-card atm-spotlight atm-interactive p-4 sm:p-5">
+    <div className={`atm-card atm-spotlight atm-interactive p-4 sm:p-5 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] text-slate-900" : ""}`}>
+      {href ? <Link href={href} className="absolute inset-0 z-10 rounded-xl" aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} /> : null}
       <div className="flex items-center justify-between gap-2">
         <p className="atm-eyebrow">{label}</p>
         {tone && (
@@ -56,7 +61,7 @@ function formatDate(iso: string): string {
   }).format(new Date(iso))
 }
 
-export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string}>}) {
+export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string; card?:string}>}) {
   const [user,params] = await Promise.all([getSessionUser(),searchParams])
   const month=resolveDashboardMonth(params.month)
   const attentionMode = params.attention === 'month' ? 'month' : 'all'
@@ -64,12 +69,15 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   const nextMonth=monthNumber===12 ? `${year+1}-01` : `${year}-${String(monthNumber+1).padStart(2,'0')}`
   const from=`${month}-01T00:00:00+07:00`,toExclusive=`${nextMonth}-01T00:00:00+07:00`
   const isPic = user.roleLevel === 2
+  const card = ['total','todo','overdue','blocked','review','deadline','done'].includes(params.card??'') ? params.card??'total' : 'total'
+  const cardHref=(key:string)=>`/dashboard?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${key}`
   const [metrics, tasksPerhatian, performance] = await Promise.all([
     attentionMode === 'all' ? getDashboardMetrics(user) : getDashboardMetrics(user,from,toExclusive),
     attentionMode === 'all' ? getTasksPerluPerhatian(user,10) : getTasksPerluPerhatian(user,10,from,toExclusive),
     isPic ? Promise.resolve(null) : attentionMode === 'all' ? getDashboardPerformance(user,new Date()) : getDashboardPerformance(user,new Date(),from,toExclusive),
   ])
 
+  const filteredTasks = tasksPerhatian.filter(task => card==='total' || (card==='todo' && task.status==='To do') || (card==='overdue' && task.isOverdue) || (card==='blocked' && task.status==='Blocked') || (card==='review' && task.status==='Review') || (card==='done' && task.status==='Done'))
   const showAlert =
     metrics.tertinggal > 0 || metrics.blocked > 0
 
@@ -86,6 +94,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
             <option value="month">Per Bulan</option>
             <option value="all">Akumulatif</option>
           </select>
+          <input type="hidden" name="card" value={card}/>
           <button className="atm-cta !w-auto !py-2">Terapkan</button>
         </form>
       </section>
@@ -112,17 +121,18 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
         className={`grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-6 atm-stagger gap-3 sm:gap-4 mb-7`}
         aria-label={`Ringkasan metrics ${attentionMode === 'all' ? 'akumulatif' : 'per bulan'}`}
       >
-        <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} />
+        <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} href={cardHref("total")} active={card==="total"} />
         {isPic ? <>
           <MetricCard label="Selesai" value={metrics.completed} tone="done" />
-          <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" />
-          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
-          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
-          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
+          <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" href={cardHref("todo")} active={card==="todo"} />
+          <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" href={cardHref("review")} active={card==="review"} />
+          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" href={cardHref("overdue")} active={card==="overdue"} />
+          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" href={cardHref("blocked")} active={card==="blocked"} />
         </> : <>
           <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
           <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
+          <MetricCard label="Belum Dimulai" value={metrics.pending} tone="revisi" href={cardHref("todo")} active={card==="todo"} />
           <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" />
         </>}
       </section>
@@ -143,7 +153,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           Task Perlu Perhatian <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
         </h2>
 
-        {tasksPerhatian.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="atm-card p-12 text-center">
             <p className="text-sm text-slate-400">
               Tidak ada task yang memerlukan perhatian saat ini.
@@ -163,7 +173,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {tasksPerhatian.map((task) => (
+                {filteredTasks.map((task) => (
                   <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-2 sm:px-3 font-semibold text-slate-800 whitespace-nowrap">
                       <Link
@@ -198,7 +208,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           </div>
         )}
 
-        {tasksPerhatian.length > 0 && (
+        {filteredTasks.length > 0 && (
           <div className="mt-3 text-right">
             <Link
               href="/tasks"
