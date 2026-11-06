@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   const isPic = user.roleLevel === 2
   const [metrics, tasksPerhatian, performance] = await Promise.all([
     getDashboardMetrics(user,from,toExclusive),
-    getTasksPerluPerhatian(user,10,from,toExclusive),
+    getTasksPerluPerhatian(user,10),
     isPic ? Promise.resolve(null) : getDashboardPerformance(user,new Date(),from,toExclusive),
   ])
 
