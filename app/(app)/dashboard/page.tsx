@@ -59,7 +59,7 @@ function formatDate(iso: string): string {
 export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string}>}) {
   const [user,params] = await Promise.all([getSessionUser(),searchParams])
   const month=resolveDashboardMonth(params.month)
-  const attentionMode = params.attention === 'all' ? 'all' : 'month'
+  const attentionMode = params.attention === 'month' ? 'month' : 'all'
   const [year,monthNumber]=month.split('-').map(Number)
   const nextMonth=monthNumber===12 ? `${year+1}-01` : `${year}-${String(monthNumber+1).padStart(2,'0')}`
   const from=`${month}-01T00:00:00+07:00`,toExclusive=`${nextMonth}-01T00:00:00+07:00`
