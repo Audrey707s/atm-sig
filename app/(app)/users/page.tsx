@@ -8,9 +8,10 @@ import {
   getUserAssignmentOptions,
 } from '@/lib/users/queries'
 import UserManagement from './UserManagement'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Organisasi Pengguna',
+  title: 'Pengguna',
 }
 
 export default async function UsersPage() {
@@ -20,7 +21,7 @@ export default async function UsersPage() {
     return (
       <section className="p-6 sm:p-8" aria-labelledby="users-heading">
         <h1 id="users-heading" className="text-xl font-bold text-slate-900">
-          Organisasi Pengguna
+          Pengguna
         </h1>
         <p className="mt-3 text-sm text-slate-600" role="alert">
           Anda tidak berwenang mengakses data pengguna.
@@ -63,7 +64,7 @@ export default async function UsersPage() {
   }
 
   return (
-    <><div className="px-4 pt-5 sm:px-6 lg:px-8"><WorkspaceTabs current="/users" tabs={MASTER_USER_TABS} roleLevel={user.roleLevel} /></div><UserManagement
+    <><div className="px-4 pt-5 sm:px-6 lg:px-8"><WorkspaceTabs current="/users" tabs={MASTER_USER_TABS} roleLevel={user.roleLevel} />{user.roleLevel === 6 && <Link href="/organizations" className="mb-4 inline-flex rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">+ Tambah Unit / Section</Link>}</div><UserManagement
       currentUserId={user.id}
       currentUserRole={user.role}
       users={data.users}

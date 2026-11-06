@@ -23,19 +23,20 @@ export const WORK_TABS: Tab[] = [
 ]
 export const DASHBOARD_TABS: Tab[] = [
   { label: 'Ringkasan', icon: 'dashboard', href: '/dashboard' },
-  { label: 'Beban Kerja Periode', icon: 'jobload', href: '/jobload', minLevel: 3 },
+  { label: 'Evaluasi Kinerja', icon: 'jobload', href: '/jobload', minLevel: 3 },
 ]
 export const APPROVAL_TABS: Tab[] = [
   { label: 'Tinjauan Tugas', icon: 'approval', href: '/review-inbox', minLevel: 3 },
   { label: 'Persetujuan Tenggat', icon: 'calendar', href: '/approvals', minLevel: 4 },
 ]
 export const MASTER_TABS: Tab[] = [
-  { label: 'Pengguna', icon: 'user', href: '/account' },
-  { label: 'Organisasi', icon: 'structure', href: '/users', minLevel: 3 },
+  { label: 'Profil', icon: 'user', href: '/account' },
+  { label: 'Pengguna', icon: 'user', href: '/users', minLevel: 3 },
+  { label: 'Organizations', icon: 'structure', href: '/organizations', minLevel: 3 },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates', minLevel: 2 },
 ]
 export const PIC_MASTER_TABS: Tab[] = [
-  { label: 'Pengguna', icon: 'user', href: '/account' },
+  { label: 'Profil', icon: 'user', href: '/account' },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates' },
 ]
 export const MASTER_USER_TABS: Tab[] = MASTER_TABS

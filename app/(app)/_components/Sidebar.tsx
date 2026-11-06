@@ -20,7 +20,7 @@ const GROUPS: NavGroup[] = [
     { label: 'Laporan', href: '/reports', minLevel: 2, routes: ['/reports', '/audit-log'], icon: 'reports' },
   ] },
   { heading: 'SETTING', items: [
-    { label: 'Master Data', href: '/account', minLevel: 1, routes: ['/account', '/users', '/task-templates', '/org-structure', '/master-data'], icon: 'master' },
+    { label: 'Master Data', href: '/account', minLevel: 1, routes: ['/account', '/users', '/task-templates', '/org-structure', '/organizations', '/master-data'], icon: 'master' },
   ] },
 ]
 
