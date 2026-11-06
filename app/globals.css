@@ -434,9 +434,9 @@ html[data-theme='light'] .atm-nav-link[aria-current='page'] { background: #fff; 
 
 /* One content rail for every authenticated page. Page-level max-width and
    auto margins previously produced different left gaps between modules. */
-.atm-workspace { --workspace-gutter: 1rem; }
-@media (min-width: 640px) { .atm-workspace { --workspace-gutter: 1.5rem; } }
-@media (min-width: 1024px) { .atm-workspace { --workspace-gutter: 2rem; } }
+.atm-workspace { --workspace-gutter: 0.75rem; }
+@media (min-width: 640px) { .atm-workspace { --workspace-gutter: 1rem; } }
+@media (min-width: 1024px) { .atm-workspace { --workspace-gutter: 1.25rem; } }
 
 .atm-workspace > :where(main, section, div),
 .atm-page-transition > :where(main, section, div) {

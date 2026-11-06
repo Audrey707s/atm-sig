@@ -56,16 +56,17 @@ function formatDate(iso: string): string {
   }).format(new Date(iso))
 }
 
-export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string}>}) {
+export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string}>}) {
   const [user,params] = await Promise.all([getSessionUser(),searchParams])
   const month=resolveDashboardMonth(params.month)
+  const attentionMode = params.attention === 'all' ? 'all' : 'month'
   const [year,monthNumber]=month.split('-').map(Number)
   const nextMonth=monthNumber===12 ? `${year+1}-01` : `${year}-${String(monthNumber+1).padStart(2,'0')}`
   const from=`${month}-01T00:00:00+07:00`,toExclusive=`${nextMonth}-01T00:00:00+07:00`
   const isPic = user.roleLevel === 2
   const [metrics, tasksPerhatian, performance] = await Promise.all([
     getDashboardMetrics(user,from,toExclusive),
-    getTasksPerluPerhatian(user,10),
+    attentionMode === 'all' ? getTasksPerluPerhatian(user,10) : getTasksPerluPerhatian(user,10,from,toExclusive),
     isPic ? Promise.resolve(null) : getDashboardPerformance(user,new Date(),from,toExclusive),
   ])
 
@@ -80,6 +81,11 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
         <DashboardWelcome name={user.name} />
         <form method="get" action="/dashboard" className="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
           <input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-full border px-4 py-2 text-sm" />
+          <label className="sr-only" htmlFor="attention-mode">Cakupan Task Perlu Perhatian</label>
+          <select id="attention-mode" name="attention" defaultValue={attentionMode} aria-label="Cakupan Task Perlu Perhatian" className="rounded-full border px-3 py-2 text-sm bg-[var(--color-bg-card)] text-[var(--color-text-primary)]">
+            <option value="month">Per Bulan</option>
+            <option value="all">Akumulatif</option>
+          </select>
           <button className="atm-cta !w-auto !py-2">Terapkan</button>
         </form>
       </section>
@@ -103,13 +109,15 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
 
       {/* Metric cards */}
       <section
-        className={`grid grid-cols-1 min-[400px]:grid-cols-2 ${isPic ? 'lg:grid-cols-3' : 'xl:grid-cols-5'} atm-stagger gap-3 sm:gap-4 mb-7`}
+        className={`grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-5 atm-stagger gap-3 sm:gap-4 mb-7`}
         aria-label="Ringkasan metrics"
       >
         <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} />
         {isPic ? <>
           <MetricCard label="Selesai" value={metrics.completed} tone="done" />
           <MetricCard label="Pending" value={metrics.pending} tone="revisi" />
+          <MetricCard label="Tertinggal" value={metrics.tertinggal} tone="revisi" />
+          <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
         </> : <>
           <MetricCard label="Tertinggal" value={metrics.tertinggal} tone="revisi" />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
@@ -131,7 +139,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       {/* Tabel task perlu perhatian */}
       <section aria-label="Task perlu perhatian">
         <h2 className="atm-eyebrow mb-3 !text-[var(--color-text-secondary)]">
-          Task Perlu Perhatian
+          Task Perlu Perhatian <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
         </h2>
 
         {tasksPerhatian.length === 0 ? (
@@ -142,21 +150,21 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           </div>
         ) : (
           <div className="atm-card atm-appear overflow-x-auto">
-            <table className="w-full min-w-[690px] text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr>
-                  <th className="py-3 px-4 font-semibold" scope="col">TASK</th>
-                  <th className="py-3 px-4 font-semibold" scope="col">PIC</th>
-                  <th className="py-3 px-4 font-semibold" scope="col">TENGGAT</th>
-                  <th className="py-3 px-4 font-semibold" scope="col">WAKTU BERJALAN</th>
-                  <th className="py-3 px-4 font-semibold" scope="col">PROGRESS</th>
-                  <th className="py-3 px-4 font-semibold" scope="col">STATUS</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">TASK</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">PIC</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">TENGGAT</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">WAKTU BERJALAN</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">PROGRESS</th>
+                  <th className="py-3 px-2 sm:px-3 font-semibold" scope="col">STATUS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {tasksPerhatian.map((task) => (
                   <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 font-semibold text-slate-800 whitespace-nowrap">
                       <Link
                         href={`/tasks/${task.id}`}
                         className="hover:text-[var(--color-brand)] transition-colors"
@@ -164,22 +172,22 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
                         {task.title}
                       </Link>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 text-slate-600 whitespace-nowrap">
                       {task.ownerName}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 text-slate-600 whitespace-nowrap">
                       {formatDate(task.dueDate)}
                     </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 whitespace-nowrap">
                       <TimeProgress
                         timePct={task.timePct}
                         isOverdue={task.isOverdue}
                       />
                     </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 whitespace-nowrap">
                       <ProgressBar value={task.progressPct} />
                     </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-2 sm:px-3 whitespace-nowrap">
                       <StatusBadge status={task.status} />
                     </td>
                   </tr>
