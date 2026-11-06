@@ -65,9 +65,9 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   const from=`${month}-01T00:00:00+07:00`,toExclusive=`${nextMonth}-01T00:00:00+07:00`
   const isPic = user.roleLevel === 2
   const [metrics, tasksPerhatian, performance] = await Promise.all([
-    getDashboardMetrics(user,from,toExclusive),
+    attentionMode === 'all' ? getDashboardMetrics(user) : getDashboardMetrics(user,from,toExclusive),
     attentionMode === 'all' ? getTasksPerluPerhatian(user,10) : getTasksPerluPerhatian(user,10,from,toExclusive),
-    isPic ? Promise.resolve(null) : getDashboardPerformance(user,new Date(),from,toExclusive),
+    isPic ? Promise.resolve(null) : attentionMode === 'all' ? getDashboardPerformance(user,new Date()) : getDashboardPerformance(user,new Date(),from,toExclusive),
   ])
 
   const showAlert =
@@ -110,7 +110,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       {/* Metric cards */}
       <section
         className={`grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-5 atm-stagger gap-3 sm:gap-4 mb-7`}
-        aria-label="Ringkasan metrics"
+        aria-label={`Ringkasan metrics ${attentionMode === 'all' ? 'akumulatif' : 'per bulan'}`}
       >
         <MetricCard label={isPic ? 'Total Ditugaskan' : 'Total Task'} value={metrics.totalTask} />
         {isPic ? <>
