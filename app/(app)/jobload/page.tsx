@@ -4,18 +4,19 @@ import { getPeriodWorkloads } from '@/lib/dashboard/period-workload'
 import WorkspaceTabs, { DASHBOARD_TABS } from '../_components/WorkspaceTabs'
 import CountUp from '@/app/_components/CountUp'
 
-export const metadata: Metadata = { title: 'Beban Kerja Periode' }
+export const metadata: Metadata = { title: 'Evaluasi Kinerja' }
 
-type Params = Promise<{ month?: string }>
+type Params = Promise<{ month?: string; mode?: string }>
 export default async function JobloadPage({ searchParams }: { searchParams: Params }) {
   const [user,params]=await Promise.all([getSessionUser(),searchParams])
   requireRole(user,'Manager')
   const parts = new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',timeZone:'Asia/Jakarta'}).formatToParts(new Date())
   const defaultMonth = (parts.find(p=>p.type==='year')?.value??'2026') + '-' + (parts.find(p=>p.type==='month')?.value??'01')
   const month= params.month && /^(19|20)\d\d-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : defaultMonth
+  const mode=params.mode==='month'?'month':'all'
   const [year,mon]=month.split('-').map(Number)
   const nextMonth=mon===12 ? `${year+1}-01` : `${year}-${String(mon+1).padStart(2,'0')}`
-  const workload=await getPeriodWorkloads(user,`${month}-01T00:00:00+07:00`,`${nextMonth}-01T00:00:00+07:00`)
+  const workload=await getPeriodWorkloads(user,mode==='all'?'2000-01-01T00:00:00+07:00':`${month}-01T00:00:00+07:00`,mode==='all'?'2100-01-01T00:00:00+07:00':`${nextMonth}-01T00:00:00+07:00`)
   const total=workload.rows.reduce((sum,row)=>sum+row.total,0)
   const completed=workload.rows.reduce((sum,row)=>sum+row.completed,0)
   const completionRate=total > 0 ? Math.round((completed / total) * 100) : 0
@@ -23,8 +24,8 @@ export default async function JobloadPage({ searchParams }: { searchParams: Para
     <main className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <WorkspaceTabs current="/jobload" tabs={DASHBOARD_TABS} roleLevel={user.roleLevel} />
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Beban Kerja per Periode</h1></div>
-        <form method="get" action="/jobload" className="flex items-end gap-2"><input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
+        <div><h1 className="text-xl font-bold text-[var(--color-text-primary)]">Evaluasi Kinerja</h1></div>
+        <form method="get" action="/jobload" className="flex items-end gap-2"><select name="mode" defaultValue={mode} aria-label="Cakupan evaluasi" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2"><option value="all">Akumulatif</option><option value="month">Per Bulan</option></select><input type="month" name="month" defaultValue={month} aria-label="Periode bulan dan tahun" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2" /><button className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white">Terapkan</button></form>
       </div>
       <div className="flex flex-wrap gap-4">
         <div className="atm-card atm-spotlight atm-interactive w-full max-w-60 p-4 sm:p-5" aria-label={`Total penugasan: ${total}`}>
