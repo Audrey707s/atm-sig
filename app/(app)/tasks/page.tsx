@@ -174,11 +174,11 @@ export default async function TasksPage({
           <table className="w-full min-w-[1160px] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/60 text-[11px] font-semibold tracking-wider text-slate-500">
-                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL TENGGAT"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan dan tahun tenggat" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL DIBUAT"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan tenggat tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="TUGAS"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="PIC">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-xs text-slate-500">Akun Anda</span>}</TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="SEKSI">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:<span className="text-xs text-slate-500">Seksi Anda</span>}</TableFilterMenu></th>
-                <th className="px-4 py-3">DIBUAT</th>
+                <th className="px-4 py-3">TENGGAT</th>
                 <th className="px-4 py-3"><TableFilterMenu label="PRIORITAS"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="KEMAJUAN"><input form="task-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progressFilter ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="STATUS"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></TableFilterMenu></th>
@@ -187,7 +187,7 @@ export default async function TasksPage({
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">{formatDate(task.dueDate)}</td>
+                  <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">{formatDate(task.createdAt)}</td>
                   <td className="py-3.5 px-4 whitespace-nowrap max-w-xs">
                     <Link
                       href={`/tasks/${task.id}`}
