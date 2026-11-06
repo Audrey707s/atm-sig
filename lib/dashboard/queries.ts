@@ -11,7 +11,7 @@ export type DashboardMetrics = {
   totalTask: number
   completed: number
   pending: number
-  tertinggal: number   // task yang waktu > 80% tapi progress jauh di bawah
+  tertinggal: number   // jumlah task aktif yang melewati tenggat, termasuk Blocked
   blocked: number
   menuungguReview: number
   pengajuanDeadline: number
@@ -253,16 +253,9 @@ export async function getDashboardMetrics(user: SessionUser, from?: string, toEx
   if (user.roleLevel === 2) deadlineQuery = deadlineQuery.eq('requested_by', user.id)
   const {count:pendingDeadlines,error:deadlineError} = await deadlineQuery
 
-  let tertinggal = 0
-  for (const t of tasks) {
-    if (t.status === 'Done' || t.status === 'Blocked') continue
-    const timePct = calcTimePct(t.start_date, t.due_date)
-    const isOverdue = isTaskOverdue(t.due_date, t.status)
-    // Tertinggal: overdue, atau waktu > 80% dan progress jauh di bawah waktu.
-    if (isOverdue || (timePct > 80 && t.progress_pct < timePct - 20)) {
-      tertinggal++
-    }
-  }
+  // Card Melewati Tenggat: semua status aktif, termasuk Blocked.
+  // Jangan hitung task Done maupun task yang baru mendekati deadline.
+  const tertinggal = tasks.filter((task) => isTaskOverdue(task.due_date, task.status)).length
 
   const blocked = tasks.filter((t) => t.status === 'Blocked').length
   const menuungguReview = tasks.filter((t) => t.status === 'Review').length
