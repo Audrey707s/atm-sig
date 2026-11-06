@@ -97,7 +97,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
             <span aria-hidden="true" className="atm-live-indicator shrink-0 !bg-[var(--st-revisi-dot)]" style={{ animation: 'none' }} />
             <p className="text-sm font-medium leading-relaxed">
               {metrics.tertinggal > 0 && (
-                <>{metrics.tertinggal} task melewati checkpoint dengan progress tertinggal. </>
+                <>{metrics.tertinggal} task melewati tenggat dan belum selesai. </>
               )}
               {metrics.blocked > 0 && (
                 <>{metrics.blocked} task dalam status Blocked dan memerlukan bantuan.</>
@@ -116,10 +116,10 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
         {isPic ? <>
           <MetricCard label="Selesai" value={metrics.completed} tone="done" />
           <MetricCard label="Pending" value={metrics.pending} tone="revisi" />
-          <MetricCard label="Tertinggal" value={metrics.tertinggal} tone="revisi" />
+          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
         </> : <>
-          <MetricCard label="Tertinggal" value={metrics.tertinggal} tone="revisi" />
+          <MetricCard label="Melewati Tenggat" value={metrics.tertinggal} tone="revisi" />
           <MetricCard label="Blocked" value={metrics.blocked} tone="blocked" />
           <MetricCard label="Menunggu Review" value={metrics.menuungguReview} tone="review" />
           <MetricCard label="Pengajuan Deadline" value={metrics.pengajuanDeadline} tone="progress" />
