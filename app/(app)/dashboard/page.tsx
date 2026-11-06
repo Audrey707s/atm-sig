@@ -34,8 +34,7 @@ function MetricCard({
   active?: boolean
 }) {
   return (
-    <div className={`atm-card relative atm-spotlight atm-interactive p-4 sm:p-5 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] text-slate-900" : ""}`}>
-      {href ? <Link href={href} className="absolute inset-0 z-10 rounded-xl" aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} /> : null}
+    <Link href={href ?? "/dashboard"} aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} className={`atm-card atm-spotlight atm-interactive block cursor-pointer p-4 sm:p-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] !text-slate-900" : "hover:!bg-[#fff0ed]"}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="atm-eyebrow">{label}</p>
         {tone && (
@@ -49,7 +48,7 @@ function MetricCard({
       <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
         <CountUp value={value} />
       </p>
-    </div>
+    </Link>
   )
 }
 
