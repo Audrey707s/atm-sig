@@ -34,7 +34,7 @@ function MetricCard({
   active?: boolean
 }) {
   return (
-    <div className={`atm-card atm-spotlight atm-interactive p-4 sm:p-5 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] text-slate-900" : ""}`}>
+    <div className={`atm-card relative atm-spotlight atm-interactive p-4 sm:p-5 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] text-slate-900" : ""}`}>
       {href ? <Link href={href} className="absolute inset-0 z-10 rounded-xl" aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} /> : null}
       <div className="flex items-center justify-between gap-2">
         <p className="atm-eyebrow">{label}</p>
