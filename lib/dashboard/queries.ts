@@ -265,7 +265,7 @@ export async function getDashboardMetrics(user: SessionUser, from?: string, toEx
   return {
     totalTask: tasks.length,
     completed: tasks.filter((task) => task.status === 'Done').length,
-    pending: tasks.filter((task) => task.status !== 'Done').length,
+    pending: tasks.filter((task) => task.status !== 'Done' && task.status !== 'Review').length,
     tertinggal,
     blocked,
     menuungguReview,
