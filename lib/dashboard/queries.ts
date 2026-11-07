@@ -356,8 +356,9 @@ export async function getTasksPerluPerhatian(
         status: t.status as TaskStatus,
       }
     })
-    // Filter: hanya yang memerlukan perhatian
-    .filter((t) => card==='total' ? (t.isOverdue || t.timePct >= 80 || t.status === 'Blocked' || t.status === 'Review') : card==='deadline' ? pendingDeadlineIds.has(t.id) : matchesDashboardCard({status:t.status,dueDate:t.dueDate},card))
+    // Total Task menampilkan seluruh tugas pada scope/periode yang sama dengan kartu Total Task.
+    // Filter status hanya diterapkan ketika pengguna memilih kartu tertentu.
+    .filter((t) => card==='total' ? true : card==='deadline' ? pendingDeadlineIds.has(t.id) : matchesDashboardCard({status:t.status,dueDate:t.dueDate},card))
     .slice(0, limit)
 
   return result

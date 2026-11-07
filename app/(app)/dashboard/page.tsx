@@ -149,7 +149,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       {/* Tabel task perlu perhatian */}
       <section aria-label="Task perlu perhatian">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">
-          Task Perlu Perhatian <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
+          Daftar Task <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
         </h2><div className="flex shrink-0 gap-2">
           <a id="btn-dashboard-export-xls" href={`/dashboard/export?month=${encodeURIComponent(month)}&attention=${attentionMode}&card=${card}&format=xls`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
             <svg className="h-3.5 w-3.5 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v6m0 0l-3-3m3 3l3-3M4 8l8-8 8 8" /></svg>
@@ -164,7 +164,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
         {filteredTasks.length === 0 ? (
           <div className="atm-card p-12 text-center">
             <p className="text-sm text-slate-400">
-              Tidak ada task yang memerlukan perhatian saat ini.
+              Tidak ada task untuk filter dan periode yang dipilih.
             </p>
           </div>
         ) : (
