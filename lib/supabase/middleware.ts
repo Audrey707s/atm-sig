@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/lib/supabase/database.types'
 
 function requiredRoleLevel(pathname: string): number | null {
+  if (pathname === '/approvals' || pathname.startsWith('/approvals/')) return 4
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) return 2
   if (pathname === '/jobload' || pathname.startsWith('/jobload/')) return 3
   if (pathname === '/performance' || pathname.startsWith('/performance/')) return 3

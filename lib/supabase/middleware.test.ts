@@ -21,6 +21,22 @@ vi.mock('@supabase/ssr', () => ({
 }))
 
 describe('updateSession (FR-001)', () => {
+  it.each([1, 2, 3])('redirects role level %i from deadline approvals without rendering an error', async (level) => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
+    profileResult.data = { status: 'aktif', role: { level } }
+    const response = await updateSession(new NextRequest('https://atm.example/approvals'))
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe('https://atm.example/tasks?error=forbidden')
+  })
+
+  it.each([4, 5, 6])('allows authorized role level %i to open deadline approvals', async (level) => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-id' } } })
+    profileResult.data = { status: 'aktif', role: { level } }
+    const response = await updateSession(new NextRequest('https://atm.example/approvals'))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('location')).toBeNull()
+  })
+
   beforeEach(() => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'

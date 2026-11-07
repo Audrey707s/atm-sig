@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import TaskTypeTabs from '../../_components/TaskTypeTabs'
 import type { Metadata } from 'next'
 import { getSessionUser, requireRole } from '@/lib/auth/session'
 import { ROLES } from '@/lib/constants/rbac'
@@ -11,11 +11,10 @@ export default async function RecurringTasksPage() {
   const user = await getSessionUser()
   requireRole(user, ROLES.STAFF_PIC)
   const data = await getTaskMasterData(user)
-  return <>
-    <nav aria-label="Jenis tugas" className="mx-auto flex max-w-6xl gap-2 px-4 pt-5">
-      <Link href="/tasks/new" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Tugas Sekali Jalan</Link>
-      <span aria-current="page" className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white">Tugas Berulang</span>
-    </nav>
-    <TaskTemplateManager {...data} mode="recurring" />
-  </>
+  return <div>
+    <TaskTypeTabs current="recurring" />
+    <div className="mx-auto max-w-3xl">
+      <TaskTemplateManager {...data} mode="recurring" />
+    </div>
+  </div>
 }
