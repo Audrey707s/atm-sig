@@ -75,6 +75,28 @@ A Next.js application for managing accounting tasks with Supabase Auth and Postg
 
 ## Checks
 
+### Gmail reminders without buying a domain
+
+The reminder scheduler also supports sending from a Gmail account through authenticated
+SMTP. In Vercel Production, configure `REMINDER_EMAIL_PROVIDER=gmail`, `GMAIL_USER`
+with the sender's Gmail address, and `GMAIL_APP_PASSWORD` as a Secret containing a
+Google App Password. Create that password directly in the owner's Google Account
+with 2-Step Verification enabled; never use the normal Google password or commit it.
+Redeploy after setting the variables. A partial configuration does not claim emails.
+
+Gmail sends as `GMAIL_USER`, so no Resend domain or `RESEND_FROM_EMAIL` is required.
+The existing 72-hour unanswered-reminder rule, PIC recipient, and database delivery
+tracking still apply. Gmail processes at most five queued emails per scheduler run;
+account sending quotas still apply. SMTP cannot guarantee exactly-once delivery if a
+connection fails after Gmail accepted a message but before the app recorded success.
+Test one controlled recipient before enabling an existing backlog. Supabase Auth
+confirmation/reset emails are configured separately from these task reminders.
+
+The default provider remains Resend for existing installations. To use it, keep
+`REMINDER_EMAIL_PROVIDER=resend` (or unset), `RESEND_API_KEY`, and a verified
+`RESEND_FROM_EMAIL`. The free `resend.dev` sender is limited to the Resend account
+owner's email and does not replace a production sender for all PICs.
+
 ```bash
 npm run lint
 npx tsc --noEmit
