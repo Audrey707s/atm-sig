@@ -7,6 +7,14 @@ export type ReminderEmail = {
   checkpoint_pct: number
 }
 
+export function reminderEmailText(reminder: ReminderEmail) {
+  return [
+    `Task "${reminder.task_title}" telah melewati checkpoint ${reminder.checkpoint_pct}%.`,
+    'Reminder ini belum mendapat tanggapan selama 72 jam kalender.',
+    'Silakan buka aplikasi Task Manager Accounting untuk memperbarui progres atau menanggapi reminder.',
+  ].join('\n\n')
+}
+
 export async function sendReminderEmail(
   reminder: ReminderEmail,
   apiKey: string,
@@ -23,11 +31,7 @@ export async function sendReminderEmail(
       from: fromEmail,
       to: [reminder.owner_email],
       subject: `Reminder ${reminder.checkpoint_pct}%: ${reminder.task_title}`,
-      text: [
-        `Task "${reminder.task_title}" telah melewati checkpoint ${reminder.checkpoint_pct}%.`,
-        'Reminder ini belum mendapat tanggapan selama 72 jam kalender.',
-        'Silakan buka aplikasi Task Manager Accounting untuk memperbarui progres atau menanggapi reminder.',
-      ].join('\n\n'),
+      text: reminderEmailText(reminder),
     }),
   })
 
