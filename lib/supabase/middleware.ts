@@ -1,5 +1,6 @@
 
 import { createServerClient } from '@supabase/ssr'
+import { isAuthSessionMissingError } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/lib/supabase/database.types'
 
@@ -71,7 +72,7 @@ export async function updateSession(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError) {
+    if (authError && !isAuthSessionMissingError(authError)) {
       console.error('Supabase getUser error:', authError.message)
     }
 

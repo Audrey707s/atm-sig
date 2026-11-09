@@ -1,3 +1,4 @@
+import { AuthSessionMissingError } from '@supabase/supabase-js'
 import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { updateSession } from './middleware'
@@ -46,6 +47,22 @@ describe('updateSession (FR-001)', () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe('https://atm.example/login')
+  })
+
+  it('allows the login page without logging an expected missing session as an error', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() })
+    const response = await updateSession(new NextRequest('https://atm.example/login'))
+    expect(response.status).toBe(200)
+    expect(log).not.toHaveBeenCalled()
+  })
+
+  it('still logs unexpected authentication failures and protects private pages', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getUser.mockResolvedValue({ data: { user: null }, error: { message: 'Auth service unavailable' } })
+    const response = await updateSession(new NextRequest('https://atm.example/tasks'))
+    expect(response.headers.get('location')).toBe('https://atm.example/login')
+    expect(log).toHaveBeenCalledWith('Supabase getUser error:', 'Auth service unavailable')
   })
 
   it('redirects an authenticated user away from the login page', async () => {
