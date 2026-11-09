@@ -16,7 +16,7 @@ async function getActiveRegistration(): Promise<ServiceWorkerRegistration> {
   if (registration.active?.state === 'activated') return registration
 
   const worker = registration.installing ?? registration.waiting ?? registration.active
-  if (!worker) throw new Error('Service Worker belum ditemukan. Muat ulang halaman lalu coba lagi.')
+  if (!worker) throw new Error('Notifikasi belum siap. Muat ulang halaman lalu coba lagi.')
   if (worker.state === 'activated') return registration
   // Capture the non-null worker in a separate binding for async callbacks.
   const activeCandidate: ServiceWorker = worker
@@ -24,7 +24,7 @@ async function getActiveRegistration(): Promise<ServiceWorkerRegistration> {
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => {
       activeCandidate.removeEventListener('statechange', onStateChange)
-      reject(new Error('Aktivasi Service Worker terlalu lama. Muat ulang halaman dan coba lagi.'))
+      reject(new Error('Persiapan notifikasi terlalu lama. Muat ulang halaman dan coba lagi.'))
     }, 15000)
     function onStateChange() {
       if (activeCandidate.state === 'activated') {
@@ -34,7 +34,7 @@ async function getActiveRegistration(): Promise<ServiceWorkerRegistration> {
       } else if (activeCandidate.state === 'redundant') {
         clearTimeout(timeout)
         activeCandidate.removeEventListener('statechange', onStateChange)
-        reject(new Error('Service Worker gagal diaktifkan. Muat ulang halaman.'))
+        reject(new Error('Notifikasi gagal disiapkan. Muat ulang halaman.'))
       }
     }
     activeCandidate.addEventListener('statechange', onStateChange)
@@ -55,11 +55,11 @@ export default function PushPermissionButton() {
     async function check() {
       if (!window.isSecureContext || !('Notification' in window) ||
           !('serviceWorker' in navigator) || !('PushManager' in window)) {
-        if (!cancelled) { setState('unsupported'); setMessage('Browser ini tidak mendukung Web Push. Gunakan Chrome Android melalui HTTPS.') }
+        if (!cancelled) { setState('unsupported'); setMessage('Browser ini belum mendukung notifikasi perangkat. Gunakan browser yang mendukung notifikasi.') }
         return
       }
       if (Notification.permission === 'denied') {
-        if (!cancelled) { setState('blocked'); setMessage('Notifikasi diblokir. Ubah izin notifikasi aplikasi di pengaturan Android/Chrome.') }
+        if (!cancelled) { setState('blocked'); setMessage('Notifikasi diblokir. Ubah izin notifikasi di pengaturan browser atau perangkat.') }
         return
       }
       try {
@@ -68,10 +68,10 @@ export default function PushPermissionButton() {
         if (cancelled) return
         setState(subscription ? 'subscribed' : 'not-subscribed')
         setMessage(subscription
-          ? 'Perangkat pernah berlangganan. Tekan Aktifkan untuk memastikan akun ini terhubung ke server.'
-          : 'Perangkat belum terdaftar. Tekan Aktifkan untuk mulai menerima push.')
+          ? 'Notifikasi sudah diizinkan pada perangkat ini. Tekan Aktifkan untuk menghubungkannya dengan akun Anda.'
+          : 'Perangkat belum terdaftar. Tekan Aktifkan untuk mulai menerima notifikasi.')
       } catch {
-        if (!cancelled) { setState('error'); setMessage('Service worker gagal dipasang. Periksa koneksi HTTPS dan instal ulang aplikasi jika perlu.') }
+        if (!cancelled) { setState('error'); setMessage('Notifikasi belum dapat disiapkan. Periksa koneksi, lalu muat ulang halaman.') }
       }
     }
     void check()
@@ -83,20 +83,20 @@ export default function PushPermissionButton() {
     const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
     if (!key || key.length < 60) {
       setState('error')
-      setMessage('Public key VAPID belum tersedia pada deployment ini. Administrator perlu menambahkan konfigurasi lalu deploy ulang.')
+      setMessage('Layanan notifikasi belum siap. Hubungi administrator.')
       return
     }
     if (!('Notification' in window) || !('serviceWorker' in navigator) ||
         !('PushManager' in window) || !window.isSecureContext) {
       setState('unsupported')
-      setMessage('Web Push tidak didukung pada browser/perangkat ini.')
+      setMessage('Notifikasi belum didukung pada browser atau perangkat ini.')
       return
     }
     setBusy(true)
     try {
       if (await Notification.requestPermission() !== 'granted') {
         setState('blocked')
-        setMessage('Izin notifikasi ditolak. Aktifkan izin notifikasi ATM di pengaturan Android.')
+        setMessage('Izin notifikasi ditolak. Aktifkan izin notifikasi ATM di pengaturan browser atau perangkat.')
         return
       }
       const registration = await getActiveRegistration()
@@ -113,15 +113,13 @@ export default function PushPermissionButton() {
         body: JSON.stringify(subscription.toJSON()),
       })
       if (!response.ok) {
-        const details = await response.json().catch(() => null)
-        throw new Error(typeof details?.error === 'string'
-          ? details.error : 'Server menolak pendaftaran (' + response.status + ')')
+        throw new Error('Pendaftaran notifikasi ditolak.')
       }
       setState('subscribed')
-      setMessage('Perangkat berhasil terdaftar pada server. Notifikasi baru akan dikirim saat pemicu push berjalan.')
-    } catch (error) {
+      setMessage('Notifikasi berhasil diaktifkan. Perangkat ini akan menerima notifikasi baru untuk akun Anda.')
+    } catch {
       setState('error')
-      setMessage('Pendaftaran gagal: ' + (error instanceof Error ? error.message : 'kesalahan tidak diketahui'))
+      setMessage('Notifikasi belum dapat diaktifkan. Periksa koneksi dan izin notifikasi, lalu coba lagi.')
     } finally {
       setBusy(false)
     }
@@ -129,20 +127,20 @@ export default function PushPermissionButton() {
 
   async function testLocalNotification() {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
-      setMessage('Izinkan notifikasi di Android terlebih dahulu sebelum mencoba tes lokal.')
+      setMessage('Izinkan notifikasi pada perangkat terlebih dahulu sebelum mencoba tes.')
       return
     }
     try {
       const registration = await getActiveRegistration()
       await registration.showNotification('Tes notifikasi ATM', {
-        body: 'Jika pesan ini muncul di panel Android, izin dan service worker berfungsi.',
+        body: 'Notifikasi ATM berhasil ditampilkan pada perangkat ini.',
         icon: '/icon.svg',
         tag: 'atm-local-test',
       })
-      setMessage('Tes lokal telah diminta. Periksa panel notifikasi Android. Tes ini tidak menggunakan Supabase atau VAPID.')
-    } catch (error) {
+      setMessage('Tes telah dikirim. Periksa panel notifikasi perangkat Anda.')
+    } catch {
       setState('error')
-      setMessage('Tes notifikasi lokal gagal: ' + (error instanceof Error ? error.message : 'kesalahan browser'))
+      setMessage('Tes notifikasi gagal. Periksa izin notifikasi, lalu coba lagi.')
     }
   }
 
@@ -163,9 +161,9 @@ export default function PushPermissionButton() {
       }
       setState('not-subscribed')
       setMessage('Notifikasi perangkat sudah dinonaktifkan.')
-    } catch (error) {
+    } catch {
       setState('error')
-      setMessage(error instanceof Error ? error.message : 'Gagal menonaktifkan perangkat.')
+      setMessage('Notifikasi belum dapat dinonaktifkan. Periksa koneksi, lalu coba lagi.')
     } finally {
       setBusy(false)
     }
@@ -174,7 +172,7 @@ export default function PushPermissionButton() {
   return (
     <div className="space-y-3">
       <div role="status" aria-live="polite" className="text-sm text-slate-700">
-        <span className="font-semibold">Status Android: </span>{message}
+        <span className="font-semibold">Status perangkat: </span>{message}
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={busy || state === 'unsupported'}
@@ -185,7 +183,7 @@ export default function PushPermissionButton() {
         <button type="button" disabled={busy || state === 'unsupported'}
           onClick={testLocalNotification}
           className="rounded-md border border-blue-300 px-4 py-2 text-sm font-medium text-blue-800 hover:bg-blue-50 disabled:opacity-50">
-          Tes notifikasi Android
+          Tes notifikasi perangkat
         </button>
         <button type="button" disabled={busy || state === 'unsupported'}
           onClick={unsubscribe}
@@ -194,7 +192,7 @@ export default function PushPermissionButton() {
         </button>
       </div>
       {state === 'subscribed' && <p className="text-xs text-slate-500">
-        Push hanya berlaku untuk notifikasi baru setelah perangkat terdaftar; notifikasi lama tetap ada di inbox web.
+        Perangkat menerima notifikasi baru setelah diaktifkan. Notifikasi sebelumnya tetap tersedia di kotak masuk aplikasi.
       </p>}
     </div>
   )

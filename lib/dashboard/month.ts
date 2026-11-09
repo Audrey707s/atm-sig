@@ -8,11 +8,12 @@ export function resolveDashboardMonth(
     return requestedMonth
   }
 
-  const pieces = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts(now)
+  const year = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta', year: 'numeric',
+  }).format(now)
+  const month = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta', month: '2-digit',
+  }).format(now)
 
-  return `${pieces.find((piece) => piece.type === 'year')?.value ?? '2026'}-${pieces.find((piece) => piece.type === 'month')?.value ?? '01'}`
+  return `${year}-${month}`
 }

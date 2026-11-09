@@ -48,8 +48,8 @@ try {
   assert.equal((await weekly('2026-10-22T01:02:00Z')).created_count,0)
   assert.equal((await run("select count(*)::int n from public.task_template_runs where outcome='created'"))[0].n,1)
   assert.equal((await run("select count(*)::int n from public.tasks where category_id is not null"))[0].n,1)
-  const next=(await run("select next_run_at at time zone 'Asia/Jakarta' as next from public.task_templates"))[0].next
-  assert.equal(new Date(next).toISOString(), '2026-10-29T08:00:00.000Z')
+  const next=(await run("select to_char(next_run_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS') as next from public.task_templates"))[0].next
+  assert.equal(next, '2026-10-29 08:00:00')
   const check=async time=>(await run("SELECT task_id,checkpoint_pct FROM public.process_task_reminder_checkpoints('"+time+"'::timestamptz) ORDER BY checkpoint_pct")).filter(x=>x.task_id==='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee').map(x=>x.checkpoint_pct)
   assert.deepEqual(await check('2026-10-21T23:00:00Z'),[])
   assert.deepEqual(await check('2026-10-22T00:00:00Z'),[50])

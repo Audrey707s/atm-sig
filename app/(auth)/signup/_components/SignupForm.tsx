@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 function signupErrorMessage(error: { code?: string; status?: number; message?: string }): string {
   switch (error.code) {
     case 'over_email_send_rate_limit':
-      return 'Batas pengiriman email konfirmasi tercapai. Tunggu sekitar satu jam lalu coba lagi, atau hubungi administrator untuk memasang SMTP khusus.'
+      return 'Batas pengiriman email konfirmasi tercapai. Coba lagi nanti atau hubungi administrator.'
     case 'over_request_rate_limit':
       return 'Terlalu banyak percobaan dalam waktu singkat. Tunggu beberapa menit lalu coba lagi.'
     case 'email_address_invalid':
@@ -17,9 +17,9 @@ function signupErrorMessage(error: { code?: string; status?: number; message?: s
       return 'Kata sandi terlalu lemah. Gunakan minimal 8 karakter dengan kombinasi huruf, angka, dan simbol.'
     case 'signup_disabled':
     case 'email_provider_disabled':
-      return 'Pendaftaran sedang dinonaktifkan di konfigurasi Supabase. Hubungi administrator.'
+      return 'Pendaftaran sedang dinonaktifkan. Hubungi administrator.'
     case 'unexpected_failure':
-      return 'Server gagal membuat akun (kemungkinan database belum lengkap). Hubungi administrator.'
+      return 'Akun belum dapat dibuat. Coba lagi nanti atau hubungi administrator.'
     default:
       return 'Pendaftaran belum dapat diproses. Periksa data dan coba lagi.'
   }
@@ -79,7 +79,7 @@ export default function SignupForm() {
           setError('Akun dibuat, tetapi sesi tidak dapat ditutup. Hubungi administrator sebelum melanjutkan.')
           return
         }
-        setError('Akun dibuat, tetapi konfirmasi email belum diwajibkan oleh konfigurasi Supabase. Hubungi administrator untuk memeriksa pengaturan sebelum masuk.')
+        setError('Akun dibuat, tetapi konfirmasi email belum dapat dilakukan. Hubungi administrator sebelum masuk.')
         return
       }
 

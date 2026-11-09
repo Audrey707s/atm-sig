@@ -49,7 +49,7 @@ export default async function UsersPage() {
         <div role="alert" className="rounded-xl border border-red-200 bg-white p-6">
           <h1 className="text-lg font-semibold text-slate-900">Data user gagal dimuat</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Data user atau usulan perubahan role tidak dapat dibaca. Periksa koneksi database dan migrasi Supabase, lalu coba lagi.
+            Data pengguna atau usulan perubahan role belum dapat dimuat. Muat ulang halaman atau coba lagi nanti.
           </p>
           <a
             href="/users"

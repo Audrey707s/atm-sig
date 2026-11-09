@@ -3,6 +3,7 @@ import { getSessionUser, requireRole } from '@/lib/auth/session'
 import { getPeriodWorkloads } from '@/lib/dashboard/period-workload'
 import WorkspaceTabs, { DASHBOARD_TABS } from '../_components/WorkspaceTabs'
 import CountUp from '@/app/_components/CountUp'
+import { resolveDashboardMonth } from '@/lib/dashboard/month'
 
 export const metadata: Metadata = { title: 'Evaluasi Kinerja' }
 
@@ -10,9 +11,7 @@ type Params = Promise<{ month?: string; mode?: string }>
 export default async function JobloadPage({ searchParams }: { searchParams: Params }) {
   const [user,params]=await Promise.all([getSessionUser(),searchParams])
   requireRole(user,'Manager')
-  const parts = new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',timeZone:'Asia/Jakarta'}).formatToParts(new Date())
-  const defaultMonth = (parts.find(p=>p.type==='year')?.value??'2026') + '-' + (parts.find(p=>p.type==='month')?.value??'01')
-  const month= params.month && /^(19|20)\d\d-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : defaultMonth
+  const month = resolveDashboardMonth(params.month)
   const mode=params.mode==='month'?'month':'all'
   const [year,mon]=month.split('-').map(Number)
   const nextMonth=mon===12 ? `${year+1}-01` : `${year}-${String(mon+1).padStart(2,'0')}`
