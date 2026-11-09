@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { AdminConfigurationError, createAdminClient } from '@/lib/supabase/admin'
-import { sendReminderEmail } from '@/lib/reminders/email'
+import { getReminderEmailSender } from '@/lib/reminders/email-provider'
 
 function hasValidCronAuthorization(request: Request, secret: string) {
   const authorization = request.headers.get('authorization')
@@ -48,9 +48,8 @@ export async function POST(request: Request) {
   const taskTemplatesSkipped = templateRuns?.[0]?.skipped_count ?? 0
 
   const created = data?.length ?? 0
-  const apiKey = process.env.RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL
-  if (!apiKey || !fromEmail) {
+  const emailSender = getReminderEmailSender()
+  if (!emailSender) {
     // In-app and Android push reminders are independent of email.
     // Report the disabled email channel explicitly without marking successful
     // checkpoint/template processing as a failed cron execution.
@@ -67,7 +66,7 @@ export async function POST(request: Request) {
   const now = new Date().toISOString()
   const { data: reminders, error: claimError } = await supabase.rpc('claim_due_reminder_emails', {
     p_now: now,
-    p_batch_size: 50,
+    p_batch_size: emailSender.batchSize,
   })
   if (claimError) {
     console.error('Reminder email claim RPC failed', claimError)
@@ -77,11 +76,11 @@ export async function POST(request: Request) {
   let emailsSent = 0
   let emailFailures = 0
   for (const reminder of reminders ?? []) {
-    let delivery: Awaited<ReturnType<typeof sendReminderEmail>>
+    let delivery: Awaited<ReturnType<typeof emailSender.send>>
     try {
-      delivery = await sendReminderEmail(reminder, apiKey, fromEmail)
-    } catch (error) {
-      console.error('Reminder email request failed', error)
+      delivery = await emailSender.send(reminder)
+    } catch {
+      console.error('Reminder email request failed', { reminderId: reminder.reminder_id })
       emailFailures += 1
       continue
     }
