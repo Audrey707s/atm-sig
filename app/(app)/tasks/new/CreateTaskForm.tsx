@@ -107,7 +107,6 @@ export default function CreateTaskForm({
           ← Kembali ke daftar task
         </Link>
         <h1 className="mt-3 text-xl font-bold tracking-tight text-slate-900">BUAT TASK BARU</h1>
-        <p className="mt-1 text-sm text-slate-500">Isi PIC, section, prioritas, dan timeline task.</p>
       </div>
 
       {initialTask && <p role="status" className="mb-4 rounded-lg border border-slate-200 p-3 text-sm">Judul dan prioritas disalin. Pilih PIC dan tanggal baru sebelum menyimpan.</p>}
@@ -167,7 +166,6 @@ export default function CreateTaskForm({
           {currentUserRoleLevel === 2 && supportRecipients.length > 0 && (
             <fieldset className="space-y-3 rounded-lg border border-slate-200 p-4">
               <legend className="px-1 text-sm font-semibold text-slate-700">Support awal (opsional)</legend>
-              <p className="text-xs text-slate-500">Disimpan dalam transaksi yang sama bersama task dan WBS.</p>
               <label className="block text-sm text-slate-700">Dibutuhkan dari
                 <select name="supportId" defaultValue="" className={inputClass}>
                   <option value="">Tidak memerlukan support</option>
