@@ -42,8 +42,6 @@ export type TaskFilters = {
   dueFrom?: string | null
   dueTo?: string | null
   progressPct?: number | null
-  reviewerId?: string | null
-  attention?: 'active' | 'overdue' | 'assigned-review'
   page?: number
   pageSize?: number
 }
@@ -217,8 +215,6 @@ function validateTaskFilters(filters: TaskFilters): TaskFilters {
   ) {
     throw new Error('Filter prioritas task tidak valid.')
   }
-  if (filters.reviewerId && !isValidUuid(filters.reviewerId)) throw new Error('Filter reviewer tidak valid.')
-  if (filters.attention && !['active', 'overdue', 'assigned-review'].includes(filters.attention)) throw new Error('Filter tindakan tidak valid.')
   if (filters.ownerId && !isValidUuid(filters.ownerId)) {
     throw new Error('Filter PIC task tidak valid.')
   }
@@ -318,15 +314,9 @@ export async function getTaskList(
       { count: 'exact' },
     )
     .order('due_date', { ascending: true })
-    .order('id', { ascending: true })
     .range(from, to)
 
   if (scopeFilter) query = query.or(scopeFilter)
-
-  if (filters.reviewerId) query = query.eq('reviewer_id', filters.reviewerId)
-  if (filters.attention === 'assigned-review') query = query.eq('status', 'Review')
-  if (filters.attention === 'active' || filters.attention === 'overdue') query = query.neq('status', 'Done')
-  if (filters.attention === 'overdue') query = query.lt('due_date', new Date().toISOString())
 
   // Filter status
   if (filters.status) {
