@@ -29,6 +29,8 @@ describe('getTaskList (FR-029)', () => {
     eq: ReturnType<typeof vi.fn>
     ilike: ReturnType<typeof vi.fn>
     gte: ReturnType<typeof vi.fn>
+    neq: ReturnType<typeof vi.fn>
+    lt: ReturnType<typeof vi.fn>
     lte: ReturnType<typeof vi.fn>
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => Promise<unknown>
   }
@@ -45,6 +47,8 @@ describe('getTaskList (FR-029)', () => {
       ilike: vi.fn(() => query),
       gte: vi.fn(() => query),
       lte: vi.fn(() => query),
+      neq: vi.fn(() => query),
+      lt: vi.fn(() => query),
       then: (resolve, reject) => Promise.resolve({
         data: [{
           id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
@@ -67,6 +71,17 @@ describe('getTaskList (FR-029)', () => {
       }).then(resolve, reject),
     }
     createClient.mockResolvedValue({ from: vi.fn(() => query) })
+  })
+
+  it('keeps overdue and assigned review filters within the authenticated scope', async () => {
+    await getTaskList(user, { attention: 'overdue' })
+    expect(query.or).toHaveBeenCalledWith(expect.stringContaining('org_unit_id'))
+    expect(query.neq).toHaveBeenCalledWith('status', 'Done')
+    expect(query.lt).toHaveBeenCalledWith('due_date', expect.any(String))
+    await getTaskList(user, { attention: 'assigned-review', reviewerId: user.id })
+    expect(query.eq).toHaveBeenCalledWith('reviewer_id', user.id)
+    expect(query.eq).toHaveBeenCalledWith('status', 'Review')
+    expect(query.order).toHaveBeenCalledWith('id', { ascending: true })
   })
 
   describe('getPendingDeadlineRequests (FR-061)', () => {

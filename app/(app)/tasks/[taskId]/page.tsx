@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getSessionUser } from '@/lib/auth/session'
@@ -28,6 +29,8 @@ export default async function TaskDetailPage({
   ])
 
   return (
+    <>
+    {user.roleLevel >= 2 && <div className="flex justify-end px-4 pt-4 sm:px-6 lg:px-8"><Link href={`/tasks/new?duplicate=${task.id}`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Duplikasi tugas</Link></div>}
     <TaskDetailClient
       task={task}
       currentUserId={user.id}
@@ -35,5 +38,6 @@ export default async function TaskDetailPage({
       supportRecipients={supportRecipients}
       reassignmentOptions={(creationOptions?.owners ?? []).filter((owner) => owner.id !== task.ownerId)}
     />
+    </>
   )
 }

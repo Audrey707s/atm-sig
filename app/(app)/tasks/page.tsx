@@ -8,6 +8,8 @@ import { getSessionUser } from '@/lib/auth/session'
 import { getTaskFilterOptions, getTaskList } from '@/lib/tasks/queries'
 import { StatusBadge, PriorityBadge, ProgressBar } from '../_components/ui/Badges'
 import Link from 'next/link'
+import TaskListTools from './TaskListTools'
+import { parseTaskListFilters } from '@/lib/tasks/list-filters'
 import type { TaskStatus } from '@/lib/constants/rbac'
 
 export const metadata: Metadata = { title: 'Daftar Tugas' }
@@ -23,6 +25,8 @@ type SearchParams = {
   dueMonth?: string
   progress?: string
   page?: string
+  view?: string
+  density?: string
 }
 
 function formatDate(iso: string): string {
@@ -32,14 +36,6 @@ function formatDate(iso: string): string {
     year: 'numeric',
     timeZone: 'Asia/Jakarta',
   }).format(new Date(iso))
-}
-
-function isValidStatus(s: string): s is TaskStatus {
-  return ['To do', 'In progress', 'Blocked', 'Review', 'Revisi', 'Done'].includes(s)
-}
-
-function isValidPriority(s: string): s is 'rendah' | 'sedang' | 'tinggi' {
-  return ['rendah', 'sedang', 'tinggi'].includes(s)
 }
 
 const STATUS_OPTIONS: Array<{ value: TaskStatus | ''; label: string }> = [
@@ -59,41 +55,18 @@ export default async function TasksPage({
 }) {
   const [params, user] = await Promise.all([searchParams, getSessionUser()])
 
-  const statusFilter = params.status && isValidStatus(params.status) ? params.status : null
-  const priorityFilter =
-    params.priority && isValidPriority(params.priority) ? params.priority : null
-  const searchFilter = params.search || null
-  const sectionFilter = params.section && /^\d+$/.test(params.section)
-    ? Number(params.section)
-    : null
-  const isMine = user.roleLevel < 3 || params.mine === '1'
-  const ownerFilter = isMine ? user.id : params.owner || null
-  const monthFilter = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : null
-  const createdFromFilter = monthFilter ? `${monthFilter}-01` : null
-  const createdToFilter = monthFilter
-    ? new Date(Date.UTC(Number(monthFilter.slice(0, 4)), Number(monthFilter.slice(5, 7)), 0)).toISOString().slice(0, 10)
-    : null
-  const dueMonthFilter = params.dueMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.dueMonth) ? params.dueMonth : null
-  const dueFromFilter = dueMonthFilter ? `${dueMonthFilter}-01` : null
-  const dueToFilter = dueMonthFilter
-    ? new Date(Date.UTC(Number(dueMonthFilter.slice(0, 4)), Number(dueMonthFilter.slice(5, 7)), 0)).toISOString().slice(0, 10)
-    : null
-  const progressFilter = params.progress !== undefined && /^\d{1,3}$/.test(params.progress) && Number(params.progress) <= 100 ? Number(params.progress) : null
-  const page = parseInt(params.page ?? '1', 10)
+  const { filters, mine: isMine } = parseTaskListFilters(params, user)
+  const { status: statusFilter, priority: priorityFilter, search: searchFilter, orgUnitId: sectionFilter,
+    ownerId: ownerFilter, progressPct: progressFilter } = filters
+  const monthFilter = filters.createdFrom?.slice(0, 7)
+  const dueMonthFilter = filters.dueFrom?.slice(0, 7)
+  const page = filters.page ?? 1
+  const currentQuery = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) if (typeof value === 'string') currentQuery.set(key, value)
+  if (isMine) currentQuery.set('mine', '1')
 
   const [{ items: tasks, total }, filterOptions] = await Promise.all([
-    getTaskList(user, {
-      status: statusFilter,
-      priority: priorityFilter,
-      search: searchFilter,
-      orgUnitId: sectionFilter,
-      ownerId: ownerFilter,
-      dueFrom: dueFromFilter ?? createdFromFilter,
-      dueTo: dueToFilter ?? createdToFilter,
-      progressPct: progressFilter,
-      page,
-      pageSize: 20,
-    }),
+    getTaskList(user, filters),
     user.roleLevel===2 ? Promise.resolve({sections:[],owners:[]}) : getTaskFilterOptions(user),
   ])
 
@@ -102,6 +75,8 @@ export default async function TasksPage({
   function buildHref(overrides: Partial<SearchParams>) {
     const merged = { ...params, ...overrides }
     const qs = new URLSearchParams()
+    if (merged.view) qs.set('view', merged.view)
+    if (merged.density) qs.set('density', merged.density)
     if (merged.status) qs.set('status', merged.status)
     if (merged.priority) qs.set('priority', merged.priority)
     if (merged.search) qs.set('search', merged.search)
@@ -143,27 +118,14 @@ export default async function TasksPage({
         )}
       </div>
 
+      <TaskListTools key={`${user.id}:${currentQuery}`} userId={user.id} query={currentQuery.toString()} mine={isMine} roleLevel={user.roleLevel} />
       {/* Tabel task */}
-      {tasks.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
-          <p className="text-sm text-slate-400">
-            {searchFilter || statusFilter
-              ? 'Tidak ada tugas yang sesuai filter.'
-              : 'Belum ada tugas.'}
-          </p>
-          {user.roleLevel >= 3 && (
-            <Link
-              href="/tasks/new"
-              className="inline-block mt-4 text-sm font-medium text-[var(--color-brand)] hover:underline"
-            >
-              Buat tugas baru →
-            </Link>
-          )}
-        </div>
-      ) : (
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-          <form id="task-table-filter" action="/tasks" method="get" />
+          <form id="task-table-filter" action="/tasks" method="get">
+            {params.view && <input type="hidden" name="view" value={params.view} />}
+            {params.density && <input type="hidden" name="density" value={params.density} />}
+          </form>
           <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">Daftar Tugas</h2>
             <div className="flex items-center gap-2">
@@ -171,20 +133,21 @@ export default async function TasksPage({
               <Link href={isMine?"/tasks?mine=1":"/tasks"} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Reset</Link>
             </div>
           </div>
-          <table className="w-full min-w-[1160px] border-collapse text-left text-xs">
+          <table className={`w-full min-w-[1160px] border-collapse text-left text-xs ${params.density === 'compact' ? '[&_tbody_td]:!py-2' : ''}`}>
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/60 text-[11px] font-semibold tracking-wider text-slate-500">
-                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL DIBUAT"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan tenggat tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</TableFilterMenu></th>
+                <th className="px-4 py-3"><TableFilterMenu label="TANGGAL DIBUAT"><input form="task-table-filter" type="month" name="month" defaultValue={monthFilter ?? ''} aria-label="Filter bulan pembuatan tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" />{isMine&&<input form="task-table-filter" type="hidden" name="mine" value="1" />}</TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="TUGAS"><input form="task-table-filter" type="search" name="search" maxLength={100} defaultValue={searchFilter ?? ''} placeholder="Cari judul" aria-label="Cari judul tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="PIC">{user.roleLevel>=3?<select form="task-table-filter" name="owner" defaultValue={ownerFilter ?? ''} aria-label="Filter PIC" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua PIC</option>{filterOptions.owners.map(owner=><option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>:<span className="text-xs text-slate-500">Akun Anda</span>}</TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="SEKSI">{user.roleLevel>=3?<select form="task-table-filter" name="section" defaultValue={sectionFilter ?? ''} aria-label="Filter seksi" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua seksi</option>{filterOptions.sections.map(section=><option key={section.id} value={section.id}>{section.name}</option>)}</select>:<span className="text-xs text-slate-500">Seksi Anda</span>}</TableFilterMenu></th>
-                <th className="px-4 py-3">TENGGAT</th>
+                <th className="px-4 py-3"><TableFilterMenu label="TENGGAT"><input form="task-table-filter" type="month" name="dueMonth" defaultValue={dueMonthFilter ?? ''} aria-label="Filter bulan tenggat tugas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="PRIORITAS"><select form="task-table-filter" name="priority" defaultValue={priorityFilter ?? ''} aria-label="Filter prioritas" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal"><option value="">Semua</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="KEMAJUAN"><input form="task-table-filter" type="number" name="progress" min={0} max={100} step={1} defaultValue={progressFilter ?? ''} placeholder="0–100" aria-label="Filter kemajuan 0 sampai 100 persen" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal" /></TableFilterMenu></th>
                 <th className="px-4 py-3"><TableFilterMenu label="STATUS"><select form="task-table-filter" name="status" defaultValue={statusFilter ?? ''} aria-label="Filter status" className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-normal">{STATUS_OPTIONS.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></TableFilterMenu></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
+              {tasks.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">Tidak ada tugas yang sesuai filter. Ubah filter atau pilih Reset.</td></tr>}
               {tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">{formatDate(task.createdAt)}</td>
@@ -253,7 +216,6 @@ export default async function TasksPage({
             </div>
           )}
         </div>
-      )}
     </div>
   )
 }
