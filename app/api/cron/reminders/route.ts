@@ -20,6 +20,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Akses scheduler ditolak.' }, { status: 401 })
   }
 
+  // A controlled SMTP test uses only the configured sender's own mailbox.
+  // It neither claims reminders nor creates/updates application data.
+  if (new URL(request.url).searchParams.get('test_email') === '1') {
+    const sender = getReminderEmailSender()
+    if (!sender?.sendTest) {
+      return NextResponse.json({ error: 'Email tes Gmail belum dikonfigurasi.' }, { status: 503 })
+    }
+    try {
+      const delivery = await sender.sendTest()
+      return NextResponse.json({ emailTest: delivery.ok ? 'accepted' : 'failed' },
+        { status: delivery.ok ? 200 : 502 })
+    } catch {
+      return NextResponse.json({ emailTest: 'failed' }, { status: 502 })
+    }
+  }
+
   let supabase: ReturnType<typeof createAdminClient>
   try {
     supabase = createAdminClient()
