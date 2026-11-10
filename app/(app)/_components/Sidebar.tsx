@@ -14,6 +14,7 @@ const GROUPS: NavGroup[] = [
   ] },
   { heading: 'INPUT', items: [
     { label: 'Pekerjaan', href: '/tasks', minLevel: 1, routes: ['/tasks', '/kanban', '/timeline'], icon: 'tasks' },
+    { label: 'Kalender', href: '/calendar', minLevel: 1, routes: ['/calendar'], icon: 'calendar' },
     { label: 'Persetujuan', href: '/review-inbox', minLevel: 3, routes: ['/review-inbox', '/approvals'], icon: 'approval' },
   ] },
   { heading: 'REPORT', items: [
