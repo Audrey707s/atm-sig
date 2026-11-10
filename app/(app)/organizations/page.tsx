@@ -47,7 +47,6 @@ export default async function OrganizationsPage() {
   return <main className="w-full space-y-5 px-4 py-5 sm:px-6 lg:px-8">
     <WorkspaceTabs current="/organizations" tabs={MASTER_TABS} roleLevel={user.roleLevel}/>
     <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Organizations</h1>
-    <p className="text-sm text-[var(--color-text-secondary)]">Hierarki LV1 → LV2 → LV3 dan penanggung jawab berdasarkan relasi supervisor yang tercatat.</p>
     <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
       <table className="w-full min-w-[850px] text-left text-sm">
         <thead><tr>{['Organisasi','Level','Pengguna','Role','Atasan Langsung','Manager','SM'].map(x=><th key={x} className="px-3 py-3">{x}</th>)}</tr></thead>
