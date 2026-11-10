@@ -32,7 +32,7 @@ it('uses authenticated TLS Gmail SMTP and sends only to the PIC', async () => {
     auth: { user: 'owner@gmail.com', pass: 'abcdefghijklmnop' },
   }))
   expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
-    from: { name: 'ATM Accounting', address: 'owner@gmail.com' },
+    from: { name: 'ATM-SIG', address: 'owner@gmail.com' },
     to: [{ address: 'pic@example.test' }],
     messageId: `<task-reminder-${reminder.reminder_id}@gmail.com>`,
   }))
@@ -67,4 +67,15 @@ it('rejects multiple-recipient input before connecting to SMTP', async () => {
   await expect(getReminderEmailSender()!.send({ ...reminder, owner_email: 'pic@example.test,other@example.test' }))
     .resolves.toEqual({ ok: false, status: 422 })
   expect(createTransport).not.toHaveBeenCalled()
+})
+
+it('sends a clearly labelled self-test only to the configured sender', async () => {
+  sendMail.mockResolvedValue({ accepted: ['owner@gmail.com'] })
+  await expect(getReminderEmailSender()!.sendTest!()).resolves.toEqual({ ok: true, status: 200 })
+  expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
+    from: { name: 'ATM-SIG', address: 'owner@gmail.com' },
+    to: [{ address: 'owner@gmail.com' }],
+    subject: 'Tes email ATM-SIG',
+    text: expect.stringContaining('bukan reminder tugas'),
+  }))
 })
