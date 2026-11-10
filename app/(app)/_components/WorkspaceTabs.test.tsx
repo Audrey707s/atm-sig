@@ -3,9 +3,15 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 afterEach(() => cleanup())
-import WorkspaceTabs, { APPROVAL_TABS, WORK_TABS } from './WorkspaceTabs'
+import WorkspaceTabs, { APPROVAL_TABS, WORK_TABS, MASTER_TABS } from './WorkspaceTabs'
 
 describe('Grouped workspace tabs (audit R.03)', () => {
+  it.each([1, 2, 3, 4, 5, 6])('exposes Organizations to role level %i without privileged user management', roleLevel => {
+    render(<WorkspaceTabs current="/organizations" tabs={MASTER_TABS} roleLevel={roleLevel} />)
+    expect(screen.getByRole('link', { name: 'Organizations' }).getAttribute('aria-current')).toBe('page')
+    if (roleLevel < 3) expect(screen.queryByRole('link', { name: 'Pengguna' })).toBeNull()
+  })
+
   it('shows PIC task views without privileged approval', () => {
     render(<WorkspaceTabs current="/tasks?mine=1" tabs={WORK_TABS} roleLevel={2} />)
     expect(screen.getByRole('link', { name: 'Tugas Saya' }).getAttribute('aria-current')).toBe('page')
