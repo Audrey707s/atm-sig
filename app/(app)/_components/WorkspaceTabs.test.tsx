@@ -3,9 +3,33 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 afterEach(() => cleanup())
-import WorkspaceTabs, { APPROVAL_TABS, WORK_TABS, MASTER_TABS } from './WorkspaceTabs'
+import WorkspaceTabs, { APPROVAL_TABS, WORK_TABS, MASTER_TABS, PIC_MASTER_TABS, MASTER_USER_TABS, DASHBOARD_TABS, REPORT_TABS } from './WorkspaceTabs'
 
 describe('Grouped workspace tabs (audit R.03)', () => {
+  it('uses a single master-data order for every page alias', () => {
+    expect(PIC_MASTER_TABS).toBe(MASTER_TABS)
+    expect(MASTER_USER_TABS).toBe(MASTER_TABS)
+  })
+  it.each([1, 2, 3, 4, 5, 6])('keeps master-data navigation stable across pages for role %i', roleLevel => {
+    const expected = ['Profil', 'Organizations', ...(roleLevel >= 2 ? ['Kategori Tasks'] : []), ...(roleLevel >= 3 ? ['Pengguna'] : [])]
+    const view = render(<WorkspaceTabs current="/account" tabs={MASTER_TABS} roleLevel={roleLevel} />)
+    for (const current of ['/account', '/organizations', '/task-templates', '/users']) {
+      view.rerender(<WorkspaceTabs current={current} tabs={MASTER_TABS} roleLevel={roleLevel} />)
+      expect(screen.getAllByRole('link').map(link => link.textContent)).toEqual(expected)
+    }
+  })
+  it.each([
+    { tabs: WORK_TABS, labels: ['Tugas Saya', 'Tugas Tim', 'Papan Tugas', 'Linimasa'] },
+    { tabs: DASHBOARD_TABS, labels: ['Ringkasan', 'Evaluasi Kinerja'] },
+    { tabs: APPROVAL_TABS, labels: ['Tinjauan Tugas', 'Persetujuan Tenggat'] },
+    { tabs: REPORT_TABS, labels: ['Laporan Task', 'Catatan Audit'] },
+  ])('keeps other workspace tabs in place when the active page changes: $labels', ({ tabs, labels }) => {
+    const view = render(<WorkspaceTabs current={tabs[0].href} tabs={tabs} roleLevel={6} />)
+    for (const tab of tabs) {
+      view.rerender(<WorkspaceTabs current={tab.href} tabs={tabs} roleLevel={6} />)
+      expect(screen.getAllByRole('link').map(link => link.textContent)).toEqual(labels)
+    }
+  })
   it.each([1, 2, 3, 4, 5, 6])('exposes Organizations to role level %i without privileged user management', roleLevel => {
     render(<WorkspaceTabs current="/organizations" tabs={MASTER_TABS} roleLevel={roleLevel} />)
     expect(screen.getByRole('link', { name: 'Organizations' }).getAttribute('aria-current')).toBe('page')
