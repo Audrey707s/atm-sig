@@ -203,8 +203,8 @@ export default function TaskTemplateManager({
   const sectionById = new Map(sections.map((section) => [section.id, section]))
 
   return (
-    <div className="w-full space-y-6 px-4 pt-5 pb-6 sm:px-6 lg:px-8">
-      <header className="pt-1">
+    <div className={`w-full space-y-6 px-4 pb-6 sm:px-6 lg:px-8 ${mode === 'categories' ? 'pt-0' : 'pt-5'}`}>
+      <header className={mode === 'categories' ? undefined : 'pt-1'}>
         <h1 className="text-xl font-bold text-slate-900">{mode==='categories'?'Kategori Tugas':'Tugas Berulang'}</h1>
         {mode!=='categories'&&<p className="mt-1 text-sm text-slate-600">Atur tugas yang otomatis dibuat setiap minggu atau bulan sesuai jadwal penugasan.</p>}
       </header>
