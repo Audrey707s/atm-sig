@@ -7,7 +7,7 @@ import { createTask } from '@/lib/tasks/actions'
 import type { TaskCreationOptions, TaskSupportRecipient } from '@/lib/tasks/queries'
 import { toJakartaTimestamp } from '@/lib/tasks/dates'
 
-type Props = TaskCreationOptions & { initialTask?: { title: string; priority: string }; currentUserRoleLevel: number; currentUserId: string; supportRecipients: TaskSupportRecipient[] }
+type Props = TaskCreationOptions & { currentUserRoleLevel: number; currentUserId: string; supportRecipients: TaskSupportRecipient[] }
 
 const inputClass = 'mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600'
 
@@ -28,7 +28,6 @@ export default function CreateTaskForm({
   supportRecipients,
   currentUserRoleLevel,
   currentUserId,
-  initialTask,
 }: Props) {
   const router = useRouter()
   const [sectionId, setSectionId] = useState(String(sections[0]?.id ?? ''))
@@ -110,7 +109,6 @@ export default function CreateTaskForm({
         <p className="mt-1 text-sm text-slate-500">Isi PIC, section, prioritas, dan timeline task.</p>
       </div>
 
-      {initialTask && <p role="status" className="mb-4 rounded-lg border border-slate-200 p-3 text-sm">Judul dan prioritas disalin. Pilih PIC dan tanggal baru sebelum menyimpan.</p>}
       {sections.length === 0 ? (
         <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Tidak ada section dalam cakupan Anda yang dapat dipilih untuk task baru.
@@ -119,7 +117,7 @@ export default function CreateTaskForm({
         <form onSubmit={submit} className="grid gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <label className="text-sm font-medium text-slate-700">
             Judul task
-            <input className={inputClass} name="title" required maxLength={200} defaultValue={initialTask?.title ?? ''} />
+            <input className={inputClass} name="title" required maxLength={200} />
           </label>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -189,7 +187,7 @@ export default function CreateTaskForm({
           <div className="grid gap-5 sm:grid-cols-3">
             <label className="text-sm font-medium text-slate-700">
               Prioritas
-              <select className={inputClass} name="priority" defaultValue={initialTask?.priority ?? 'sedang'}>
+              <select className={inputClass} name="priority" defaultValue="sedang">
                 <option value="rendah">Rendah</option>
                 <option value="sedang">Sedang</option>
                 <option value="tinggi">Tinggi</option>
