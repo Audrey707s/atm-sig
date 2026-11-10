@@ -213,6 +213,28 @@ describe('reminder scheduler endpoint', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
+  it('self-tests Gmail without claiming reminders or accessing application data', async () => {
+    vi.stubEnv('REMINDER_EMAIL_PROVIDER', 'gmail')
+    vi.stubEnv('GMAIL_USER', 'owner@gmail.com')
+    vi.stubEnv('GMAIL_APP_PASSWORD', 'abcdefghijklmnop')
+    sendMail.mockResolvedValue({ accepted: ['owner@gmail.com'] })
+    const response = await POST(new Request('https://example.test/api/cron/reminders?test_email=1', {
+      method: 'POST', headers: { authorization: 'Bearer test-cron-secret' },
+      body: JSON.stringify({ to: 'ignored@example.test' }),
+    }))
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ emailTest: 'accepted' })
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: [{ address: 'owner@gmail.com' }] }))
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('does not send a self-test without cron authentication', async () => {
+    const response = await POST(new Request('https://example.test/api/cron/reminders?test_email=1', { method: 'POST' }))
+    expect(response.status).toBe(401)
+    expect(sendMail).not.toHaveBeenCalled()
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
   it('reports provider errors and leaves the claim to expire before retry', async () => {
     const reminder = {
       reminder_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
