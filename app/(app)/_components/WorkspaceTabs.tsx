@@ -32,10 +32,11 @@ export const APPROVAL_TABS: Tab[] = [
 export const MASTER_TABS: Tab[] = [
   { label: 'Profil', icon: 'user', href: '/account' },
   { label: 'Pengguna', icon: 'user', href: '/users', minLevel: 3 },
-  { label: 'Organizations', icon: 'structure', href: '/organizations', minLevel: 3 },
+  { label: 'Organizations', icon: 'structure', href: '/organizations' },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates', minLevel: 2 },
 ]
 export const PIC_MASTER_TABS: Tab[] = [
+  { label: 'Organizations', icon: 'structure', href: '/organizations' },
   { label: 'Profil', icon: 'user', href: '/account' },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates' },
 ]
