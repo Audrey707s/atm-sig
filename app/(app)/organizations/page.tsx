@@ -1,16 +1,18 @@
 import type { Metadata } from 'next'
-import { getSessionUser, requireRole } from '@/lib/auth/session'
+import { getSessionUser } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import WorkspaceTabs, { MASTER_TABS } from '../_components/WorkspaceTabs'
-import OrgManagement from '../org-structure/OrgManagement'
 
 export const metadata: Metadata = { title: 'Organizations' }
 type Unit = { id:number; name:string; type:'department'|'unit'|'section'; parent_id:number|null }
 type Member = { id:string; name:string; org_unit_id:number; supervisor_id:string|null; role_id:number }
 export default async function OrganizationsPage() {
   const user=await getSessionUser()
-  requireRole(user,'Manager')
-  const supabase=await createClient()
+  // Spectator's direct Data API remains restricted to their own profile.
+  // This authenticated, read-only directory exposes only the selected public
+  // organization fields below, never email, credentials, or task data.
+  const supabase=user.roleLevel===1 ? createAdminClient() : await createClient()
   const [{data:rawUnits,error:unitError},{data:members,error:memberError},{data:roles,error:roleError}]=await Promise.all([
     supabase.from('org_units').select('id,name,type,parent_id').order('name'),
     supabase.from('users').select('id,name,org_unit_id,supervisor_id,role_id').eq('status','aktif'),
@@ -46,7 +48,6 @@ export default async function OrganizationsPage() {
     <WorkspaceTabs current="/organizations" tabs={MASTER_TABS} roleLevel={user.roleLevel}/>
     <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Organizations</h1>
     <p className="text-sm text-[var(--color-text-secondary)]">Hierarki LV1 → LV2 → LV3 dan penanggung jawab berdasarkan relasi supervisor yang tercatat.</p>
-    {user.roleLevel===6&&<OrgManagement units={ordered}/>}
     <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
       <table className="w-full min-w-[850px] text-left text-sm">
         <thead><tr>{['Organisasi','Level','Pengguna','Role','Atasan Langsung','Manager','SM'].map(x=><th key={x} className="px-3 py-3">{x}</th>)}</tr></thead>
