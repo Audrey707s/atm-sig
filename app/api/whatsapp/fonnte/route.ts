@@ -8,7 +8,7 @@ function authorized(request:Request) {
   return equalSecret(new URL(request.url).searchParams.get('key')??'',process.env.FONNTE_WEBHOOK_SECRET??'')
 }
 export async function GET(request:Request) {
-  return new Response(null,{status:authorized(request)?204:401,headers})
+  return new Response(null,{status:authorized(request)?200:401,headers})
 }
 export async function POST(request:Request) {
   if(!authorized(request)) return new Response('Unauthorized',{status:401,headers})
@@ -16,8 +16,14 @@ export async function POST(request:Request) {
   let incoming
   try { incoming=parseFonnteIncoming(JSON.parse(new TextDecoder().decode(await readWebhookBody(request,32_768))),process.env.FONNTE_BOT_NUMBER??'') }
   catch { return new Response('Invalid payload',{status:400,headers}) }
-  if(!incoming) return new Response(null,{status:204,headers})
-  const {error}=await channelStore().rpc('wa_receive',{p_id:incoming.id,p_sender:incoming.sender,p_command:incoming.command,p_hash:incoming.codeHash})
+  if(!incoming) return Response.json({accepted:false},{headers})
+  const taskCommandsEnabled=process.env.WHATSAPP_TASK_COMMANDS_ENABLED==='true'
+  const legacyCommands=['link','help','stop','start','disconnect']
+  const command=taskCommandsEnabled||legacyCommands.includes(incoming.command)?incoming.command:'help'
+  const args={p_id:incoming.id,p_sender:incoming.sender,p_command:command,p_hash:incoming.codeHash}
+  const {error}=taskCommandsEnabled
+    ? await channelStore().rpc('wa_receive_task',{...args,p_args:incoming.args})
+    : await channelStore().rpc('wa_receive',args)
   if(error) return new Response('Not accepted',{status:503,headers})
   // Only ACK after the receipt and reply are durably committed together.
   after(async()=>{try{await deliverPendingWhatsApp()}catch{/* durable pending rows remain for scheduler recovery */}})

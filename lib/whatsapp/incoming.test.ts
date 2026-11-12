@@ -17,3 +17,20 @@ describe('Fonnte incoming validation',()=>{
   ])('rejects invalid or stale messages %j',change=>expect(parseFonnteIncoming({...base,...change},device,now)).toBeNull())
   it('accepts millisecond timestamps',()=>expect(parseFonnteIncoming({...base,timestamp:now},device,now)).not.toBeNull())
 })
+
+describe('WhatsApp structured task commands',()=>{
+  const taskId='33333333-3333-4333-8333-333333333333'
+  it.each([
+    ['TUGAS','tasks',{page:1}],['TUGAS 2','tasks',{page:2}],['REVIEW','reviews',{page:1}],
+    ['KALENDER 3','calendar',{page:3}],['LAPORAN','report',{}],['BATAL','cancel',{}],
+    ['DETAIL '+taskId,'detail',{taskId}],['PROGRES '+taskId+' 55%','progress',{taskId,progress:55}],
+    ['PROGRES '+taskId+' 0','progress',{taskId,progress:0}],['PROGRES '+taskId+' 100','progress',{taskId,progress:100}],
+    ['KONFIRMASI ABCDEF123456','confirm',{token:'abcdef123456'}],
+  ])('parses %s', (message,command,args)=>{
+    const parsed=parseFonnteIncoming({...base,message},device,now)
+    expect(parsed?.command).toBe(command);expect(parsed?.args).toEqual(args)
+  })
+  it.each(['TUGAS 0','TUGAS -1','TUGAS 1001','DETAIL undefined','PROGRES '+taskId+' 101','PROGRES '+taskId+' -1','PROGRES '+taskId+' 0.5','KONFIRMASI abc','please update '+taskId])('returns help for malformed commands: %s',message=>{
+    expect(parseFonnteIncoming({...base,message},device,now)?.command).toBe('help')
+  })
+})
