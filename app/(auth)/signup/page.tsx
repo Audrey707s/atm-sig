@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function SignupPage() {
   return (
-    <AuthPageShell title="Daftar akun" description="Konfirmasi email diperlukan sebelum masuk. Akun baru otomatis mendapat akses Spectator.">
+    <AuthPageShell title="Daftar akun">
       <SignupForm />
       <p className="mt-5 text-center text-sm text-slate-600">Sudah punya akun? <Link href="/login" className="font-medium text-slate-900 underline underline-offset-4">Masuk</Link></p>
     </AuthPageShell>
