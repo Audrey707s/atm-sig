@@ -26,7 +26,7 @@ describe('WhatsApp task commands: access, confirmation, atomicity',()=>{
       grant usage on schema public,auth to service_role,anon,authenticated;
       grant select on public.roles,public.users,public.notifications to service_role;
       grant select,update on public.tasks to service_role;`)
-    for(const file of ['20261112161939_whatsapp_channel.sql','016_task_progress_history.sql','20261022015000_atomic_task_audit.sql','20261112171810_whatsapp_task_commands.sql']) {
+    for(const file of ['20261112161939_whatsapp_channel.sql','016_task_progress_history.sql','20261022015000_atomic_task_audit.sql','20261112174755_whatsapp_task_commands.sql']) {
       // The read policy needs a web-scope helper; chatbot queries deliberately
       // restrict results to own/assigned-review tasks rather than bypassing it.
       if(file==='016_task_progress_history.sql') await db.exec(`create function public.can_access_task_scope(integer,uuid,uuid) returns boolean language sql as $$select false$$;alter table public.tasks add column org_unit_id integer default 1;`)
