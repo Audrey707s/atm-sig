@@ -4,6 +4,7 @@
 
 import { getSessionUser } from '@/lib/auth/session'
 import Sidebar from './_components/Sidebar'
+import TaskDataSync from './_components/TaskDataSync'
 import TopHeader from './_components/TopHeader'
 import { getUnreadNotificationCount } from '@/lib/notifications/queries'
 import { Suspense, type ReactNode } from 'react'
@@ -35,6 +36,7 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
     <div className="flex h-full min-h-0 flex-col">
       {/* Top Header merah */}
       <TopHeader user={user} unreadCount={unreadCount} avatarUrl={avatar} />
+      <TaskDataSync />
 
       {/* Konten: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
