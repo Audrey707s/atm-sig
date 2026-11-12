@@ -4,7 +4,7 @@ import ThemeToggle from '@/app/_components/ThemeToggle'
 
 type Props = {
   title: string
-  description: string
+  description?: string
   children: ReactNode
 }
 
@@ -16,17 +16,19 @@ export default function AuthPageShell({ title, description, children }: Props) {
       </div>
       <section
         aria-labelledby="auth-heading"
-        className="atm-login-card mx-auto w-full max-w-[420px] rounded-2xl border border-red-100 bg-white px-5 py-7 shadow-sm sm:max-w-[460px] sm:px-10 sm:py-11"
+        className="atm-login-card mx-auto w-full max-w-[440px] rounded-2xl border border-red-100 bg-white px-6 py-8 shadow-[0_10px_35px_-4px_rgba(230,150,150,0.12)] sm:px-9 sm:py-9"
       >
-        <div className="mb-5 flex justify-center sm:mb-7">
-          <ATMWordmark variant="dark" showSubtitle className="w-[min(62vw,205px)] sm:w-[210px]" />
+        <div className="mb-4 flex justify-center">
+          <ATMWordmark variant="dark" showSubtitle className="w-[min(62vw,224px)] sm:w-[240px]" />
         </div>
-        <h1 id="auth-heading" className="text-center text-2xl font-bold tracking-tight text-slate-900">
+        <h1 id="auth-heading" className="mb-6 text-center text-[22px] font-bold tracking-tight text-slate-900">
           {title}
         </h1>
-        <p className="mb-6 mt-2 text-center text-sm leading-relaxed text-slate-600">
-          {description}
-        </p>
+        {description && (
+          <p className="mb-6 -mt-4 text-center text-sm leading-relaxed text-slate-600">
+            {description}
+          </p>
+        )}
         {children}
       </section>
     </main>
