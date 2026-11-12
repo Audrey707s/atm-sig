@@ -9,7 +9,8 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === '/api/cron/push' ||
       request.nextUrl.pathname === '/api/cron/reminders' ||
       request.nextUrl.pathname === '/api/whatsapp/webhook' ||
-      request.nextUrl.pathname === '/api/whatsapp/test') {
+      request.nextUrl.pathname === '/api/whatsapp/test' ||
+      request.nextUrl.pathname === '/api/whatsapp/fonnte') {
     const { NextResponse } = await import('next/server')
     return NextResponse.next()
   }

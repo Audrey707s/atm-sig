@@ -11,7 +11,7 @@ describe('Grouped workspace tabs (audit R.03)', () => {
     expect(MASTER_USER_TABS).toBe(MASTER_TABS)
   })
   it.each([1, 2, 3, 4, 5, 6])('keeps master-data navigation stable across pages for role %i', roleLevel => {
-    const expected = ['Profil', 'Organizations', ...(roleLevel >= 2 ? ['Kategori Tasks'] : []), ...(roleLevel >= 3 ? ['Pengguna'] : [])]
+    const expected = ['Profil', ...(roleLevel >= 3 ? ['Pengguna'] : []), 'Organizations', ...(roleLevel >= 2 ? ['Kategori Tasks'] : [])]
     const view = render(<WorkspaceTabs current="/account" tabs={MASTER_TABS} roleLevel={roleLevel} />)
     for (const current of ['/account', '/organizations', '/task-templates', '/users']) {
       view.rerender(<WorkspaceTabs current={current} tabs={MASTER_TABS} roleLevel={roleLevel} />)

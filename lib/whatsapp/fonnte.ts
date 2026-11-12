@@ -57,7 +57,13 @@ export async function sendFonnteText(target: string, message: string) {
   body.set('connectOnly', 'true')
   body.set('preview', 'false')
   const data = await requestFonnte('send', body)
-  const ids = Array.isArray(data.id) ? data.id.filter((id): id is string => typeof id === 'string' && /^\d+$/.test(id)) : []
-  if (!ids.length) throw new FonnteError('missing_message_id')
+  const rawIds: unknown[] = Array.isArray(data.id) ? data.id : [data.id]
+  const ids = rawIds.flatMap((id): string[] => {
+    if (typeof id === 'string' && /^\d+$/.test(id)) return [id]
+    if (typeof id === 'number' && Number.isSafeInteger(id) && id > 0) return [String(id)]
+    return []
+  })
+  // status=true already means accepted. Missing tracking metadata must not
+  // turn acceptance into a retryable failure (and duplicate the message).
   return { accepted: true as const, messageIds: ids }
 }
