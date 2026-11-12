@@ -54,3 +54,28 @@ Production config: FONNTE_API_TOKEN (Secret), FONNTE_TEST_RECIPIENT (Secret), FO
 Free-plan attachment limitations: direct inbound/outbound attachments require a higher Fonnte package according to provider docs. Keep link/web upload paths rather than silently upgrading or promising file parity.
 
 Validation: 400 tests passed, TypeScript and targeted ESLint passed, optimized production build passed. Database checks confirm RLS=true and anon/authenticated SELECT=false for all three tables, and the migration is recorded. Browser-level phone-to-profile-link and notification-recipient UAT still requires the account owner to send their own linking code; it has not been claimed as passed.
+
+## Task-command follow-up — 13 November 2026 (WIB)
+
+The owner confirmed receiving the real successful-link reply. A read-only database check confirms a non-null linked phone and notifications enabled. This closes the personal-phone linking acceptance gap above; it does not prove every future notification is delivered.
+
+Implemented behind the server-only `WHATSAPP_TASK_COMMANDS_ENABLED=true` switch:
+
+- `TUGAS [page]`: five own tasks per page, including their full IDs.
+- `REVIEW [page]`: tasks in Review explicitly assigned to this reviewer. This is a listing, not an approval command.
+- `DETAIL <UUID>`: details for an owned task or an explicitly assigned review task.
+- `LAPORAN`: status and overdue counts for the sender's own tasks.
+- `KALENDER [page]`: own unfinished tasks due today through the next six calendar days, with dates/times in Asia/Jakarta.
+- `PROGRES <UUID> <0-100>`: preview only. `KONFIRMASI <12-character code>` commits within five minutes; `BATAL` discards the pending preview. A new preview replaces the old one.
+
+Migration `20261112174755_whatsapp_task_commands.sql` creates a service-only, RLS-protected confirmation table and a service-only SECURITY INVOKER receiver. A command never accepts a chat-supplied user ID. It resolves the active user from the verified phone, serializes on the link row, durably deduplicates receipts, and commits a reply in the same transaction as any mutation. Progress changes require current PIC ownership and role level >=2. Confirmation rechecks the link generation, expiry, current actor/ownership and full task-row version. A changed/reassigned task requires a new preview.
+
+The progress UPDATE executes the existing progress-history, transactional audit and reviewer-notification triggers. The actor context is transaction-local, derived solely from the verified link and restored before reply enqueue. No user password, session token, JWT signing key, or anonymous execution grant is introduced. A rejected trigger rolls back the change before a failure reply is queued. The existing delivery worker rechecks active account, linked recipient and notification opt-in before sending private replies.
+
+STOP and PUTUS discard pending confirmations. Chat task commands require MULAI if notifications have been stopped. The generic help and opt-out acknowledgments remain available without private-task access.
+
+Fonnte requires HTTP 200 to acknowledge a webhook (official provider update: https://docs.fonnte.com/update-12-januari-2026/). The receiver now returns 200 for authenticated validation probes and deliberately ignored payloads, while malformed JSON, unauthorized requests and database failures retain failure statuses. No authentication or sender/freshness checks have been relaxed.
+
+Rollout order: apply and verify the migration, deploy matching code with the switch off, then enable the switch in production and redeploy. Until the switch is enabled, legacy linking and notification commands continue through `wa_receive`; new commands fall back to the old help rather than calling a missing RPC. Never enable the switch before the live database migration is verified.
+
+Supabase access was restored on 13 November 2026 (WIB). The migration is applied to hosted Singapore project vgmllwyvzttnlevorjim and its filename matches the recorded version 20261112174755. Live checks confirm confirmation-table RLS, no anonymous SELECT or authenticated RPC execution, and service-role execution allowed. Activation and real-phone command UAT are tracked below. Creation, review decisions, WBS/support/evidence, deadline workflows and the remaining conversational forms still require follow-up implementation and testing. This is not full ATM-through-WhatsApp feature parity.
