@@ -22,7 +22,7 @@ export async function POST(request:Request) {
   const command=taskCommandsEnabled||legacyCommands.includes(incoming.command)?incoming.command:'help'
   const args={p_id:incoming.id,p_sender:incoming.sender,p_command:command,p_hash:incoming.codeHash}
   const {error}=taskCommandsEnabled
-    ? await channelStore().rpc('wa_receive_task',{...args,p_args:incoming.args})
+    ? await channelStore().rpc('wa_receive_guided',{...args,p_args:incoming.args})
     : await channelStore().rpc('wa_receive',args)
   if(error) return new Response('Not accepted',{status:503,headers})
   // Only ACK after the receipt and reply are durably committed together.

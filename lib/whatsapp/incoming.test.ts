@@ -34,3 +34,10 @@ describe('WhatsApp structured task commands',()=>{
     expect(parseFonnteIncoming({...base,message},device,now)?.command).toBe('help')
   })
 })
+
+describe('Guided menu shortcuts',()=>{
+ it.each([['1','choice',{choice:1}],['0','choice',{choice:0}],['50%','choice',{choice:50}],['100','choice',{choice:100}],['saya','mine',{}],['akun','identity',{}],['notif','settings',{}],['progres','progress_list',{}],['lanjut','next',{}],['kembali','back',{}],['ya','approve',{}],['menu','help',{}]])('understands %s',(message,command,args)=>{
+  const r=parseFonnteIncoming({...base,message},device,now)
+  expect(r?.command).toBe(command);expect(r?.args).toEqual(args)
+ })
+})
