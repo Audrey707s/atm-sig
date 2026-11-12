@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import WhatsAppConnection from './WhatsAppConnection'
+import { getMyWhatsApp } from '@/lib/whatsapp/linking'
 import { getSessionUser } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
 import ProfileForm from './ProfileForm'
@@ -10,6 +12,7 @@ export const metadata: Metadata = { title: 'Profil Saya' }
 export default async function AccountPage() {
   const user = await getSessionUser()
   const supabase = await createClient()
+  const whatsapp = await getMyWhatsApp()
   const { data: unit } = await supabase
     .from('org_units')
     .select('name')
@@ -30,6 +33,7 @@ export default async function AccountPage() {
         unitName={unit?.name ?? '—'}
         avatarUrl={avatar?.signedUrl ?? ''}
       />
+      {whatsapp.enabled && <WhatsAppConnection phone={whatsapp.phone} notifications={whatsapp.notifications} />}
     </section>
   )
 }

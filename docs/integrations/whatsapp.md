@@ -2,7 +2,7 @@
 
 ## Current status — 12 November 2026
 
-Provider: official Meta WhatsApp Cloud API. No paid plan or payment method enabled.
+Current provider: Fonnte Free, chosen by the owner after the Meta delivery restriction below. No paid plan, auto-order or payment method enabled. The original Meta integration remains a separate inactive prototype.
 App ID: 3590430167801807. Business portfolio ID: 4588218968116531.
 Test sender: +15551679733. Phone Number ID: 1447598038437900.
 WABA ID: 1147389444407499.
@@ -36,3 +36,21 @@ Use a verified recipient in Meta's Try it out screen. User completes any OTP/acc
 Recipient ownership was verified in Meta. A single dashboard template send was accepted, but its status callback reported FAILED, error 130497: business account restricted from messaging users in the destination country. Do not equate the dashboard send confirmation with delivery. Business Support Home for this WABA shows no reviewable policy issues and Request review is disabled; it does not establish that the country restriction has been lifted. No repeat send was attempted. Do not promise that adding payment, switching templates, opening a 24-hour window, or publication will fix this account restriction.
 
 Alternative evaluated: Fonnte free device offers 1,000 monthly messages and webhook chatbots, but it is an unofficial WhatsApp Web gateway. It requires explicit user choice and linked-device authorization for a dedicated bot number; do not connect personal chat history or switch provider silently. Outbound attachment limitations must be tested before promising feature parity.
+
+## Fonnte account-linking and notifications release
+
+The dedicated ATM-SIG device is connected. A single real message from the ATM production self-test is recorded as sent/delivered in Fonnte history (provider message 192649925). The initial endpoint misclassified tracking metadata as a failure; the adapter now treats status=true as acceptance even without tracking IDs and normalizes numeric/scalar IDs. No retry was performed for that already-delivered message.
+
+This release adds a WhatsApp card to /account. Each authenticated user generates a high-entropy, ten-minute, single-use code and sends HUBUNGKAN followed by that code to the bot. Only its SHA-256 hash is stored. Phone uniqueness, active-user checks, conditional code replacement, and atomic code consumption prevent cross-account linking. No passwords or Supabase sessions are stored for this notification-only link.
+
+Supported chat commands at this stage: HUBUNGKAN, MENU, STOP, MULAI, PUTUS. Task mutations, private queries and conversational task forms are NOT implemented or enabled in this release. The bot states this explicitly and links to the authenticated web app. These remain follow-up work; do not describe all ATM features as available through chat.
+
+Migration 20261112161939_whatsapp_channel adds links, receipt hashes and an outbox, all with RLS enabled and no anon/authenticated grants. Service-only SECURITY INVOKER functions atomically deduplicate incoming messages, link accounts and enqueue replies. Existing notifications provide the exact recipients; review-request notifications additionally recheck the assigned reviewer before enqueue/claim. No historical notification blast: only post-link notifications from the last 24 hours qualify.
+
+The existing thirty-minute push scheduler also drains up to five queued WhatsApp messages. Incoming webhooks schedule an immediate drain after durable acceptance. Only a connected Free device with available quota may send. Claimed sends are not automatically retried if their result is unknown; they remain for reconciliation. Accepted does not mean delivered/read. No provider auto-upgrade/order API is used. Opt-out/unlink cancels pending private notifications. Fonnte inbox storage and group processing stay off.
+
+Production config: FONNTE_API_TOKEN (Secret), FONNTE_TEST_RECIPIENT (Secret), FONNTE_WEBHOOK_SECRET (Secret), FONNTE_BOT_NUMBER (Config), WHATSAPP_CHANNEL_ENABLED=true (Config). The Fonnte webhook uses a random 256-bit capability in the key query parameter because the device webhook configuration does not expose a signing-secret field (the documented secret field belongs to Flow webhooks). Treat the complete callback URL as a secret: do not publish it, log it in application code, put it in chat/screenshots, or use it in a client bundle. Rotate if disclosed. Sender/device/freshness/size validation is additional protection, not a substitute for callback authentication.
+
+Free-plan attachment limitations: direct inbound/outbound attachments require a higher Fonnte package according to provider docs. Keep link/web upload paths rather than silently upgrading or promising file parity.
+
+Validation: 400 tests passed, TypeScript and targeted ESLint passed, optimized production build passed. Database checks confirm RLS=true and anon/authenticated SELECT=false for all three tables, and the migration is recorded. Browser-level phone-to-profile-link and notification-recipient UAT still requires the account owner to send their own linking code; it has not been claimed as passed.

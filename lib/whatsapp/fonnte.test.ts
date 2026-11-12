@@ -39,6 +39,10 @@ describe('Fonnte free connection', () => {
     expect(options.body.get('target')).toBe('6281234567890')
     expect(options.body.has('url')).toBe(false)
   })
+  it.each([[[1234]], [1234], ['1234']])('normalizes numeric and scalar provider ids: %j', async id => {
+    fetchMock.mockResolvedValue(Response.json({ status: true, id }))
+    expect(await sendFonnteText('6281234567890', 'Test')).toEqual({ accepted: true, messageIds: ['1234'] })
+  })
   it('rejects group/bulk targets and empty messages before sending', async () => {
     await expect(sendFonnteText('6281234567890,6281111111111', 'Test')).rejects.toThrow()
     await expect(sendFonnteText('12345@g.us', 'Test')).rejects.toThrow()
@@ -50,11 +54,11 @@ describe('Fonnte free connection', () => {
     await expect(sendFonnteText('6281234567890', 'Test')).rejects.not.toThrow('secret-provider-details')
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
-  it('requires actual success and a provider message id', async () => {
+  it('rejects provider failures but preserves acceptance without tracking metadata', async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ status: false, reason: 'invalid token' }))
       .mockResolvedValueOnce(Response.json({ status: true }))
     await expect(sendFonnteText('6281234567890', 'Test')).rejects.toThrow()
-    await expect(sendFonnteText('6281234567890', 'Test')).rejects.toThrow()
+    expect(await sendFonnteText('6281234567890', 'Test')).toEqual({ accepted: true, messageIds: [] })
   })
   it('protects the self-test and ignores arbitrary request targets', async () => {
     expect((await POST(new Request('https://example.test/api/whatsapp/test', { method: 'POST' }))).status).toBe(401)
