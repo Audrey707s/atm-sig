@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-export type FonnteIncoming = { id:string; sender:string; command:'link'|'help'|'stop'|'start'|'disconnect'|'tasks'|'reviews'|'detail'|'report'|'calendar'|'progress'|'confirm'|'cancel'; codeHash:string|null; args:Record<string,string|number> }
+export type FonnteIncoming = { id:string; sender:string; command:'link'|'help'|'stop'|'start'|'disconnect'|'tasks'|'reviews'|'detail'|'report'|'calendar'|'progress'|'confirm'|'cancel'|'choice'|'next'|'back'|'approve'|'mine'|'progress_list'|'identity'|'settings'; codeHash:string|null; args:Record<string,string|number> }
 export function parseFonnteIncoming(value:unknown,device:string,now=Date.now()): FonnteIncoming|null {
   if(!value||typeof value!=='object') return null
   const p=value as Record<string,unknown>
@@ -25,6 +25,9 @@ export function parseFonnteIncoming(value:unknown,device:string,now=Date.now()):
   else if(confirm) {command='confirm';args.token=confirm[1].toLowerCase()}
   else if(/^laporan$/i.test(text)) command='report'
   else if(/^batal$/i.test(text)) command='cancel'
+  const shortcuts:Record<string,FonnteIncoming['command']>={saya:'mine',akun:'identity',notif:'settings',notifikasi:'settings',lanjut:'next',kembali:'back',ya:'approve',konfirmasi:'approve',progres:'progress_list',semua:'tasks',bantuan:'help'}
+  if(shortcuts[text.toLowerCase()]) command=shortcuts[text.toLowerCase()]
+  if(/^(100|[1-9]?\d)%?$/.test(text)) {command='choice';args.choice=Number(text.replace('%',''))}
   const id=createHash('sha256').update(JSON.stringify([p.device,p.sender,String(p.timestamp),p.inboxid??null,text])).digest('hex')
   return {id,sender:p.sender,command,codeHash:match?createHash('sha256').update(match[1].toLowerCase()).digest('hex'):null,args}
 }
