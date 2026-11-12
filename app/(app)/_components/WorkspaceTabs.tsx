@@ -31,9 +31,9 @@ export const APPROVAL_TABS: Tab[] = [
 ]
 export const MASTER_TABS: Tab[] = [
   { label: 'Profil', icon: 'user', href: '/account' },
+  { label: 'Pengguna', icon: 'user', href: '/users', minLevel: 3 },
   { label: 'Organizations', icon: 'structure', href: '/organizations' },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates', minLevel: 2 },
-  { label: 'Pengguna', icon: 'user', href: '/users', minLevel: 3 },
 ]
 // All master-data pages share one ordered definition; role filtering only hides tabs.
 export const PIC_MASTER_TABS: Tab[] = MASTER_TABS
