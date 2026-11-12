@@ -8,7 +8,8 @@ export async function proxy(request: NextRequest) {
   // /login and prevent the queue from ever being processed.
   if (request.nextUrl.pathname === '/api/cron/push' ||
       request.nextUrl.pathname === '/api/cron/reminders' ||
-      request.nextUrl.pathname === '/api/whatsapp/webhook') {
+      request.nextUrl.pathname === '/api/whatsapp/webhook' ||
+      request.nextUrl.pathname === '/api/whatsapp/test') {
     const { NextResponse } = await import('next/server')
     return NextResponse.next()
   }
