@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function ForgotPasswordPage() {
   return (
-    <AuthPageShell title="Lupa kata sandi?" description="Masukkan email akun. Jika terdaftar, kami akan mengirim tautan reset.">
+    <AuthPageShell title="Lupa kata sandi?">
       <ForgotPasswordForm />
       <p className="mt-5 text-center text-sm text-slate-600"><Link href="/login" className="font-medium text-slate-900 underline underline-offset-4">Kembali ke masuk</Link></p>
     </AuthPageShell>
