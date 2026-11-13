@@ -25,7 +25,7 @@ export async function beginWhatsAppLink() {
     ? await db.from('whatsapp_links').update(values).eq('user_id',user.id).is('phone',null).select('user_id').maybeSingle()
     : await db.from('whatsapp_links').insert({user_id:user.id,...values}).select('user_id').maybeSingle()
   if(error||!saved) return {error:'Kode belum dapat dibuat.'}
-  return {code,expires,bot:process.env.FONNTE_BOT_NUMBER??''}
+  return {code,expires,bot:process.env.WHATSAPP_CONNECT_NUMBER??process.env.FONNTE_BOT_NUMBER??''}
 }
 export async function disconnectWhatsApp() {
   const user=await getSessionUser()
