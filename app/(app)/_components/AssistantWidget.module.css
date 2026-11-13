@@ -21,4 +21,4 @@
 @media(prefers-reduced-motion:reduce){.typing span{animation:none}.panel *{scroll-behavior:auto!important;transition:none!important}}
 
 .launcher[aria-expanded=true]{opacity:0;pointer-events:none}
-@media(max-width:480px){.panel .composer textarea,.panel .search input{font-size:16px}.send{width:44px;height:44px}.iconButton{width:44px;height:44px}.barActions{gap:0}.tab{min-height:42px}.suggestion{min-height:40px}}
+@media(max-width:480px){.panel .composer textarea,.panel .composer textarea:focus,.panel .search input,.panel .search input:focus{font-size:16px}.send{width:44px;height:44px}.iconButton{width:44px;height:44px}.barActions{gap:0}.tab{min-height:42px}.suggestion{min-height:40px}}
