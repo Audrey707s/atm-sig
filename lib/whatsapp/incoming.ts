@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-export type FonnteIncoming = { id:string; sender:string; command:'link'|'help'|'stop'|'start'|'disconnect'|'tasks'|'reviews'|'detail'|'report'|'calendar'|'progress'|'confirm'|'cancel'|'choice'|'next'|'back'|'approve'|'mine'|'progress_list'|'identity'|'settings'; codeHash:string|null; args:Record<string,string|number> }
+export type FonnteIncoming = { id:string; sender:string; command:'link'|'help'|'stop'|'start'|'disconnect'|'tasks'|'reviews'|'detail'|'report'|'calendar'|'progress'|'confirm'|'cancel'|'choice'|'next'|'back'|'approve'|'mine'|'progress_list'|'identity'|'settings'|'feature'; codeHash:string|null; args:Record<string,string|number>; text:string|null }
 export function parseFonnteIncoming(value:unknown,device:string,now=Date.now()): FonnteIncoming|null {
   if(!value||typeof value!=='object') return null
   const p=value as Record<string,unknown>
@@ -28,6 +28,8 @@ export function parseFonnteIncoming(value:unknown,device:string,now=Date.now()):
   const shortcuts:Record<string,FonnteIncoming['command']>={saya:'mine',akun:'identity',notif:'settings',notifikasi:'settings',lanjut:'next',kembali:'back',ya:'approve',konfirmasi:'approve',progres:'progress_list',semua:'tasks',bantuan:'help'}
   if(shortcuts[text.toLowerCase()]) command=shortcuts[text.toLowerCase()]
   if(/^(100|[1-9]?\d)%?$/.test(text)) {command='choice';args.choice=Number(text.replace('%',''))}
+  const features=new Set(['BUAT','UBAH','HAPUS','DUPLIKASI','STATUS','TINJAU','KOMENTAR','TENGGAT','PINDAH','TAMBAHWBS','WBS','SUPPORT','MINTASUPPORT','BUKTI','SYARATBUKTI','PERSETUJUAN','KATEGORI','BUATKATEGORI','BERULANG','BUATBERULANG','ORGANISASI','BUATORGANISASI','PENGGUNA','NOTIFIKASI','BACASEMUA','REMINDER','AUDIT','NAMASAYA','CRUD','FITUR','DASHBOARD','KINERJA','PAPAN','LINIMASA','PROFIL','PEMULIHAN','UNGGAH','EKSPOR','PASSWORD','KEAMANAN','UNDANG','ROLE'])
+  if(features.has(text.toUpperCase())) {command='feature';args.feature=text.toUpperCase()}
   const id=createHash('sha256').update(JSON.stringify([p.device,p.sender,String(p.timestamp),p.inboxid??null,text])).digest('hex')
-  return {id,sender:p.sender,command,codeHash:match?createHash('sha256').update(match[1].toLowerCase()).digest('hex'):null,args}
+  return {id,sender:p.sender,command,codeHash:match?createHash('sha256').update(match[1].toLowerCase()).digest('hex'):null,args,text:command==='link'?null:text}
 }

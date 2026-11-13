@@ -22,7 +22,13 @@ describe('Fonnte route task-command rollout and acknowledgments',()=>{
  })
  it('routes enabled commands to the atomic task receiver',async()=>{
    vi.stubEnv('WHATSAPP_TASK_COMMANDS_ENABLED','true');await POST(request('TUGAS 2'))
-   expect(rpc).toHaveBeenCalledWith('wa_receive_guided',expect.objectContaining({p_command:'tasks',p_args:{page:2}}));expect(after).toHaveBeenCalledOnce()
+   expect(rpc).toHaveBeenCalledWith('wa_receive_full',expect.objectContaining({p_command:'tasks',p_args:{page:2}}));expect(after).toHaveBeenCalledOnce()
+ })
+ it('forwards form text to the durable full-workflow receiver',async()=>{
+   vi.stubEnv('WHATSAPP_TASK_COMMANDS_ENABLED','true')
+   const text='judul: Tugas baru\nmulai: 2027-01-01 08:00'
+   await POST(request(text))
+   expect(rpc).toHaveBeenCalledWith('wa_receive_full',expect.objectContaining({p_text:text}))
  })
  it('does not acknowledge database failures as accepted',async()=>{
    rpc.mockResolvedValue({error:{message:'unavailable'}})

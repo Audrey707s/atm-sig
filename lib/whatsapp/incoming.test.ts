@@ -41,3 +41,16 @@ describe('Guided menu shortcuts',()=>{
   expect(r?.command).toBe(command);expect(r?.args).toEqual(args)
  })
 })
+
+
+describe('Full-feature chat input',()=>{
+ it.each(['BUAT','UBAH','HAPUS','DUPLIKASI','TINJAU','KOMENTAR','WBS','SUPPORT','BUKTI','TENGGAT','KATEGORI','BERULANG','ORGANISASI','PENGGUNA','FITUR','EKSPOR'])('routes %s to the feature workflow',message=>{
+  const r=parseFonnteIncoming({...base,message},device,now)
+  expect(r?.command).toBe('feature');expect(r?.args.feature).toBe(message)
+ })
+ it('preserves bounded form text while excluding raw linking codes',()=>{
+  const text='judul: Tugas chat\nmulai: 2027-01-01 08:00\ntenggat: 2027-01-02 16:00'
+  expect(parseFonnteIncoming({...base,message:text},device,now)?.text).toBe(text)
+  expect(parseFonnteIncoming({...base,message:'HUBUNGKAN '+'b'.repeat(36)},device,now)?.text).toBeNull()
+ })
+})

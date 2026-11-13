@@ -48,7 +48,7 @@ export default function WhatsAppConnection({ phone, notifications }: { phone: st
       <p className="break-all text-sm font-medium">+{activePhone}</p>
       <div className="rounded-xl border border-slate-200 p-4 text-sm">
         <p className="font-semibold">Mulai percakapan dengan MENU</p>
-        <p className="mt-2 leading-relaxed">Balas angka pilihan atau ketik TUGAS, REVIEW, LAPORAN, KALENDER, SAYA, PROGRES, atau AKUN.</p>
+        <p className="mt-2 leading-relaxed">Balas angka pilihan. Ketik FITUR untuk seluruh menu, BUAT untuk tugas baru, atau pilih tugas untuk UBAH dan HAPUS. Setiap hasil menyertakan tautan pemeriksaan.</p>
       </div>
       <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={activeNotifications} disabled={pending} onChange={e => {
         const checked = e.target.checked
