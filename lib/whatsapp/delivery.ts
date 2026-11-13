@@ -2,6 +2,7 @@ import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { channelStore,whatsappEnabled } from './store'
 import { requireFreeFonnteDevice,sendFonnteText } from './fonnte'
+import { providerText } from './format'
 
 export async function deliverPendingWhatsApp() {
   if(!whatsappEnabled()) return {enabled:false,accepted:0}
@@ -25,7 +26,7 @@ export async function deliverPendingWhatsApp() {
       }
     }
     try {
-      const result=await sendFonnteText(item.phone,item.body)
+      const result=await sendFonnteText(item.phone,providerText(item.body))
       await db.from('whatsapp_outbox').update({state:'accepted',provider_ids:result.messageIds,accepted_at:new Date().toISOString()}).eq('id',item.id)
       accepted++
     } catch {
