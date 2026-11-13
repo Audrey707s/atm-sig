@@ -13,6 +13,8 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
   const spec=Object.hasOwn(catalog,p.operation??'')?catalog[p.operation!]:undefined;if(!spec) throw new Error('Operation denied')
   if(!p.data||typeof p.data!=='object'||Array.isArray(p.data)) throw new Error('Invalid data')
   for(const [k,v] of Object.entries(p.data)) if(!Object.hasOwn(spec.fields,k)||typeof v!=='string'||v.length>2000) throw new Error('Invalid field')
+  // New records and own-account actions never accept a model-selected target.
+  if(['task_create','category_create','template_create','org_create','notification_all','profile_name'].includes(p.operation!))delete p.target
  }
  if(p.data)for(const key of ['mulai','tenggat']) {const value=p.data[key];if(value&&/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?\s+WIB$/i.test(value))p.data[key]=value.replace(/\s+WIB$/i,'').replace('T',' ')}
  return p
