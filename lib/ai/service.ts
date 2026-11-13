@@ -24,7 +24,11 @@ export async function requestAssistant(turn:Turn,message:string,token?:string):P
  if(error) throw new Error('Catalogue unavailable')
  let plan:Plan
  try {plan=await planRequest(message,turn.level,data as Record<string,Operation>,reserved.history??[])}
- catch {return dispatch(turn,'reply',{message:'Permintaan belum dapat diproses. Coba tulis judul/ID tugas dan perubahan secara lengkap, atau gunakan menu ATM. Tidak ada perubahan yang disimpan.'})}
+ catch(error) {
+  const reason=error as {name?:unknown;statusCode?:unknown}
+  console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined})
+  if(reason?.statusCode===429)return dispatch(turn,'reply',{message:'Kuota AI gratis sementara tercapai. Coba lagi nanti, atau gunakan perintah seperti “lihat tugas saya” dan “ringkasan tugas”. Tidak ada perubahan yang disimpan.'})
+  return dispatch(turn,'reply',{message:'Permintaan belum dapat diproses. Coba tulis judul/ID tugas dan perubahan secara lengkap, atau gunakan menu ATM. Tidak ada perubahan yang disimpan.'})}
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,data:plan.data})
