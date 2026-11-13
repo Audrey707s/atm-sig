@@ -286,10 +286,18 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   const fresh=await ai(pic,'reserve',{message:'Baru',contextChannel:'web'})
   expect((fresh as unknown as {history:string[]}).history).toEqual(['Baru'])
  })
+ it('AI read scope matches the web for Spectator and Staff while personal mode stays personal',async()=>{
+  const teammate=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,reviewer_id,org_unit_id,title,start_date,due_date) values('${manager}','${sa}','${sm}',4,'Team task',now(),now()+interval '10 days') returning id`)).rows[0].id
+  const visible=await ai(pic,'read',{entity:'tasks'})
+  expect(visible.rows?.some(r=>r.id===teammate)).toBe(true)
+  expect((await ai(spectator,'read',{entity:'tasks'})).rows?.some(r=>r.id===task)).toBe(true)
+  expect((await ai(pic,'read',{entity:'tasks',mode:'mine'})).rows?.some(r=>r.id===teammate)).toBe(false)
+ })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')
   const r=await apply(pic,'task_comment',task,{komentar:'Pesan dari WhatsApp'})
   expect(r.ok,r.error).toBe(true)
+  expect((await ai(pic,'read',{entity:'tasks'})).ok).toBe(true)
   expect((await db.query<{role:string}>('select current_user as role')).rows[0].role).toBe('service_role')
   await db.exec('reset session authorization')
  })
