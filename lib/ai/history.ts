@@ -10,6 +10,7 @@ type HistoryDatabase={public:Omit<Database['public'],'Tables'>&{Tables:Database[
 }}}
 // The same cookie-authenticated client and RLS; this adds only the new schema types.
 export function historyClient(client:SupabaseClient<Database>){return client as unknown as SupabaseClient<HistoryDatabase>}
+function clip(value:string,length:number){return Array.from(value).slice(0,length).join('')}
 export function safeChatPath(path?:string|null){return path&&/^\/(?!\/)[a-z0-9/_?=&%-]*$/i.test(path)?path:null}
 export async function beginChatTurn(client:SupabaseClient<Database>,userId:string,conversationId:string,message:string){
  const db=historyClient(client)
@@ -20,8 +21,8 @@ export async function beginChatTurn(client:SupabaseClient<Database>,userId:strin
  if(readError)throw new Error('History unavailable')
  const {error:writeError}=await db.from('ai_chat_messages').insert({conversation_id:conversationId,user_id:userId,author:'user',content:message})
  if(writeError)throw new Error('History unavailable')
- const title=thread.title==='Percakapan baru'?message.replace(/\s+/g,' ').slice(0,100):thread.title
- const {error:updateError}=await db.from('ai_chat_threads').update({title,last_preview:message.slice(0,160),updated_at:new Date().toISOString()}).eq('id',conversationId).eq('user_id',userId)
+ const title=thread.title==='Percakapan baru'?clip(message.replace(/\s+/g,' '),100):thread.title
+ const {error:updateError}=await db.from('ai_chat_threads').update({title,last_preview:clip(message,160),updated_at:new Date().toISOString()}).eq('id',conversationId).eq('user_id',userId)
  if(updateError)throw new Error('History unavailable')
  return [...(previous??[]).reverse().map(x=>x.content),message]
 }
@@ -31,8 +32,8 @@ export async function finishChatTurn(client:SupabaseClient<Database>,userId:stri
  let archive=reply.message
  if(Array.isArray(reply.rows))archive+='\n\n'+reply.rows.length+' hasil ditampilkan. Buka halaman terkait untuk data terbaru.'
  else if(reply.rows)archive+='\n\n'+Object.entries(reply.rows).map(([key,value])=>( {total:'Total',done:'Selesai',review:'Review',overdue:'Lewat tenggat'} as Record<string,string>)[key]+': '+String(value)).join(' · ')
- const {error}=await db.from('ai_chat_messages').insert({conversation_id:conversationId,user_id:userId,author:'assistant',content:archive.slice(0,12000),page_path:safeChatPath(reply.path)})
+ const {error}=await db.from('ai_chat_messages').insert({conversation_id:conversationId,user_id:userId,author:'assistant',content:clip(archive,12000),page_path:safeChatPath(reply.path)})
  if(error)throw new Error('History unavailable')
- const {error:updateError}=await db.from('ai_chat_threads').update({last_preview:reply.message.slice(0,160),updated_at:new Date().toISOString()}).eq('id',conversationId).eq('user_id',userId)
+ const {error:updateError}=await db.from('ai_chat_threads').update({last_preview:clip(reply.message,160),updated_at:new Date().toISOString()}).eq('id',conversationId).eq('user_id',userId)
  if(updateError)throw new Error('History unavailable')
 }

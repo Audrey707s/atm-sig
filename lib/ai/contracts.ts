@@ -23,7 +23,7 @@ export function localPlan(text:string):Plan|null {
  const s=text.trim().toLowerCase()
  if(/^(halo|hai|hi|menu|bantuan|fitur)(\s|$)/.test(s)) return {kind:'help',topic:'tasks'}
  if(/cara|bagaimana|gimana|apa fungsi/.test(s)) {
-  const topic=/hapus.*(akun|user)|role|undang|pengguna/.test(s)?'users':/kategori/.test(s)?'categories':/ulang/.test(s)?'templates':/organisasi/.test(s)?'organizations':/ekspor|export|laporan/.test(s)?'reports':/review|tinjau/.test(s)?'review':/kalender/.test(s)?'calendar':/password|sandi/.test(s)?'security':'tasks'
+  const topic=/hapus.*(akun|user)|role|undang|pengguna/.test(s)?'users':/kategori/.test(s)?'categories':/ulang/.test(s)?'templates':/organisasi/.test(s)?'organizations':/ekspor|export|laporan/.test(s)?'reports':/review|tinjau/.test(s)?'review':/kalender/.test(s)?'calendar':/password|sandi|keamanan|akun/.test(s)?'security':/wbs/.test(s)?'wbs':/support/.test(s)?'support':/bukti|evidence/.test(s)?'evidence':/notifikasi|reminder/.test(s)?'notifications':'tasks'
   return {kind:'help',topic}
  }
  if(/^(lihat|tampilkan|cek|cari|daftar)\b/.test(s)&&/tugas|task|pekerjaan/.test(s)) return {kind:'read',entity:'tasks',mode:/saya|pribadi/.test(s)?'mine':'list',query:/cari/.test(s)?text.replace(/^.*?cari\s+(?:tugas\s+)?/i,'').trim():''}

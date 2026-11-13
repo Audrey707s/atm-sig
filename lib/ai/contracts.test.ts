@@ -35,4 +35,10 @@ describe('AI intent boundary',()=>{
   expect(allowedKnowledge(2).some(x=>x.topic==='users')).toBe(false)
   expect(helpReply('organizations',1)).toMatchObject({ok:true,path:'/organizations'})
  })
+ it('routes helpdesk follow-up topics locally without model inference',()=>{
+  expect(localPlan('Bagaimana cara menggunakan notifikasi & reminder?')).toMatchObject({kind:'help',topic:'notifications'})
+  expect(localPlan('Bagaimana cara menggunakan WBS & progres?')).toMatchObject({kind:'help',topic:'wbs'})
+  expect(localPlan('Bagaimana cara menggunakan akun & keamanan?')).toMatchObject({kind:'help',topic:'security'})
+ })
+
 })
