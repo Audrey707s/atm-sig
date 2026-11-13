@@ -2,7 +2,7 @@ import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { planRequest } from './planner'
 import { helpReply } from './knowledge'
-import type { AssistantReply,Operation,Plan } from './contracts'
+import {containsAssistantSecret,type AssistantReply,type Operation,type Plan} from './contracts'
 export function assistantStore() {
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY
  if(!url||!key) throw new Error('Assistant store unavailable')
@@ -14,16 +14,16 @@ export async function dispatch(turn:Turn,kind:string,payload:Record<string,unkno
  if(error) throw new Error('Assistant operation unavailable')
  return data as AssistantReply
 }
-export async function requestAssistant(turn:Turn,message:string,token?:string):Promise<AssistantReply> {
+export async function requestAssistant(turn:Turn,message:string,token?:string,historyOverride?:string[]):Promise<AssistantReply> {
  if(/^(ya|konfirmasi)$/i.test(message.trim())) return dispatch(turn,'confirm',{},token)
  if(/^batal$/i.test(message.trim())) return dispatch(turn,'cancel')
- if(/(?:gsk_[a-z0-9]{20,}|sk-[a-z0-9]{20,}|(?:password|kata sandi|api[_ ]?key)\s*[:=])/i.test(message))return dispatch(turn,'reply',{message:'Jangan kirim password atau API key melalui asisten. Gunakan pengaturan akun yang sesuai.'})
+ if(containsAssistantSecret(message))return dispatch(turn,'reply',{message:'Jangan kirim password atau API key melalui asisten. Gunakan pengaturan akun yang sesuai.'})
  const reserved=await dispatch({...turn,channel:'web'},'reserve',{message,contextChannel:turn.channel})
  if(!reserved.ok) return dispatch(turn,'reply',{message:'Batas permintaan sementara tercapai. Tunggu satu menit lalu coba lagi.'})
  const {data,error}=await assistantStore().rpc('wa_operation_catalog')
  if(error) throw new Error('Catalogue unavailable')
  let plan:Plan
- try {plan=await planRequest(message,turn.level,data as Record<string,Operation>,reserved.history??[])}
+ try {plan=await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
  catch(error) {
   const reason=error as {name?:unknown;statusCode?:unknown}
   console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined})
