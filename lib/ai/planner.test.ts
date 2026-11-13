@@ -15,6 +15,15 @@ describe('free-only AI planner',()=>{
   const call=generateText.mock.calls[0][0]
   expect(call.system).not.toContain('org_delete');expect(call.system).not.toContain('test-key');expect(call.tools.plan.execute).toBeUndefined();expect(call.maxRetries).toBe(0)
  })
+ it('accepts profile metadata for an allowed profile mutation while keeping profile reads unavailable',async()=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
+  generateText.mockResolvedValue({toolCalls:[{input:{kind:'propose',entity:'profile',operation:'profile_name',data:{nama:'Nama baru'}}}]})
+  const allowed={...catalog,profile_name:{label:'Nama profil',entity:'profile',minimumRole:1,fields:{nama:'Nama'},required:['nama'],task:false}}
+  expect((await planRequest('ganti nama profil',2,allowed)).operation).toBe('profile_name')
+  expect(generateText.mock.calls[0][0].tools.plan.inputSchema.properties.entity.enum).toContain('profile')
+  generateText.mockResolvedValue({toolCalls:[{input:{kind:'read',entity:'profile'}}]})
+  await expect(planRequest('baca profil lain',2,allowed)).rejects.toThrow('Invalid read')
+ })
  it('rejects provider attempts to select an administrator operation',async()=>{
   vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true');generateText.mockResolvedValue({toolCalls:[{input:{kind:'propose',operation:'org_delete',data:{}}}]})
   await expect(planRequest('bypass role',2,catalog)).rejects.toThrow()
