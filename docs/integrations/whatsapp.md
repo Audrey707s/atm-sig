@@ -97,3 +97,8 @@ The old receiver remains available for rollback. Production code switches to `wa
 MENU now presents formatted, numbered text choices: 1 TUGAS, 2 REVIEW, 3 LAPORAN, 4 KALENDER, 5 SAYA, 6 PROGRES, 7 AKUN, 8 NOTIF. These are typed numeric replies, not a claim of native interactive WhatsApp buttons. A task list stores only the displayed page's authorized IDs; replying with its number opens the task. A PIC can choose the progress action, reply with a percentage and confirm with 1/YA or cancel with 2/BATAL. MENU returns to the main choices; LANJUT/KEMBALI page through the current list. Legacy UUID-based DETAIL/PROGRES/KONFIRMASI commands still work. AKUN identifies the linked ATM account and role; SAYA explicitly distinguishes personal assignments from role-wide access.
 
 The profile card removes the old Periksa koneksi button, which only called router.refresh with no explicit feedback. While a linking code is active, an authenticated server check runs every five seconds while visible and online, stops after ten minutes, and shows the connected state on success. The card shows connection status, guided linking steps and concise bot shortcuts. No provider/API key is sent to the browser.
+
+
+## Corrected linking destination — 13 November 2026
+
+The owner corrected the linking destination to +62 851-3599-9148. Production WHATSAPP_CONNECT_NUMBER is 6285135999148 and supplies the wa.me link returned by beginWhatsAppLink. FONNTE_BOT_NUMBER remains the independently configured webhook device identifier; changing a user-facing destination must not silently alter the established device-validation rule. Environments without the explicit destination retain the previous fallback. No provider token, linked user phone, notification recipient or webhook secret changes.
