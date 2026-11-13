@@ -18,4 +18,4 @@ export function helpReply(topic:string,level:number) {
  if(!k||level<k.minimum) return {ok:false,message:'Permintaan tersebut berada di luar hak akses Anda. Saya dapat membantu pekerjaan dalam cakupan akun Anda.'}
  return {ok:true,message:k.text,path:k.path}
 }
-export function allowedKnowledge(level:number) {return Object.entries(topics).filter(([,v])=>level>=v.minimum).map(([key,v])=>({topic:key,text:v.text}))}
+export function allowedKnowledge(level:number) {return Object.entries(topics).filter(([,v])=>level>=v.minimum).map(([key,v])=>({topic:key,text:v.text,path:v.path}))}

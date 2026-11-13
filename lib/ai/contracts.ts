@@ -35,3 +35,5 @@ export function localPlan(text:string):Plan|null {
  for(const [re,op] of patterns) {const m=re.exec(text.trim());if(m) return {kind:'propose',operation:op,target:m[1],data:op==='task_status'?{status:({selesai:'Done',beres:'Done',done:'Done',berjalan:'In progress',blocked:'Blocked',review:'Review','belum dimulai':'To do'} as Record<string,string>)[m[2].toLowerCase()]}:{}}}
  return null
 }
+
+export function containsAssistantSecret(message:string){return /(?:gsk_[a-z0-9]{20,}|sk-[a-z0-9]{20,}|(?:password|kata sandi|api[_ ]?key)\s*[:=])/i.test(message)}
