@@ -21,6 +21,10 @@ describe('AI intent boundary',()=>{
   expect(validatePlan({kind:'propose',operation:'task_create',data:{mulai:'2026-11-14 08:00 WIB',tenggat:'2026-11-15T16:00 WIB'}},c).data).toEqual({mulai:'2026-11-14 08:00',tenggat:'2026-11-15 16:00'})
   expect(validatePlan({kind:'propose',operation:'task_create',data:{mulai:'2'}},c).data?.mulai).toBe('2')
  })
+ it('discards model target hints for own-profile and record-creation actions',()=>{
+  const c={profile_name:{label:'Own name',entity:'profile',minimumRole:1,fields:{nama:'Name'},required:['nama'],task:false}}
+  expect(validatePlan({kind:'propose',operation:'profile_name',target:'profil saya',data:{nama:'Nama baru'}},c).target).toBeUndefined()
+ })
  it('validates read entities, modes and bounded values',()=>{
   expect(()=>validatePlan({kind:'read',entity:'auth.users'},catalog)).toThrow()
   expect(()=>validatePlan({kind:'read',entity:'tasks',mode:'all_organizations'},catalog)).toThrow()
