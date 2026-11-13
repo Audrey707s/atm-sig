@@ -3,6 +3,7 @@
 // NFR-001: getSessionUser() memastikan hanya user terautentikasi yang masuk
 
 import { getSessionUser } from '@/lib/auth/session'
+import AssistantWidget from './_components/AssistantWidget'
 import Sidebar from './_components/Sidebar'
 import TaskDataSync from './_components/TaskDataSync'
 import TopHeader from './_components/TopHeader'
@@ -37,6 +38,7 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
       {/* Top Header merah */}
       <TopHeader user={user} unreadCount={unreadCount} avatarUrl={avatar} />
       <TaskDataSync />
+      {process.env.ATM_AI_ENABLED==='true' && <AssistantWidget key={user.id} />}
 
       {/* Konten: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">

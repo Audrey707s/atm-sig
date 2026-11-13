@@ -1,3 +1,4 @@
+import { receiveAssistantWhatsApp } from '@/lib/ai/whatsapp'
 import { after } from 'next/server'
 import { equalSecret,readWebhookBody } from '@/lib/whatsapp/security'
 import { parseFonnteIncoming } from '@/lib/whatsapp/incoming'
@@ -18,6 +19,14 @@ export async function POST(request:Request) {
   catch { return new Response('Invalid payload',{status:400,headers}) }
   if(!incoming) return Response.json({accepted:false},{headers})
   const taskCommandsEnabled=process.env.WHATSAPP_TASK_COMMANDS_ENABLED==='true'
+  if(taskCommandsEnabled&&process.env.ATM_AI_ENABLED==='true') {
+    try {
+      if(await receiveAssistantWhatsApp(incoming)) {
+        after(async()=>{try{await deliverPendingWhatsApp()}catch{}})
+        return Response.json({accepted:true},{headers})
+      }
+    }catch{return new Response('Not accepted',{status:503,headers})}
+  }
   const legacyCommands=['link','help','stop','start','disconnect']
   const command=taskCommandsEnabled||legacyCommands.includes(incoming.command)?incoming.command:'help'
   const args={p_id:incoming.id,p_sender:incoming.sender,p_command:command,p_hash:incoming.codeHash}

@@ -10,8 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/groq": "4.0.83",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "ai": "7.0.172",
     "next": "16.4.1",
     "nodemailer": "10.4.0",
     "react": "19.3.0",

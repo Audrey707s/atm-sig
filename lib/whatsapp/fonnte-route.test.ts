@@ -1,5 +1,6 @@
 import { afterEach,beforeEach,describe,expect,it,vi } from 'vitest'
 const {rpc,after,deliver}=vi.hoisted(()=>({rpc:vi.fn(),after:vi.fn(),deliver:vi.fn()}))
+vi.mock('@/lib/ai/whatsapp',()=>({receiveAssistantWhatsApp:vi.fn().mockResolvedValue(false)}))
 vi.mock('next/server',()=>({after}))
 vi.mock('./store',()=>({channelStore:()=>({rpc}),whatsappEnabled:()=>true}))
 vi.mock('./delivery',()=>({deliverPendingWhatsApp:deliver}))
