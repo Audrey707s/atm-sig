@@ -7,13 +7,14 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
  const p=value as Plan
  if(!['read','propose','help','clarify'].includes(p.kind)) throw new Error('Invalid kind')
  for(const k of ['query','target','topic','question','operation','task','mode','entity'] as const) if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k]!.length>500)) throw new Error('Invalid value')
- if(p.kind==='read'&&(!entities.has(p.entity??'')||!['list','mine','review','calendar','report'].includes(p.mode??'list'))) throw new Error('Invalid read')
+ if(p.kind==='read'&&(!entities.has(p.entity??'')||!['list','mine','review','calendar','mine_calendar','report'].includes(p.mode??'list'))) throw new Error('Invalid read')
  if(p.task&&!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(p.task)) throw new Error('Invalid task')
  if(p.kind==='propose') {
   const spec=Object.hasOwn(catalog,p.operation??'')?catalog[p.operation!]:undefined;if(!spec) throw new Error('Operation denied')
   if(!p.data||typeof p.data!=='object'||Array.isArray(p.data)) throw new Error('Invalid data')
   for(const [k,v] of Object.entries(p.data)) if(!Object.hasOwn(spec.fields,k)||typeof v!=='string'||v.length>2000) throw new Error('Invalid field')
  }
+ if(p.data)for(const key of ['mulai','tenggat']) {const value=p.data[key];if(value&&/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?\s+WIB$/i.test(value))p.data[key]=value.replace(/\s+WIB$/i,'').replace('T',' ')}
  return p
 }
 export function localPlan(text:string):Plan|null {

@@ -20,7 +20,7 @@ export default function AssistantWidget() {
   if(busy||!text.trim())return
   const confirmation=/^(ya|konfirmasi)$/i.test(text.trim()),token=confirmation?pending:undefined
   setMessages(ms=>[...ms.slice(-29),{id:seq.current++,who:'user',text}]);setInput('');setBusy(true);setPending(undefined)
-  const controller=new AbortController();abort.current=controller;const timer=setTimeout(()=>controller.abort(),25000)
+  const controller=new AbortController();abort.current=controller;const timer=setTimeout(()=>controller.abort(),35000)
   try {
    const response=await fetch('/api/assistant',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,token}),signal:controller.signal})
    if(response.status===401){router.push('/login');return}

@@ -16,6 +16,11 @@ describe('AI intent boundary',()=>{
  it('rejects out-of-role tools, non-string fields, extra fields and prototype properties',()=>{
   for(const value of [{kind:'propose',operation:'task_delete',data:{}},{kind:'propose',operation:'constructor',data:{}},{kind:'propose',operation:'task_status',data:{status:100}},{kind:'propose',operation:'task_status',data:{actor:'admin'}},{kind:'propose',operation:'task_status',data:JSON.parse('{"__proto__":"admin"}')}]) expect(()=>validatePlan(value,catalog)).toThrow()
  })
+ it('normalizes only explicit WIB timestamp suffixes, leaving recurrence offsets intact',()=>{
+  const c={task_create:{label:'Create',entity:'tasks',minimumRole:2,fields:{mulai:'date',tenggat:'date'},required:[],task:false}}
+  expect(validatePlan({kind:'propose',operation:'task_create',data:{mulai:'2026-11-14 08:00 WIB',tenggat:'2026-11-15T16:00 WIB'}},c).data).toEqual({mulai:'2026-11-14 08:00',tenggat:'2026-11-15 16:00'})
+  expect(validatePlan({kind:'propose',operation:'task_create',data:{mulai:'2'}},c).data?.mulai).toBe('2')
+ })
  it('validates read entities, modes and bounded values',()=>{
   expect(()=>validatePlan({kind:'read',entity:'auth.users'},catalog)).toThrow()
   expect(()=>validatePlan({kind:'read',entity:'tasks',mode:'all_organizations'},catalog)).toThrow()
