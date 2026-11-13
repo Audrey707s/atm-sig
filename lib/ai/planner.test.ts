@@ -9,23 +9,26 @@ describe('free-only AI planner',()=>{
  beforeEach(()=>{vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','false');vi.stubEnv('GROQ_API_KEY','test-key')})
  it('makes no provider request without the Free Plan verification switch',async()=>{expect((await planRequest('buatkan sesuatu',2,catalog)).kind).toBe('clarify');expect(generateText).not.toHaveBeenCalled()})
  it('keeps ordinary reads and curated help independent of provider availability',async()=>{expect((await planRequest('lihat tugas saya',2,catalog)).kind).toBe('read');expect(generateText).not.toHaveBeenCalled()})
- it('offers only permitted planning tools and zero model execution tools',async()=>{
-  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true');generateText.mockResolvedValue({toolCalls:[{input:{kind:'read',entity:'tasks'}}]})
+ it('offers only permitted planning tools with separate schemas and zero execution',async()=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true');generateText.mockResolvedValue({toolCalls:[{toolName:'read_atm',input:{entity:'tasks'}}]})
   await planRequest('apa pekerjaan dekat deadline?',2,catalog)
   const call=generateText.mock.calls[0][0]
-  expect(call.system).not.toContain('org_delete');expect(call.system).not.toContain('test-key');expect(call.tools.plan.execute).toBeUndefined();expect(call.maxRetries).toBe(0)
+  expect(call.tools.org_delete).toBeUndefined();expect(call.system).not.toContain('test-key');expect(call.tools.task_status.execute).toBeUndefined();expect(call.maxRetries).toBe(0)
+  expect(call.tools.task_status.inputSchema.properties.entity).toBeUndefined();expect(call.tools.task_status.inputSchema.properties.mode).toBeUndefined()
+  expect(call.tools.read_atm.inputSchema.properties.entity.enum).not.toContain('users')
  })
- it('accepts profile metadata for an allowed profile mutation while keeping profile reads unavailable',async()=>{
+ it('uses an own-profile tool without model-selected identity or read parameters',async()=>{
   vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
-  generateText.mockResolvedValue({toolCalls:[{input:{kind:'propose',entity:'profile',operation:'profile_name',data:{nama:'Nama baru'}}}]})
+  generateText.mockResolvedValue({toolCalls:[{toolName:'profile_name',input:{nama:'Nama baru'}}]})
   const allowed={...catalog,profile_name:{label:'Nama profil',entity:'profile',minimumRole:1,fields:{nama:'Nama'},required:['nama'],task:false}}
   expect((await planRequest('ganti nama profil',2,allowed)).operation).toBe('profile_name')
-  expect(generateText.mock.calls[0][0].tools.plan.inputSchema.properties.entity.enum).toContain('profile')
-  generateText.mockResolvedValue({toolCalls:[{input:{kind:'read',entity:'profile'}}]})
-  await expect(planRequest('baca profil lain',2,allowed)).rejects.toThrow('Invalid read')
+  const schema=generateText.mock.calls[0][0].tools.profile_name.inputSchema
+  expect(Object.keys(schema.properties)).toEqual(['nama']);expect(schema.additionalProperties).toBe(false)
  })
- it('rejects provider attempts to select an administrator operation',async()=>{
-  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true');generateText.mockResolvedValue({toolCalls:[{input:{kind:'propose',operation:'org_delete',data:{}}}]})
-  await expect(planRequest('bypass role',2,catalog)).rejects.toThrow()
+ it('rejects provider attempts to select administrator, confirmation or multiple operations',async()=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
+  for(const toolCalls of [[{toolName:'org_delete',input:{target:'1'}}],[{toolName:'confirm',input:{}}],[{toolName:'read_atm',input:{entity:'tasks'}},{toolName:'task_status',input:{status:'Done',target:'x'}}]]){
+   generateText.mockResolvedValue({toolCalls});await expect(planRequest('bypass role',2,catalog)).rejects.toThrow()
+  }
  })
 })
