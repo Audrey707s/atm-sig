@@ -513,6 +513,9 @@ html[data-theme='dark'] .atm-wordmark-dark { color: #fff !important; }
 .atm-role-card { display:flex; flex-direction:column; gap:8px; padding:14px; background:var(--color-bg-sunken); border:1px solid var(--color-border); border-radius:12px; }
 .atm-role-card strong { width:fit-content; background:var(--color-brand-light); color:var(--color-red-700); border-radius:6px; padding:4px 8px; font-size:12px; }
 .atm-mobile-menu { display:none; }
+.atm-sidebar-identity { display:flex; flex-direction:column; flex-shrink:0; gap:4px; margin-top:auto; padding:16px 12px 2px; border-top:1px solid var(--color-border); }
+.atm-sidebar-identity strong { font-size:12px; font-weight:650; letter-spacing:.01em; color:var(--color-text-secondary); }
+.atm-sidebar-identity span { font-size:11px; line-height:1.5; color:var(--color-text-muted); }
 .atm-eyebrow { font-family:var(--font-display); font-size:11px; font-weight:600; letter-spacing:.035em; }
 .atm-workspace h2:not(.atm-eyebrow) { font-weight:650; }
 .atm-workspace .atm-eyebrow:is(h2) { font-size:14px !important; text-transform:none; letter-spacing:-.01em; font-weight:650; }

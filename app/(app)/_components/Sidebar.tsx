@@ -68,6 +68,10 @@ export default function Sidebar({ user }: { user: SessionUser }) {
             </div>
           )
         })}
+        <div className="atm-sidebar-identity">
+          <strong>ATM-SIG</strong>
+          <span>Accounting Task Manager</span>
+        </div>
       </nav>
     </aside>
   )
