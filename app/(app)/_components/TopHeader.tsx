@@ -36,11 +36,17 @@ export default function TopHeader({ user, unreadCount = 0, avatarUrl = '' }: Pro
           <ATMWordmark variant="light" className="w-[88px] sm:w-[104px]" />
         </Link>
         <span aria-hidden="true" className="hidden h-4 w-px bg-white/35 md:block" />
-        <span className="atm-eyebrow hidden !text-white/80 md:inline">Accounting Task Manager</span>
+        <span className="hidden text-sm font-semibold tracking-tight text-white lg:inline">Accounting Task Manager</span>
       </div>
 
+      <form action="/tasks" role="search" aria-label="Pencarian tugas" className="atm-header-search">
+        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <input type="search" name="search" maxLength={100} aria-label="Cari tugas" placeholder="Cari judul tugas…" />
+        <button type="submit" aria-label="Jalankan pencarian">Cari</button>
+      </form>
+
       <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
-        <JakartaClock />
+        <div className="hidden xl:block"><JakartaClock /></div>
         <span className="atm-eyebrow hidden !text-white/80 lg:inline">{today}</span>
         <ThemeToggle onBrand />
         <Link

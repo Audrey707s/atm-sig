@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DashboardPerformance } from '@/lib/dashboard/queries'
 import PerformanceOverview from './PerformanceOverview'
@@ -39,7 +39,7 @@ describe('PerformanceOverview (FR-072)', () => {
     expect(screen.getAllByText('Belum ada task aktif dalam cakupan Anda.')).toHaveLength(2)
   })
 
-  it('shows every PIC returned by the role hierarchy scope', () => {
+  it('pages through every PIC without dropping the role hierarchy scope', () => {
     const owners = Array.from({ length: 6 }, (_, index) => ({
       id: `user-${index + 1}`,
       name: `PIC ${index + 1}`,
@@ -51,6 +51,11 @@ describe('PerformanceOverview (FR-072)', () => {
     render(<PerformanceOverview performance={{ owners, orgUnits: [] }} />)
 
     expect(screen.getByText('PIC 1')).toBeTruthy()
+    expect(screen.queryByText('PIC 6')).toBeNull()
+    fireEvent.click(screen.getByRole('button', {name:'Progress per PIC berikutnya'}))
     expect(screen.getByText('PIC 6')).toBeTruthy()
+    expect(screen.queryByText('PIC 1')).toBeNull()
+    fireEvent.click(screen.getByRole('button', {name:'Progress per PIC sebelumnya'}))
+    expect(screen.getByText('PIC 1')).toBeTruthy()
   })
 })

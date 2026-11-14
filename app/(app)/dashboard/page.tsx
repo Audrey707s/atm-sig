@@ -15,10 +15,12 @@ import PerformanceOverview from '../_components/PerformanceOverview'
 import { resolveDashboardMonth } from '@/lib/dashboard/month'
 import CountUp from '@/app/_components/CountUp'
 import DashboardWelcome from './DashboardWelcome'
+import NavIcon, {type NavIconName} from '../_components/NavIcon'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
 type MetricTone = 'blocked' | 'revisi' | 'review' | 'progress' | 'done'
+const METRIC_ICONS: Record<MetricTone, NavIconName> = {blocked:'notification',revisi:'calendar',review:'approval',progress:'timeline',done:'tasks'}
 
 function MetricCard({
   label,
@@ -34,19 +36,13 @@ function MetricCard({
   active?: boolean
 }) {
   return (
-    <Link href={href ?? "/dashboard"} aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} className={`atm-card atm-spotlight atm-interactive block cursor-pointer p-4 sm:p-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${active ? "!bg-[#ffe0dc] !border-[#eb8790] !text-slate-900" : "hover:!bg-[#fff0ed]"}`}>
+    <Link href={href ?? "/dashboard"} aria-label={`Filter ${label}`} aria-current={active ? "true" : undefined} className="atm-metric">
       <div className="flex items-center justify-between gap-2">
-        <p className="atm-eyebrow">{label}</p>
-        {tone && (
-          <span
-            aria-hidden="true"
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: `var(--st-${tone}-dot)` }}
-          />
-        )}
+        <p className="atm-metric-label">{label}</p>
+        <span className="atm-metric-icon"><NavIcon name={tone ? METRIC_ICONS[tone] : 'tasks'} className="h-4 w-4"/></span>
       </div>
-      <p className="mt-3 text-4xl font-medium tabular-nums tracking-[-0.05em] text-[var(--color-text-primary)]">
-        <CountUp value={value} />
+      <p className="atm-metric-value">
+        <CountUp value={value} /><span aria-hidden="true" className="text-base font-normal text-[var(--color-text-muted)]">↗</span>
       </p>
     </Link>
   )
@@ -60,7 +56,7 @@ function formatDate(iso: string): string {
   }).format(new Date(iso))
 }
 
-export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string; card?:string}>}) {
+export default async function DashboardPage({ searchParams }: {searchParams:Promise<{month?:string; attention?:string; card?:string; page?:string}>}) {
   const [user,params] = await Promise.all([getSessionUser(),searchParams])
   const month=resolveDashboardMonth(params.month)
   const attentionMode = params.attention === 'month' ? 'month' : 'all'
@@ -77,6 +73,10 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
   ])
 
   const filteredTasks = tasksPerhatian
+  const pageCount = Math.max(1, Math.ceil(filteredTasks.length / 10))
+  const page = Math.min(pageCount, Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1))
+  const pageTasks = filteredTasks.slice((page - 1) * 10, page * 10)
+  const pageHref = (target: number) => `${cardHref(card)}&page=${target}`
   const showAlert =
     metrics.tertinggal > 0 || metrics.blocked > 0
 
@@ -97,6 +97,12 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
           <button className="atm-cta !w-auto !py-2">Terapkan</button>
         </form>
       </section>
+
+      <nav aria-label="Aksi cepat dashboard" className="atm-dashboard-actions mb-5">
+        <Link href="/tasks"><NavIcon name="tasks" className="h-4 w-4"/>Buka pekerjaan</Link>
+        <Link href="/calendar"><NavIcon name="calendar" className="h-4 w-4"/>Kalender tugas</Link>
+        {user.roleLevel >= 3 && <Link href="/review-inbox"><NavIcon name="approval" className="h-4 w-4"/>Tinjauan tugas</Link>}
+      </nav>
 
       {/* Banner peringatan */}
       {showAlert && (
@@ -147,7 +153,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
       ) : performance ? <div className="mb-7"><PerformanceOverview performance={performance} /></div> : null}
 
       {/* Tabel task perlu perhatian */}
-      <section aria-label="Task perlu perhatian">
+      <section aria-label="Task perlu perhatian" className="atm-dashboard-table">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="atm-eyebrow !text-[var(--color-text-secondary)]">
           Daftar Task <span className="font-normal normal-case">({attentionMode === "all" ? "Akumulatif" : "Per Bulan"})</span>
         </h2><div className="flex shrink-0 gap-2">
@@ -181,7 +187,7 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredTasks.map((task) => (
+                {pageTasks.map((task) => (
                   <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-2 sm:px-3 font-semibold text-slate-800 whitespace-nowrap">
                       <Link
@@ -217,13 +223,19 @@ export default async function DashboardPage({ searchParams }: {searchParams:Prom
         )}
 
         {filteredTasks.length > 0 && (
-          <div className="mt-3 text-right">
+          <div className="atm-pagination">
+            <span>{(page - 1) * 10 + 1}–{Math.min(page * 10, filteredTasks.length)} dari {filteredTasks.length} tugas</span>
+            <div className="atm-pagination-controls">
+              {page > 1 && <Link href={pageHref(page-1)} aria-label="Halaman tugas sebelumnya">←</Link>}
+              <span className="self-center">{page}/{pageCount}</span>
+              {page < pageCount && <Link href={pageHref(page+1)} aria-label="Halaman tugas berikutnya">→</Link>}
             <Link
               href="/tasks"
-              className="atm-link text-xs font-medium"
+              className="text-xs font-medium"
             >
               Lihat semua task →
             </Link>
+            </div>
           </div>
         )}
       </section>

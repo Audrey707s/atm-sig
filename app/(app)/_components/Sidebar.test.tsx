@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import Sidebar from './Sidebar'
 import type { SessionUser } from '@/lib/auth/session'
 
@@ -12,6 +12,16 @@ function user(roleLevel: number): SessionUser {
 }
 
 describe('sidebar navigation R.03', () => {
+  it('closes the mobile menu after navigation without changing role visibility', () => {
+    render(<Sidebar user={user(2)} />)
+    const toggle = screen.getByRole('button', {name:'Menu'})
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(screen.getByRole('link', {name:'Kalender'}))
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('link', {name:'Persetujuan'})).toBeNull()
+  })
   it('renders menu icons and labels without duplicated decorative text', () => {
     render(<Sidebar user={user(6)} />)
     for (const label of ['Dashboard', 'Pekerjaan', 'Persetujuan', 'Laporan', 'Master Data']) {

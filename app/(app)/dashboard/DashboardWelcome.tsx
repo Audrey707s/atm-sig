@@ -1,22 +1,5 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import NavIcon from '../_components/NavIcon'
 
 export default function DashboardWelcome({ name }: { name: string }) {
-  const text = `Selamat Datang, ${name}!`
-  const [visible, setVisible] = useState('')
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const reducedTimer = window.setTimeout(() => setVisible(text), 0)
-      return () => window.clearTimeout(reducedTimer)
-    }
-    let index = 0
-    const timer = window.setInterval(() => {
-      index += 1
-      setVisible(text.slice(0, index))
-      if (index >= text.length) window.clearInterval(timer)
-    }, 48)
-    return () => window.clearInterval(timer)
-  }, [text])
-  return <h1 aria-label={text}>{visible}<span aria-hidden="true" className="ml-0.5 inline-block h-[.9em] w-0.5 animate-pulse bg-[var(--color-brand)] align-[-.05em]" /></h1>
+  return <div><p className="mb-2 text-sm text-[var(--color-text-muted)]">Selamat Datang, {name}!</p><h1 className="flex items-center gap-3"><NavIcon name="dashboard" className="h-6 w-6 text-[var(--color-brand)]"/>Dashboard</h1></div>
 }

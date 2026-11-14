@@ -36,6 +36,7 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <a className="atm-skip-link" href="#atm-main">Lewati ke konten</a>
       {/* Top Header merah */}
       <TopHeader user={user} unreadCount={unreadCount} avatarUrl={avatar} />
       <TaskDataSync />
@@ -44,7 +45,7 @@ async function AuthenticatedAppLayout({ children }: { children: ReactNode }) {
       {/* Konten: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <Sidebar user={user} />
-        <main className="atm-workspace min-h-0 min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg-app)]">
+        <main id="atm-main" tabIndex={-1} className="atm-workspace min-h-0 min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg-app)]">
           {children}
         </main>
       </div>
