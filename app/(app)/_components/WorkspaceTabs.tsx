@@ -31,7 +31,7 @@ export const APPROVAL_TABS: Tab[] = [
 ]
 export const MASTER_TABS: Tab[] = [
   { label: 'Profil', icon: 'user', href: '/account' },
-  { label: 'Pengguna', icon: 'user', href: '/users', minLevel: 3 },
+  { label: 'Pengguna', icon: 'users', href: '/users', minLevel: 3 },
   { label: 'Organizations', icon: 'structure', href: '/organizations' },
   { label: 'Kategori Tasks', icon: 'master', href: '/task-templates', minLevel: 2 },
 ]
