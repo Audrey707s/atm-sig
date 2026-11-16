@@ -16,10 +16,12 @@ export async function receiveAssistantWhatsApp(incoming:FonnteIncoming):Promise<
  if(!profile||profile.status!=='aktif') return false
  const role=profile.role as unknown as {level:number}
  const {data:pending}=await store.from('atm_ai_sessions').select('token,payload,phone,linked_at,expires_at').eq('user_id',link.user_id).eq('channel','whatsapp').maybeSingle()
+ const {data:taskContext}=await store.from('atm_ai_task_context').select('task_id,choices,phone,linked_at,expires_at').eq('user_id',link.user_id).eq('channel','whatsapp').maybeSingle()
+ const validTaskContext=Boolean(taskContext&&taskContext.phone===incoming.sender&&taskContext.linked_at===link.linked_at&&Date.parse(taskContext.expires_at)>Date.now())
  const confirmation=/^(ya|konfirmasi|batal)$/i.test(incoming.text.trim())
  const validSession=Boolean(pending&&pending.phone===incoming.sender&&pending.linked_at===link.linked_at&&Date.parse(pending.expires_at)>Date.now())
  const validPending=validSession&&Boolean(pending?.token)
- const choosing=validSession&&Array.isArray(pending?.payload?.choices)&&/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(incoming.text.trim())
+ const choosing=((validSession&&Array.isArray(pending?.payload?.choices))||(validTaskContext&&Array.isArray(taskContext?.choices)&&taskContext.choices.length>0))&&/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(incoming.text.trim())
  const continuing=validSession&&pending?.payload?.lastRead&&/^(?:lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(incoming.text.trim())
  if(confirmation&&!validPending&&!validSession) return false
  if(!confirmation&&!choosing&&!continuing) {
@@ -27,6 +29,8 @@ export async function receiveAssistantWhatsApp(incoming:FonnteIncoming):Promise<
   if((incoming.command!=='help'&&!taskReadIntent(incoming.text))||/^(menu|bantuan)$/i.test(incoming.text)) {
    const {error:resetError}=await store.from('atm_ai_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
    if(resetError)throw new Error('Assistant reset unavailable')
+   const {error:contextError}=await store.from('atm_ai_task_context').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
+   if(contextError)throw new Error('Assistant context reset unavailable')
    return false
   }
   const [{data:action},{data:chat}]=await Promise.all([

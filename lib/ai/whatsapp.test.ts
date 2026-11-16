@@ -30,4 +30,10 @@ describe('WhatsApp conversational routing',()=>{
   mocks.tables.atm_ai_sessions={phone:'6281111111111',linked_at:'2025-01-01',expires_at:new Date(Date.now()+60000).toISOString(),payload:{choices:[{id:'one'}]}}
   expect(await receiveAssistantWhatsApp(incoming('1'))).toBe(false);expect(mocks.request).not.toHaveBeenCalled()
  })
+ it('routes a number from the current task list to the assistant context',async()=>{
+  mocks.tables.atm_ai_task_context={phone:'6281111111111',linked_at:linkedAt,expires_at:new Date(Date.now()+60000).toISOString(),choices:[{id:'one'},{id:'two'}]}
+  expect(await receiveAssistantWhatsApp(incoming('2'))).toBe(true)
+  expect(mocks.request).toHaveBeenCalledWith(expect.anything(),'2')
+ })
+
 })

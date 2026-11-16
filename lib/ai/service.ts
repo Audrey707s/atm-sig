@@ -26,6 +26,10 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
    if(choice&&Array.isArray(selection.payload?.choices))return dispatch(turn,'select',{choice:Number(choice[1])})
    if(next&&selection.payload?.lastRead)return dispatch(turn,'read',{...selection.payload.lastRead,page:String(Number(selection.payload.lastRead.page??1)+1)})
   }
+  if(choice){
+   const {data:context}=await assistantStore().from('atm_ai_task_context').select('choices,expires_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
+   if(context&&Date.parse(context.expires_at)>Date.now()&&Array.isArray(context.choices)&&context.choices.length)return dispatch(turn,'select',{choice:Number(choice[1])})
+  }
  }
  const reserved=await dispatch({...turn,channel:'web'},'reserve',{message,contextChannel:turn.channel})
  if(!reserved.ok) return dispatch(turn,'reply',{message:'Batas permintaan sementara tercapai. Tunggu satu menit lalu coba lagi.'})
@@ -41,7 +45,7 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  plan=groundCreation(plan,historyOverride??reserved.history??[message])
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
- if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,exact:plan.exact,data:plan.data})
+ if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})
  if(plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
  if(plan.entity==='tasks'&&plan.mode==='calendar'&&/\b(saya|pribadi|milikku)\b/i.test(message))plan.mode='mine_calendar'
  return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task,page:plan.page,pic:plan.pic})

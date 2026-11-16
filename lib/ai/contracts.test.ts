@@ -88,5 +88,13 @@ describe('AI intent boundary',()=>{
   expect(localPlan('lihat tugas nata yang masih open halaman 2')).toMatchObject({pic:'nata',mode:'open',page:'2'})
   expect(localPlan('cari tugas nata')).not.toHaveProperty('pic')
  })
+ it('separates quoted title and PIC on mutation requests and preserves context references',()=>{
+  expect(localPlan('hapus tugas "proker" milik nata ya')).toMatchObject({operation:'task_delete',target:'proker',pic:'nata',exact:true})
+  expect(localPlan('edit tugas "pertama" milik audrey')).toMatchObject({operation:'task_update',target:'pertama',pic:'audrey',exact:true,data:{}})
+  expect(localPlan('hapus ya')).toMatchObject({operation:'task_delete',context:true,target:undefined})
+  expect(localPlan('hapus tugas')).toMatchObject({operation:'task_delete',context:true})
+  expect(localPlan('delete tugas 2')).toMatchObject({operation:'task_delete',target:'2',exact:false})
+  expect(localPlan('ganti judul jadi Judul baru')).toMatchObject({operation:'task_update',context:true,data:{judul:'Judul baru'}})
+ })
 
 })

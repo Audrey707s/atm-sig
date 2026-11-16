@@ -12,9 +12,9 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role authenticator noinherit;grant authenticated,service_role to authenticator;
    create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    create function auth.role() returns text language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role','service_role')$$;`)
-  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql']
+  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','027_task_reminder_scheduler.sql','028_reminder_recipient_guard.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','031_reminder_email_delivery.sql','032_notification_reminder_reference.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql','20261116121257_ai_task_context_and_delete_cleanup.sql']
   for(const file of files){let sql=readFileSync('supabase/migrations/'+file,'utf8');if(file.includes('full_operations')&&!sql.trim().endsWith('commit;'))sql+='\ncommit;';try{await db.exec(sql)}catch(e){throw new Error('Migration '+file+': '+String(e))}}
-  await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits from anon,authenticated;`)
+  await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits,public.atm_ai_task_context from anon,authenticated;`)
  })
  afterAll(async()=>db?.close())
  beforeEach(async()=>{
@@ -441,6 +441,93 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   expect((await apply(actor as string,'task_update',foreign,{judul:'Luar cakupan'},true)).ok).toBe(otherScope)
   expect((await apply(actor as string,'task_delete',foreign,{},true)).ok).toBe(otherScope)
   expect((await apply(actor as string,'org_create',null,{nama:'Organisasi uji role',tipe:'section',induk:'2'},true)).ok).toBe(actor===sa)
+ })
+
+ it('deletes tasks with real reminder notification references and preserves historical notification ownership',async()=>{
+  const reminder=(await db.query<{id:string}>(`insert into public.task_reminders(task_id,checkpoint_pct,due_date_version) select id,50,due_date from public.tasks where id=$1 returning id`,[task])).rows[0].id
+  const notification=(await db.query<{id:string}>(`insert into public.notifications(user_id,task_id,reminder_id,type,title,body) values($1,$2,$3,'reminder_50','Reminder','Pengingat PIC') returning id`,[pic,task,reminder])).rows[0].id
+  const preview=await ai(sa,'propose',{operation:'task_delete',target:task,data:{}})
+  expect(preview.pending,preview.message).toBe(true)
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+  expect((await ai(sa,'confirm',{},preview.token)).changed).toBe(true)
+  expect((await db.query('select id from public.task_reminders where id=$1',[reminder])).rows).toHaveLength(0)
+  expect((await db.query<{task_id:string|null;reminder_id:string|null;user_id:string}>('select task_id,reminder_id,user_id from public.notifications where id=$1',[notification])).rows[0]).toEqual({task_id:null,reminder_id:null,user_id:pic})
+ })
+ it('still rejects missing-task reminders, wrong recipients and manual detachment from a live task',async()=>{
+  await db.exec('savepoint bad_guard')
+  await expect(db.query(`insert into public.notifications(user_id,type,title,body) values($1,'reminder_50','X','X')`,[pic])).rejects.toThrow('Reminder harus terhubung')
+  await db.exec('rollback to savepoint bad_guard')
+  await expect(db.query(`insert into public.notifications(user_id,task_id,type,title,body) values($1,$2,'reminder_50','X','X')`,[manager,task])).rejects.toThrow('PIC')
+  await db.exec('rollback to savepoint bad_guard')
+  const id=(await db.query<{id:string}>(`insert into public.notifications(user_id,task_id,type,title,body) values($1,$2,'reminder_50','X','X') returning id`,[pic,task])).rows[0].id
+  await expect(db.query('update public.notifications set task_id=null where id=$1',[id])).rejects.toThrow('Reminder harus terhubung')
+  await db.exec('rollback to savepoint bad_guard')
+ })
+ it('edits an exact owner-qualified task, then keeps the same selected task for a contextual delete',async()=>{
+  await db.query('update public.tasks set title=$1 where id=$2',['pertama',task])
+  const other=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,8,'pertama',now(),now()+interval '2 days') returning id`,[sa])).rows[0].id
+  const edit=await ai(sa,'propose',{operation:'task_update',target:'pertama',exact:true,pic:'PIC',data:{}})
+  expect(edit.message).toContain('Bagian mana');expect(edit.pending).not.toBe(true)
+  const selected=(await db.query<{task_id:string}>('select task_id from public.atm_ai_task_context where user_id=$1',[sa])).rows[0].task_id
+  expect(selected).toBe(task)
+  const deletion=await ai(sa,'propose',{operation:'task_delete',context:true,data:{}})
+  expect(deletion.pending,deletion.message).toBe(true)
+  const pending=(await db.query<{target:string}>('select target from public.atm_ai_sessions where user_id=$1',[sa])).rows[0].target
+  expect(pending).toBe(task)
+  await ai(sa,'cancel');expect((await db.query('select id from public.tasks where id in ($1,$2)',[task,other])).rows).toHaveLength(2)
+ })
+ it('never treats a bare numeric selection as a substring of an unrelated UAT task title',async()=>{
+  await db.query('update public.tasks set title=$1 where id=$2',['UAT MANUAL 20261030',task])
+  const p=await ai(sa,'propose',{operation:'task_delete',target:'2',data:{}})
+  expect(p.ok).toBe(false);expect(p.message).toContain('Nomor tugas tidak aktif');expect(p.pending).not.toBe(true)
+  expect((await db.query('select * from public.atm_ai_sessions where user_id=$1',[sa])).rows).toHaveLength(0)
+ })
+ it('binds numeric references to the actual latest list and refuses expired or cross-user choices',async()=>{
+  const second=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,8,'UAT 2 lain',now(),now()+interval '12 days') returning id`,[sa])).rows[0].id
+  await ai(sa,'read',{entity:'tasks'})
+  const selected=await ai(sa,'select',{choice:1});expect(selected.message).toContain('Task asal')
+  const d=await ai(sa,'propose',{operation:'task_delete',target:'2',data:{}})
+  expect(d.pending,d.message).toBe(true)
+  expect((await db.query<{target:string}>('select target from public.atm_ai_sessions where user_id=$1',[sa])).rows[0].target).toBe(second)
+  await ai(sa,'cancel')
+  expect((await ai(manager,'propose',{operation:'task_delete',target:'2',data:{}})).pending).not.toBe(true)
+  await ai(sa,'read',{entity:'tasks'});await db.query("update public.atm_ai_task_context set expires_at=now()-interval '1 second' where user_id=$1",[sa])
+  expect((await ai(sa,'propose',{operation:'task_delete',target:'2',data:{}})).pending).not.toBe(true)
+ })
+ it('retains the original chosen row after ambiguous editing, requests fields and safely reuses it',async()=>{
+  await db.query('update public.tasks set title=$1 where id=$2',['tugas pertama',task])
+  const selected=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,8,'pertama',now(),now()+interval '12 days') returning id`,[sa])).rows[0].id
+  const p=await ai(sa,'propose',{operation:'task_update',target:'pertama',data:{}})
+  expect(p.rows).toHaveLength(2)
+  const edit=await ai(sa,'select',{choice:2});expect(edit.message).toContain('Bagian mana')
+  const d=await ai(sa,'propose',{operation:'task_delete',context:true,data:{}});expect(d.pending,d.message).toBe(true)
+  expect((await db.query<{target:string}>('select target from public.atm_ai_sessions where user_id=$1',[sa])).rows[0].target).toBe(selected)
+  await ai(sa,'cancel');expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+ })
+ it('keeps task context private from browser and anonymous database roles',async()=>{
+  const r=await db.query<{allowed:boolean}>(`select has_table_privilege(role,'public.atm_ai_task_context','select') allowed from(values('anon'),('authenticated')) x(role)`)
+  expect(r.rows.every(r=>!r.allowed)).toBe(true)
+ })
+
+ it('never ignores an explicit missing or incorrect PIC when preparing a mutation',async()=>{
+  const missing=await ai(sa,'propose',{operation:'task_delete',target:'Task asal',pic:'Nama tidak ada',exact:true,data:{}})
+  expect(missing.pending).not.toBe(true);expect(missing.ok).toBe(false)
+  const other=await ai(sa,'propose',{operation:'task_delete',target:'Task asal',pic:'SA',exact:true,data:{}})
+  expect(other.pending).not.toBe(true);expect(other.ok).toBe(false)
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+ })
+ it('keeps selected context through an ordinary clarification and changes only the selected title',async()=>{
+  await ai(sa,'propose',{operation:'task_update',target:task,data:{}})
+  await ai(sa,'reply',{message:'Bagian mana yang ingin diubah?'})
+  const update=await ai(sa,'propose',{operation:'task_update',context:true,data:{judul:'Judul dari percakapan'}})
+  expect(update.pending,update.message).toBe(true);expect(update.message).toContain('PIC: PIC')
+  expect((await ai(sa,'confirm',{},update.token)).changed).toBe(true)
+  expect((await db.query<{title:string}>('select title from public.tasks where id=$1',[task])).rows[0].title).toBe('Judul dari percakapan')
+ })
+ it('never falls back to a substring for an explicitly quoted exact title',async()=>{
+  await db.query('update public.tasks set title=$1 where id=$2',['UAT MANUAL 20261030',task])
+  const p=await ai(sa,'propose',{operation:'task_delete',target:'2',exact:true,data:{}})
+  expect(p.pending).not.toBe(true);expect(p.ok).toBe(false)
  })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')
