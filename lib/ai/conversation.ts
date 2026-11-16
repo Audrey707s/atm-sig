@@ -78,7 +78,7 @@ function answer(field:string,message:string,draft:GuidedDraft):Record<string,str
 export function conversationPlan(message:string,draft?:GuidedDraft|null):Plan|null {
  if(draft?.payload.guided&&draft.payload.field==='update'){
   const patch=/^(?:(?:ganti|ubah|edit)\s+)?(judul|nama|status|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(clean(message))
-  if(patch){const key=patch[1].toLowerCase(),isTask=draft.operation.startsWith('task_');const operation=isTask&&key==='status'?'task_status':isTask&&key==='pic'?'task_reassign':draft.operation;const value=key==='status'?statusValue(patch[2]):normalizeTaskReference(patch[2]).text;return {kind:'propose',operation,target:draft.target??undefined,context:!draft.target,data:{...(operation===draft.operation?draft.payload.data:{}),...(value?{[key]:value}:{})}}}
+  if(patch&&!(/^(?:pic|status)$/i.test(patch[1])&&/^(?:tugas|task)\b/i.test(patch[2]))){const key=patch[1].toLowerCase(),isTask=draft.operation.startsWith('task_');const operation=isTask&&key==='status'?'task_status':isTask&&key==='pic'?'task_reassign':draft.operation;const value=key==='status'?statusValue(patch[2]):normalizeTaskReference(patch[2]).text;if(value)return {kind:'propose',operation,target:draft.target??undefined,context:!draft.target,data:{...(operation===draft.operation?draft.payload.data:{}),[key]:value}}}
  }
  let spoken=spokenPlan(message)
  if(!draft?.payload.guided)return spoken

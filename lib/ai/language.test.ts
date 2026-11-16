@@ -27,3 +27,5 @@ describe('reported status requests and owner-first task references',()=>{
  it('accepts a short status answer after a selected task',()=>expect(conversationPlan('Terhambat',{operation:'task_status',target:'id',payload:{guided:true,field:'status',data:{}}})).toMatchObject({operation:'task_status',target:'id',data:{status:'Blocked'}}))
  it('changes status from a general edit draft without submitting an invalid task_update field',()=>expect(conversationPlan('status jadi Terhambat',{operation:'task_update',target:'id',payload:{guided:true,field:'update',data:{}}})).toMatchObject({operation:'task_status',target:'id',data:{status:'Blocked'}}))
 })
+
+it('lets a fully specified status request override an older general edit target',()=>expect(conversationPlan('ubah status task Ada deh milik Sevtuari menjadi Terhambat',{operation:'task_update',target:'older-task',payload:{guided:true,field:'update',data:{}}})).toMatchObject({operation:'task_status',target:'Ada deh',pic:'Sevtuari',data:{status:'Blocked'}}))
