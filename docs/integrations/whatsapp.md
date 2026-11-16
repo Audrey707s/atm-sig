@@ -178,3 +178,7 @@ Regression tests separately exercise within-section and cross-unit task update/d
 - A field answer takes priority over a bare menu word: “Laporan harian” can be a title. Explicit read/menu requests interrupt the draft. BATAL abandons it. Confirmation while required fields are missing repeats the missing-field question.
 - Web action state is bound to the verified conversation ID; WhatsApp state retains its user/phone-generation boundary. A different thread cannot inherit another thread's pending target or confirmation. Guided/local requests use a separate 30/minute ceiling while provider planning retains its existing 8/minute cap.
 - Tests replay complete ordinary-language conversations against the real operation SQL/RLS, including the reported Audrey→Nata reassignment, recurring schedules, invalid date correction and thread/role isolation. Production checks stop at preview or roll back the transaction.
+
+## Penerjemah lokal tanpa provider (16 November 2026)
+
+Semua percakapan kini memakai penerjemah lokal yang sama dengan web; tidak ada fallback Groq atau kebutuhan key AI. Perintah native/menu dan formulir WhatsApp tetap tersedia. Lihat `ai-assistant.md` untuk cakupan 31 operasi, contoh kalimat dan tindakan yang memerlukan halaman web/verifikasi. Pembatasan spam server serta aturan hak akses tetap berlaku.

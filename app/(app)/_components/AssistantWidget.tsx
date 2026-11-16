@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import {useEffect,useRef,useState,type KeyboardEvent} from 'react'
+import {useEffect,useRef,useState,type KeyboardEvent,type PointerEvent} from 'react'
 import {useRouter} from 'next/navigation'
 import ATMWordmark from '@/app/_components/ATMWordmark'
 import type {AssistantReply} from '@/lib/ai/contracts'
@@ -28,9 +28,13 @@ function ReplyDetails({reply}:{reply:AssistantReply}){
  </>
 }
 export default function AssistantWidget({helpTopics=[]}:{helpTopics?:HelpTopic[]}){
- const [open,setOpen]=useState(false),[tab,setTab]=useState<Tab>('chat'),[messages,setMessages]=useState<Message[]>([welcome]),[input,setInput]=useState(''),[busy,setBusy]=useState(false),[pending,setPending]=useState<string>(),[conversation,setConversation]=useState<string>(),[archived,setArchived]=useState(false),[position,setPosition]=useState({right:20,bottom:80})
+ const [open,setOpen]=useState(false),[tab,setTab]=useState<Tab>('chat'),[messages,setMessages]=useState<Message[]>([welcome]),[input,setInput]=useState(''),[busy,setBusy]=useState(false),[pending,setPending]=useState<string>(),[conversation,setConversation]=useState<string>(),[archived,setArchived]=useState(false),[position,setPosition]=useState({right:20,bottom:80}),[panelPosition,setPanelPosition]=useState<{left:number;top:number}>()
  const [threads,setThreads]=useState<ChatThread[]>([]),[historyLoading,setHistoryLoading]=useState(false),[historyError,setHistoryError]=useState(''),[search,setSearch]=useState(''),[article,setArticle]=useState<string>()
  const launcher=useRef<HTMLButtonElement>(null),field=useRef<HTMLTextAreaElement>(null),content=useRef<HTMLDivElement>(null),abort=useRef<AbortController|null>(null),busyRef=useRef(false),stick=useRef(true),historyGeneration=useRef(0),tabRefs=useRef<(HTMLButtonElement|null)[]>([])
+ const panel=useRef<HTMLElement>(null),panelDrag=useRef<{x:number;y:number;left:number;top:number}|null>(null)
+ function clampPanel(left:number,top:number){const rect=panel.current?.getBoundingClientRect();return {left:Math.max(12,Math.min(left,window.innerWidth-(rect?.width??400)-12)),top:Math.max(12,Math.min(top,window.innerHeight-(rect?.height??720)-12))}}
+ function beginPanelDrag(e:PointerEvent<HTMLButtonElement>){if(e.button!==0)return;const rect=panel.current?.getBoundingClientRect();if(!rect)return;panelDrag.current={x:e.clientX,y:e.clientY,left:rect.left,top:rect.top};e.currentTarget.setPointerCapture?.(e.pointerId)}
+ useEffect(()=>{const resize=()=>setPanelPosition(p=>p?clampPanel(p.left,p.top):p);window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[])
  const drag=useRef<{x:number;y:number;right:number;bottom:number}|null>(null),moved=useRef(false),router=useRouter()
  useEffect(()=>{if(open&&tab==='chat'&&(typeof window.matchMedia!=='function'||window.matchMedia('(pointer:fine)').matches))field.current?.focus({preventScroll:true})},[open,tab])
  useEffect(()=>{if(open&&tab==='chat'&&stick.current&&content.current)content.current.scrollTop=content.current.scrollHeight},[open,tab,messages,busy])
@@ -53,7 +57,7 @@ export default function AssistantWidget({helpTopics=[]}:{helpTopics?:HelpTopic[]
  function tabKey(event:KeyboardEvent<HTMLButtonElement>,index:number){const next=event.key==='ArrowRight'?(index+1)%3:event.key==='ArrowLeft'?(index+2)%3:event.key==='Home'?0:event.key==='End'?2:-1;if(next>=0){event.preventDefault();selectTab(tabs[next].key);tabRefs.current[next]?.focus()}}
  async function send(text:string){
   if(busyRef.current||!text.trim())return
-  busyRef.current=true;setBusy(true);const confirmation=/^(ya|konfirmasi)$/i.test(text.trim()),token=confirmation?pending:undefined
+  busyRef.current=true;setBusy(true);const confirmation=/^(ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan)$/i.test(text.trim()),token=confirmation?pending:undefined
   const requestAt=new Date().toISOString();stick.current=true;setArchived(false);setTab('chat');setMessages(ms=>[...ms.slice(-99),{id:crypto.randomUUID(),who:'user',text,at:requestAt}]);setInput('');setPending(undefined)
   if(field.current)field.current.style.height='auto'
   const controller=new AbortController();abort.current=controller;const timer=setTimeout(()=>controller.abort(),45000)
@@ -77,8 +81,10 @@ export default function AssistantWidget({helpTopics=[]}:{helpTopics?:HelpTopic[]
    onPointerUp={()=>{drag.current=null}} onPointerCancel={()=>{drag.current=null;moved.current=true}}
    onKeyDown={e=>{const v:Record<string,[number,number]>={ArrowLeft:[20,0],ArrowRight:[-20,0],ArrowUp:[0,20],ArrowDown:[0,-20]};if(v[e.key]){e.preventDefault();const [x,y]=v[e.key];setPosition(p=>({right:Math.min(Math.max(12,p.right+x),Math.max(12,window.innerWidth-68)),bottom:Math.min(Math.max(20,p.bottom+y),Math.max(20,window.innerHeight-68))}))}}}
    onClick={()=>{if(!moved.current)setOpen(o=>!o);moved.current=false}}><Icon name="chat" size={25}/></button>
-  {open&&<section id="atm-agent" role="dialog" aria-label="ATM Agent" className={s.panel} onKeyDown={e=>{if(e.key==='Escape')close()}}>
-   <header className={s.brandBar}><ATMWordmark className={s.logo}/><div className={s.barActions}><button type="button" className={s.iconButton} aria-label="Percakapan baru" title="Percakapan baru" disabled={busy} onClick={newChat}><Icon name="plus"/></button><button type="button" className={s.iconButton} aria-label="Minimalkan ATM Agent" onClick={close}><Icon name="down"/></button><button type="button" className={s.iconButton} aria-label="Tutup chat" onClick={close}><Icon name="close"/></button></div></header>
+  {open&&<section ref={panel} style={panelPosition?{...panelPosition,right:'auto',bottom:'auto'}:undefined} id="atm-agent" role="dialog" aria-label="ATM Agent" className={s.panel} onKeyDown={e=>{if(e.key==='Escape')close()}}>
+   <header className={s.brandBar}><button type="button" className={s.dragHandle} aria-label="Geser jendela ATM Agent" title="Tarik untuk memindahkan. Tombol panah untuk menggeser; Home untuk posisi awal."
+    onPointerDown={beginPanelDrag} onPointerMove={e=>{const d=panelDrag.current;if(d)setPanelPosition(clampPanel(d.left+e.clientX-d.x,d.top+e.clientY-d.y))}} onPointerUp={()=>{panelDrag.current=null}} onPointerCancel={()=>{panelDrag.current=null}} onLostPointerCapture={()=>{panelDrag.current=null}}
+    onKeyDown={e=>{if(e.key==='Home'){e.preventDefault();setPanelPosition(undefined);return}const delta:Record<string,[number,number]>={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};if(delta[e.key]){e.preventDefault();const rect=panel.current?.getBoundingClientRect();if(rect){const [x,y]=delta[e.key];setPanelPosition(clampPanel(rect.left+x,rect.top+y))}}}}><ATMWordmark className={s.logo}/><span aria-hidden="true" className={s.dragGrip}>⠿</span></button><div className={s.barActions}><button type="button" className={s.iconButton} aria-label="Percakapan baru" title="Percakapan baru" disabled={busy} onClick={newChat}><Icon name="plus"/></button><button type="button" className={s.iconButton} aria-label="Minimalkan ATM Agent" onClick={close}><Icon name="down"/></button><button type="button" className={s.iconButton} aria-label="Tutup chat" onClick={close}><Icon name="close"/></button></div></header>
    <div className={s.intro}><div className={s.introTop}><div><h2>ATM Agent</h2><p>Bantuan untuk pekerjaan Anda.</p></div></div><div role="tablist" aria-label="Menu ATM Agent" className={s.tabs}>{tabs.map((t,i)=><button key={t.key} ref={el=>{tabRefs.current[i]=el}} id={'agent-tab-'+t.key} role="tab" type="button" aria-selected={tab===t.key} aria-controls={'agent-panel-'+t.key} tabIndex={tab===t.key?0:-1} className={s.tab} onKeyDown={e=>tabKey(e,i)} onClick={()=>selectTab(t.key)}><Icon name={t.icon} size={14}/>{t.label}</button>)}</div></div>
    <div ref={content} id={'agent-panel-'+tab} role="tabpanel" aria-labelledby={'agent-tab-'+tab} className={s.content} onScroll={e=>{stick.current=e.currentTarget.scrollHeight-e.currentTarget.scrollTop-e.currentTarget.clientHeight<80}}>
     {tab==='chat'&&<>{archived&&<div className={s.archiveNote}><Icon name="history" size={12}/>Riwayat percakapan Anda</div>}<div role="log" aria-live="polite" aria-relevant="additions" className={s.chatLog}>{messages.map(m=><div key={m.id} className={`${s.message} ${m.who==='user'?s.outgoing:''}`}>

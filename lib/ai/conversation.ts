@@ -1,4 +1,5 @@
 import {localPlan,type Plan} from './contracts'
+import {requestLanguage,featurePlan,statusValue} from './language'
 import {normalizeTaskReference,taskMutationReference} from '@/lib/tasks/chat-intents'
 export type GuidedDraft={operation:string;target?:string|null;payload:{guided?:boolean;field?:string;data?:Record<string,string>;pic?:string;exact?:boolean;options?:Array<{label:string;value:string}>}}
 function clean(text:string){return text.trim().replace(/^(?:(?:tolong|mohon|bantu|coba|bisa|boleh|loh|oh|oke)(?:\s+(?:saya|aku|kamu|anda))?\s+)+/i,'').replace(/[.!?]+$/,'').trim()}
@@ -8,7 +9,9 @@ function proposal(operation:string,reference:string,data:Record<string,string>):
  return {kind:'propose',operation,data,...(target?{...target,target:target.context?undefined:target.target}:{context:true})}
 }
 export function spokenPlan(message:string):Plan|null {
- const text=clean(message)
+ const text=requestLanguage(message)
+ const feature=featurePlan(text)
+ if(feature)return feature
  const reassignment=/^(?:ganti|ubah|pindahkan|alihkan|pindah)\s+(?:pic|penanggung jawab)(?:\s*-?\s*nya)?\s*(.*?)\s+(?:menjadi|jadi|ke)\s+(.+)$/i.exec(text)
  if(reassignment){const parts=reassignment[2].split(/\s+(?:karena|dengan alasan)\s+/i);return proposal('task_reassign',reassignment[1],{pic:normalizeTaskReference(parts[0]).text,...(parts[1]?{alasan:parts.slice(1).join(' ')}:{})})}
  const transfer=/^(?:pindahkan|alihkan|tugaskan)\s+(?:tugas|task)\s+(.+?)\s+(?:ke|kepada|untuk)\s+(.+)$/i.exec(text)
@@ -45,11 +48,17 @@ export function spokenPlan(message:string):Plan|null {
 const numberWords:Record<string,string>={nol:'0',satu:'1',dua:'2',tiga:'3',empat:'4',lima:'5',enam:'6',tujuh:'7',delapan:'8',sembilan:'9',sepuluh:'10'}
 function number(text:string){const word=text.toLowerCase().match(/\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\b/);return text.match(/\d+/)?.[0]??(word?numberWords[word[1]]:undefined)}
 function answer(field:string,message:string,draft:GuidedDraft):Record<string,string>{
- const text=clean(message),data=draft.payload.data??{},options=draft.payload.options??[]
+ const text=message.trim(),data=draft.payload.data??{},options=draft.payload.options??[]
  const option=/^(?:pilih\s+)?([1-9]\d?)$/i.exec(text)
  const chosen=option?options[Number(option[1])-1]:options.find(o=>o.label.toLowerCase()===text.toLowerCase()||o.value.toLowerCase()===text.toLowerCase())
  if(chosen)return {[field]:chosen.value}
- if(field==='update')return {}
+ if(field==='update'){
+  const patch=/^(judul|nama|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(text)
+  return patch?{[patch[1].toLowerCase()]:normalizeTaskReference(patch[2]).text}:{}
+ }
+ if(field==='status'){const value=statusValue(text.replace(/^(?:jadi|menjadi|ke)\s+/i,''));return value?{status:value}:{}}
+ if(['aktif','selesai','wajib'].includes(field))return /^(?:ya|iya|aktif|selesai|wajib|sudah|sudah selesai)$/i.test(text)?{[field]:'ya'}:/^(?:tidak|nggak|enggak|belum|belum selesai|nonaktif|opsional)$/i.test(text)?{[field]:'tidak'}:{}
+ if(field==='keputusan')return /^(?:ya|setuju|setujui|terima|approve)$/i.test(text)?{keputusan:'setuju'}:/^(?:tolak|ditolak|reject)$/i.test(text)?{keputusan:'tolak'}:/revisi/i.test(text)?{keputusan:'revisi'}:{}
  if(field==='frekuensi'){const days=['senin','selasa','rabu','kamis','jumat','sabtu','minggu'];const day=days.findIndex(d=>(d!=='minggu'||/hari\s+minggu/i.test(text))&&new RegExp('\\b'+d+'\\b','i').test(text));if(/bulan|monthly|tanggal/i.test(text))return {frekuensi:'monthly',...(number(text)?{hari:number(text)!}:{})};if(day>=0)return {frekuensi:'weekly',hari:String(day+1)};if(/minggu|weekly|pekan/i.test(text))return {frekuensi:'weekly'};return {}}
  if(field==='hari'){
   const days=['senin','selasa','rabu','kamis','jumat','sabtu','minggu'];const day=days.findIndex(d=>new RegExp('\\b'+d+'\\b','i').test(text))
@@ -67,6 +76,10 @@ function answer(field:string,message:string,draft:GuidedDraft):Record<string,str
  return {[field]:value}
 }
 export function conversationPlan(message:string,draft?:GuidedDraft|null):Plan|null {
+ if(draft?.payload.guided&&draft.payload.field==='update'){
+  const patch=/^(?:(?:ganti|ubah|edit)\s+)?(judul|nama|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(clean(message))
+  if(patch)return {kind:'propose',operation:draft.operation,target:draft.target??undefined,data:{...draft.payload.data,[patch[1].toLowerCase()]:normalizeTaskReference(patch[2]).text}}
+ }
  let spoken=spokenPlan(message)
  if(!draft?.payload.guided)return spoken
  const data=draft.payload.data??{},field=draft.payload.field??''

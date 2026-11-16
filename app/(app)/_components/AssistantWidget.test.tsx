@@ -51,4 +51,13 @@ describe('ATM assistant widget',()=>{
   expect(await screen.findByText(/Riwayat belum dapat dimuat/)).toBeTruthy();expect(screen.getByRole('button',{name:'Coba lagi'})).toBeTruthy()
  })
 
+ it('moves the open popup by keyboard, clamps it inside the viewport and resets with Home',()=>{
+  render(<AssistantWidget/>);fireEvent.click(screen.getByRole('button',{name:'Buka ATM Agent'}))
+  const dialog=screen.getByRole('dialog'),handle=screen.getByRole('button',{name:'Geser jendela ATM Agent'})
+  vi.spyOn(dialog,'getBoundingClientRect').mockReturnValue({left:500,top:100,width:400,height:600,right:900,bottom:700,x:500,y:100,toJSON:()=>({})})
+  fireEvent.keyDown(handle,{key:'ArrowLeft'});expect(dialog.style.left).toBe('480px');expect(dialog.style.top).toBe('100px')
+  fireEvent.keyDown(handle,{key:'ArrowUp'});expect(dialog.style.top).toBe('80px')
+  fireEvent.keyDown(handle,{key:'Home'});expect(dialog.style.left).toBe('')
+ })
+
 })

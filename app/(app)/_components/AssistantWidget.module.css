@@ -22,3 +22,5 @@
 
 .launcher[aria-expanded=true]{opacity:0;pointer-events:none}
 @media(max-width:480px){.panel .composer textarea,.panel .composer textarea:focus,.panel .search input,.panel .search input:focus{font-size:16px}.send{width:44px;height:44px}.iconButton{width:44px;height:44px}.barActions{gap:0}.tab{min-height:42px}.suggestion{min-height:40px}}
+
+.dragHandle{display:flex;align-items:center;gap:12px;align-self:stretch;min-width:120px;padding:0;border:0;background:transparent;color:var(--agent-soft-ink);cursor:grab!important;touch-action:none;user-select:none}.dragHandle:active{cursor:grabbing!important}.dragGrip{font-size:22px;line-height:1}

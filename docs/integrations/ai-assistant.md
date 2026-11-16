@@ -1,53 +1,37 @@
-# Asisten ATM — web dan WhatsApp
+# ATM Agent — penerjemah percakapan lokal
 
-## Perilaku
+Web dan WhatsApp menggunakan penerjemah bahasa Indonesia yang sama, tanpa inferensi Groq, API key AI, token, atau fallback provider. Kunci lama tidak diperlukan oleh jalur percakapan. Ini pengenalan intent dan isian berbasis aturan, bukan pelatihan model bahasa umum; kalimat ambigu ditanyakan kembali, bukan ditebak atau dijalankan.
 
-Ikon chat melayang tersedia pada shell semua akun aktif saat `ATM_AI_ENABLED=true`. Ikon dapat digeser dengan pointer atau tombol panah. Chat menyediakan hasil pencarian, panduan fitur berdasarkan role, pratinjau perubahan, Konfirmasi/Batal, dan tautan ke halaman terkait. Teks dirender sebagai teks biasa; percakapan web tidak disimpan di browser dan widget dipasang ulang ketika akun berganti.
+## Alur
 
-Web memakai identitas dari `auth.getUser()` dan profil aktif. WhatsApp tetap melalui verifikasi secret, device, nomor, timestamp, dan hubungan akun yang telah ada. Pengguna tidak dapat memilih actor/role lewat pesan. Dispatcher mengikat pesan WhatsApp ke user dan generasi link yang diperiksa sebelum inferensi, lalu memeriksanya kembali saat transaksi. STOP, PUTUS, perintah angka, form dan shortcut lama tetap diproses oleh receiver lama.
+Pesan → normalisasi kata permintaan (isi judul bertanda kutip tetap utuh) → intent/target/isian → katalog operasi sesuai role → pencarian melalui cakupan ATM/RLS → pertanyaan isian yang belum lengkap → pratinjau → konfirmasi sekali pakai → operasi transaksi dan audit → tautan hasil.
 
-Model memakai tool terpisah untuk tiap aksi yang diizinkan, pembacaan, panduan, dan klarifikasi; semuanya **hanya mengusulkan rencana**, tanpa fungsi execute. Tiap tool memiliki skema parameter sendiri, agar parameter pencarian tidak tercampur dengan perubahan. Katalog operasi disaring berdasarkan role sebelum dikirim. Hanya satu rencana diterima per permintaan. Server memvalidasi tool, entity, field dan nilai lagi. Model tidak menerima hasil database, daftar seluruh pengguna, key, password, JWT atau service role. Panduan diambil dari knowledge base fitur yang disaring menurut role. Tabel hasil dan ringkasan tugas disusun oleh server; model tidak mengarang data/sukses transaksi.
+Draft menyimpan operasi, target ID yang telah dipilih, isian, opsi, masa berlaku, identitas pengguna, channel, conversation ID web atau generasi hubungan nomor WhatsApp. Angka pilihan hanya berlaku untuk daftar aktif. Konfirmasi tidak dapat mengambil target dari percakapan pengguna lain atau thread web berbeda. STOP, PUTUS, dan pembatalan menghapus state terkait. Pembatasan permintaan server tetap berlaku untuk mencegah spam; ini bukan kuota provider.
 
-Aksi memanfaatkan 30 operasi bisnis ATM yang sudah tersedia melalui `wa_safe_operation`, RLS, RPC atomik, evidence gates, reviewer dan trigger yang sama. Semua perubahan memakai pratinjau yang dibatalkan di subtransaksi sebelum ditampilkan. Konfirmasi terpisah berlaku lima menit, sekali pakai, terikat akun/channel/link, memeriksa role dan versi data lagi. Judul tugas ambigu tidak pernah dipilih secara otomatis. Audit, perubahan, receipt WhatsApp dan outbox disimpan dalam transaksi yang sama; tidak ada balasan sukses sebelum commit. Dua channel memiliki konfirmasi terpisah.
+## Contoh
 
-Permintaan model dibatasi delapan per akun per menit. Empat pesan pengguna terakhir disimpan terbatas di tabel privat untuk memahami pengisian bertahap, tanpa jawaban/hasil database; konteks kedaluwarsa dan dibersihkan saat konfirmasi/batal. Tabel sesi dan limiter memakai RLS dengan akses service-only. Tidak ada tambahan akses anonim/browser ke fungsi actor-parameter.
+- “tolong bukain task nata”
+- “hapus tugas A milik nata” / “tugas A milik nata dihapus”
+- “ganti PIC tugas pertama milik Audrey ke Nata”
+- “PIC tugas pertama milik Audrey diganti menjadi Nata”
+- “geserin tugas rekonsiliasi ke berjalan” (perubahan status Kanban)
+- “update progres rekonsiliasi jadi 70%”
+- “bikinin tugas untuk Audrey”
+- “buatkan tugas berulang untuk Audrey”, lalu judul, seksi, kategori, “setiap Senin”, “hari yang sama”, “dua hari setelah jadwal”
+- “tambahkan WBS cek saldo di tugas rekonsiliasi”, lalu bobot
+- “minta bantuan Nata untuk tugas rekonsiliasi”, lalu deskripsi
+- “tambahkan bukti https://… untuk syarat laporan”
 
-## Gratis saja
+Judul/nama dapat ditulis dengan atau tanpa tanda kutip. Kutip menandakan kecocokan judul persis. Jika ada beberapa hasil, bot meminta pilihan. Jika tidak ditemukan, bot menyimpan maksud dan meminta nama/ID yang lebih tepat. Kalimat yang belum dikenali mendapat pertanyaan klarifikasi lokal, tanpa panggilan provider.
 
-Provider yang didukung hanya **Groq Free Plan**, model produksi `openai/gpt-oss-20b` melalui `@ai-sdk/groq`. Tidak ada AI Gateway, provider berbayar alternatif, kartu, langganan, atau fallback berbayar. `ATM_AI_FREE_PLAN_CONFIRMED=true` hanya diatur setelah pemilik memastikan akun tetap Free. Jangan meningkatkan akun tersebut ke Developer/Paid; jika akun diubah, nonaktifkan switch ini lebih dahulu. Aplikasi tidak dapat mengubah atau menjamin status billing akun provider dari API inferensi.
+## Cakupan dan batas
 
-Konfigurasi server:
+Seluruh 31 operasi katalog memiliki jalur bahasa sehari-hari: task create/update/delete/duplicate/status/progress/review/comment/deadline/reassign; WBS add/toggle; support add/finish; syarat bukti/tautan; keputusan tenggat; kategori create/update/delete; jadwal create/update/toggle/delete; organisasi create/update/delete; baca notifikasi satu/semua; respons reminder; nama profil. Role, cakupan seksi/unit, PIC, reviewer, syarat bukti dan status yang sah tetap ditegakkan oleh server. Permintaan terlarang wajib ditolak.
 
-- `ATM_AI_ENABLED=true`: menampilkan widget dan mengaktifkan jalur AI WhatsApp setelah migrasi.
-- `GROQ_API_KEY`: secret server untuk akun Free, jangan menggunakan `NEXT_PUBLIC_`.
-- `ATM_AI_FREE_PLAN_CONFIRMED=true`: aktivasi inferensi hanya setelah pemeriksaan Free Plan.
+Menu menyediakan tautan halaman dan data yang diizinkan. Unggah file, OAuth Google Calendar, perubahan email/password/verifikasi, undangan/penetapan role, ekspor file dan pemulihan tetap memakai UI yang sesuai; chatbot tidak mengaku menjalankan tindakan yang belum didukung. Pengguna dapat meminta panduan dan tautan tanpa kuota AI.
 
-Kunci/switch yang belum lengkap tidak memicu panggilan provider. Perintah umum lokal dan knowledge base tetap tersedia. Timeout/429/provider error menghasilkan pemberitahuan aman tanpa eksekusi atau pindah ke layanan berbayar. Tidak ada retry otomatis inferensi.
+Popup dapat digeser melalui pegangan logo dengan mouse/sentuhan atau tombol panah. Home mengembalikan posisi awal. Ukuran/posisi dikoreksi saat viewport berubah; tombol, isi chat dan composer tidak menjadi pegangan drag.
 
-Contoh lokal tanpa biaya inferensi:
+## Verifikasi
 
-- `lihat tugas saya`
-- `ringkasan tugas`
-- `cari tugas Rekonsiliasi`
-- `buat tugas Rekonsiliasi mulai 2026-11-14 08:00 tenggat 2026-11-15 16:00`
-- `ubah tugas Rekonsiliasi jadi berjalan`
-- `hapus tugas Rekonsiliasi` (hanya role yang berwenang; wajib konfirmasi)
-- `cara menggunakan kalender`
-
-Pesan bebas lain diterjemahkan model setelah kunci siap. Tugas yang perlu review tetap tidak dapat dipaksa selesai oleh asisten. File biner, ekspor dan pengaturan keamanan akun tetap melalui halaman web. ATM saat ini tidak memiliki modul transaksi keuangan/nominal: asisten meminta klarifikasi, tidak membuat tabel atau fitur fiktif.
-
-## Validasi dan rilis
-
-Build produksi, typecheck, ESLint dan uji otomatis telah dilakukan. Suite mencakup schema/RLS ATM asli, preview tanpa side effect, konfirmasi single-use/expired/wrong token, role downgrade, versi stale, nama ambigu, isolasi channel/user, link generation, receipt dedup, read scope, larangan browser/anon RPC, origin/session API, batas gratis tanpa provider call, dan interaksi widget.
-
-Status pemasangan: migrasi hosted 20261113160217_atm_ai_assistant dan 20261113160704_ai_personal_calendar_scope telah dipasang. Groq Billing menunjukkan Current Plan Free ($0); kunci ATM-SIG tersimpan sebagai secret server. Uji hosted rollback-only lulus untuk read RLS, create preview tanpa persistensi, konfirmasi sekali pakai dan penolakan replay; actual PostgREST service read lulus dan anon ditolak HTTP 401. Uji model asli menghasilkan intent read dan create; alur model → validasi → pratinjau hosted memverifikasi tidak ada tugas tersimpan. Transport lokal Node ke Supabase mengalami timeout, sehingga pemeriksaan REST memakai transport proxy Python; perilaku deployment Vercel diperiksa terpisah. Format tanggal berakhiran WIB dinormalisasi sebelum validasi database. Enum tool dipersempit, reasoning dibatasi low dan inferensi diberi timeout 20 detik, tanpa retry/fallback berbayar. Pengiriman fisik balasan WhatsApp dari fitur AI baru tetap menjadi pemeriksaan penerimaan pengguna.
-
-## ATM Agent widget and personal history
-
-The redesigned widget uses the existing ATM vector wordmark and Inter typography. All colors use the app's `data-theme` semantic tokens through a scoped CSS module, avoiding media-driven dark utilities and the legacy palette bridge. Chat, Helpdesk and History are keyboard-accessible tabs. The launcher remains movable; the layout adapts to narrow and short viewports. Suggestions, clear thinking feedback, safe checking links and explicit confirmation/cancel controls remain functional.
-
-Helpdesk is a searchable set of existing feature guides, filtered on the server by the verified user's role. It links to actual ATM pages and can prepare a follow-up chat question; it does not claim to create support tickets or contact staff.
-
-Web conversations are saved from this release onward using owner-isolated `ai_chat_threads` and `ai_chat_messages`. The authenticated API derives identity from the session, enforces active profile status, and uses the same cookie-authenticated Supabase client. A composite thread/user foreign key prevents cross-owner message references. Even Super Admin has no browser/API exception to read another user's personal chat history. Conversation context is built only from the selected thread's recent user turns.
-
-Archived messages contain plain text and safe internal checking paths, never confirmation tokens, actionable pending state, model credentials or private task-row snapshots. A restored old preview cannot become a live confirmation. Common credential patterns are redacted before archiving. If transcript persistence fails after a business operation committed, the API still returns the actual operation result rather than implying it failed or encouraging an unsafe retry. History created before this feature was not stored and is not fabricated or backfilled.
+Uji matriks mencocokkan setiap operasi dengan katalog database agar operasi baru tidak diam-diam terlewat. Percakapan lengkap dijalankan pada fixture database sekali pakai melalui parser → RPC pratinjau → token konfirmasi → pemeriksaan hasil. Uji tambahan memeriksa enam role, RLS, task ambigu, pilihan angka, state kedaluwarsa, perubahan versi data, isolasi thread/channel dan generasi nomor WhatsApp. Data bisnis asli tidak dihapus/dipindahkan untuk pengujian.
