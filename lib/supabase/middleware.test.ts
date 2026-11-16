@@ -22,6 +22,12 @@ vi.mock('@supabase/ssr', () => ({
 }))
 
 describe('updateSession (FR-001)', () => {
+  it('allows email verification callbacks before a session exists', async () => {
+    getUser.mockResolvedValue({ data: { user: null } })
+    const response = await updateSession(new NextRequest('https://atm.example/auth/email-change?code=test'))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('location')).toBeNull()
+  })
   beforeEach(() => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'

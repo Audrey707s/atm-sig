@@ -84,6 +84,7 @@ export async function updateSession(request: NextRequest) {
       '/forgot-password',
       '/reset-password',
       '/auth/confirm',
+      '/auth/email-change',
     ].includes(pathname)
 
     if (!user && !isPublicRoute) {

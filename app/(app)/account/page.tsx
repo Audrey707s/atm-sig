@@ -4,14 +4,16 @@ import { getMyWhatsApp } from '@/lib/whatsapp/linking'
 import { getSessionUser } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
 import ProfileForm from './ProfileForm'
+import EmailChangeForm from './EmailChangeForm'
 import WorkspaceTabs, { MASTER_USER_TABS } from '../_components/WorkspaceTabs'
 import { PROFILE_AVATAR_BUCKET, PROFILE_AVATAR_TTL_SECONDS } from '@/lib/account/avatar'
 
 export const metadata: Metadata = { title: 'Profil Saya' }
 
-export default async function AccountPage() {
+export default async function AccountPage({searchParams}: {searchParams:Promise<{email?:string}>}) {
   const user = await getSessionUser()
   const supabase = await createClient()
+  const [params, {data:{user:authUser}}] = await Promise.all([searchParams, supabase.auth.getUser()])
   const whatsapp = await getMyWhatsApp()
   const { data: unit } = await supabase
     .from('org_units')
@@ -33,6 +35,7 @@ export default async function AccountPage() {
         unitName={unit?.name ?? '—'}
         avatarUrl={avatar?.signedUrl ?? ''}
       />
+      <EmailChangeForm key={authUser?.new_email ?? ''} pendingEmail={authUser?.new_email} notice={params.email} />
       {whatsapp.enabled && <WhatsAppConnection phone={whatsapp.phone} notifications={whatsapp.notifications} />}
     </section>
   )

@@ -7,7 +7,7 @@ const topics:Record<string,{minimum:number;path:string;text:string}>={
  reports:{minimum:1,path:'/reports',text:'Laporan menampilkan tugas dalam cakupan akses Anda. Pilih periode/filter, lalu gunakan ekspor yang tersedia. Asisten tidak memperluas akses ke unit lain.'},
  calendar:{minimum:1,path:'/calendar',text:'Kalender merangkum tenggat tugas yang dapat Anda akses. Hubungkan Google Calendar dari halaman kalender bila ingin menyinkronkan agenda melalui otorisasi Google.'},
  users:{minimum:3,path:'/users',text:'Pengguna menampilkan akun dalam cakupan pengelolaan Anda. Undangan dan perubahan role/status tetap dilakukan melalui halaman ini dengan aturan hak akses ATM.'},
- security:{minimum:1,path:'/account',text:'Ubah password dan hubungan WhatsApp melalui Profil. Jangan mengirim password, kode login, atau API key melalui chat asisten.'},
+ security:{minimum:1,path:'/account',text:'Ubah email, password, dan hubungan WhatsApp melalui Profil. Perubahan email perlu verifikasi pada email lama dan email baru sebelum email login diperbarui. Jangan mengirim password, kode login, atau API key melalui chat asisten.'},
  wbs:{minimum:2,path:'/tasks',text:'WBS membagi pekerjaan menjadi bagian berbobot. Buka detail tugas untuk menambah WBS dan menandai penyelesaiannya sesuai hak akses.'},
  support:{minimum:2,path:'/tasks',text:'PIC meminta support dari detail tugas. Penerima support yang ditugaskan dapat menandai bantuannya sudah diberikan.'},
  evidence:{minimum:2,path:'/tasks',text:'Lengkapi bukti wajib sebelum mengajukan review. Asisten dapat menyimpan tautan HTTPS; unggah file dilakukan melalui detail tugas.'},
