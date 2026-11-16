@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest'
-import { localPlan,validatePlan,type Operation } from './contracts'
+import { localPlan,validatePlan,groundCreation,type Operation } from './contracts'
 import { helpReply,allowedKnowledge } from './knowledge'
 const catalog:Record<string,Operation>={task_status:{label:'Status',entity:'tasks',minimumRole:2,fields:{status:'Status'},required:['status'],task:true}}
 describe('AI intent boundary',()=>{
@@ -32,6 +32,7 @@ describe('AI intent boundary',()=>{
   expect(localPlan('buka profil saya')).toMatchObject({kind:'help',topic:'security'})
   expect(localPlan('buka menu organisasi')).toMatchObject({kind:'help',topic:'organizations'})
  })
+ it('does not mistake a task title containing cara for a help question',()=>{expect(localPlan('buat tugas Cara tutup buku mulai 2027-01-01 08:00 tenggat 2027-01-02 16:00')).toMatchObject({operation:'task_create',data:{judul:'Cara tutup buku'}})})
  it('does not parse confirmation as a model-generated action',()=>{
   expect(localPlan('YA')).toBeNull()
   expect(()=>validatePlan({kind:'confirm'},catalog)).toThrow()
@@ -63,6 +64,18 @@ describe('AI intent boundary',()=>{
   expect(localPlan('Bagaimana cara menggunakan notifikasi & reminder?')).toMatchObject({kind:'help',topic:'notifications'})
   expect(localPlan('Bagaimana cara menggunakan WBS & progres?')).toMatchObject({kind:'help',topic:'wbs'})
   expect(localPlan('Bagaimana cara menggunakan akun & keamanan?')).toMatchObject({kind:'help',topic:'security'})
+ })
+
+ it('asks for a title before planning a bare recipient-only creation request',()=>{
+  expect(localPlan('buatkan tugas untuk nata ya')).toMatchObject({kind:'clarify',question:expect.stringContaining('judul')})
+ })
+ it('rejects invented titles and dates, but accepts ordinary grounded date and short time answers',()=>{
+  const p={kind:'propose' as const,operation:'task_create',data:{judul:'Rekonsiliasi bank',mulai:'2026-11-17 08:00',tenggat:'2026-11-18 16:00'}}
+  expect(groundCreation(p,['buat tugas untuk nata'])).toMatchObject({kind:'clarify'})
+  expect(groundCreation(p,['buat tugas Rekonsiliasi bank untuk nata'])).toMatchObject({kind:'clarify',question:expect.stringContaining('mulai')})
+  expect(groundCreation(p,['buat tugas Rekonsiliasi bank untuk nata','besok jam 8 pagi'])).toMatchObject({kind:'clarify'})
+  expect(groundCreation(p,['buat tugas Rekonsiliasi bank untuk nata','besok jam 8 pagi sampai lusa jam 4 sore'])).toEqual(p)
+  expect(groundCreation(p,['buat tugas Rekonsiliasi bank untuk nata','besok jam 8 pagi','16'])).toEqual(p)
  })
 
 })

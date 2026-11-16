@@ -2,7 +2,7 @@ import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { planRequest } from './planner'
 import { helpReply } from './knowledge'
-import {containsAssistantSecret,type AssistantReply,type Operation,type Plan} from './contracts'
+import {containsAssistantSecret,groundCreation,type AssistantReply,type Operation,type Plan} from './contracts'
 export function assistantStore() {
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY
  if(!url||!key) throw new Error('Assistant store unavailable')
@@ -38,6 +38,7 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
   console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined,code:typeof reason?.data?.error?.code==='string'?reason.data.error.code:undefined,type:typeof reason?.data?.error?.type==='string'?reason.data.error.type:undefined})
   if(reason?.statusCode===429)return dispatch(turn,'reply',{message:'Kuota AI gratis sementara tercapai. Coba lagi nanti, atau gunakan perintah seperti “lihat tugas saya” dan “ringkasan tugas”. Tidak ada perubahan yang disimpan.'})
   return dispatch(turn,'reply',{message:'Permintaan belum dapat diproses. Coba tulis judul/ID tugas dan perubahan secara lengkap, atau gunakan menu ATM. Tidak ada perubahan yang disimpan.'})}
+ plan=groundCreation(plan,historyOverride??reserved.history??[message])
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,data:plan.data})

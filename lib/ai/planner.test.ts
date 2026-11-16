@@ -20,6 +20,15 @@ describe('free-only AI planner',()=>{
   expect(call.tools.task_status.inputSchema.properties.entity).toBeUndefined();expect(call.tools.task_status.inputSchema.properties.mode).toBeUndefined()
   expect(call.tools.read_atm.inputSchema.properties.entity.enum).not.toContain('users')
  })
+ it('repairs a malformed free-provider tool call once without retrying a quota error',async()=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
+  generateText.mockRejectedValueOnce({statusCode:400,data:{error:{code:'tool_use_failed'}}}).mockResolvedValueOnce({toolCalls:[{toolName:'clarify_atm',input:{question:'Apa judul tugasnya?'}}]})
+  expect(await planRequest('buatkan pekerjaan untuk tim saya',2,catalog)).toMatchObject({kind:'clarify'})
+  expect(generateText).toHaveBeenCalledTimes(2);expect(generateText.mock.calls[1][0].temperature).toBe(0)
+  generateText.mockClear();generateText.mockRejectedValueOnce({statusCode:429})
+  await expect(planRequest('buatkan pekerjaan untuk tim saya',2,catalog)).rejects.toMatchObject({statusCode:429})
+  expect(generateText).toHaveBeenCalledTimes(1)
+ })
  it('uses an own-profile tool without model-selected identity or read parameters',async()=>{
   vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
   generateText.mockResolvedValue({toolCalls:[{toolName:'profile_name',input:{nama:'Nama baru'}}]})

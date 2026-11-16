@@ -17,7 +17,7 @@ export async function beginChatTurn(client:SupabaseClient<Database>,userId:strin
  const {data:thread,error}=await db.from('ai_chat_threads').select('id,title').eq('id',conversationId).eq('user_id',userId).maybeSingle()
  if(error)throw new Error('History unavailable')
  if(!thread)return null
- const {data:previous,error:readError}=await db.from('ai_chat_messages').select('content').eq('conversation_id',conversationId).eq('user_id',userId).eq('author','user').order('created_at',{ascending:false}).limit(3)
+ const {data:previous,error:readError}=await db.from('ai_chat_messages').select('content').eq('conversation_id',conversationId).eq('user_id',userId).eq('author','user').order('created_at',{ascending:false}).limit(7)
  if(readError)throw new Error('History unavailable')
  const {error:writeError}=await db.from('ai_chat_messages').insert({conversation_id:conversationId,user_id:userId,author:'user',content:message})
  if(writeError)throw new Error('History unavailable')

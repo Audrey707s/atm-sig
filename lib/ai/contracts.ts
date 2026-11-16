@@ -26,6 +26,7 @@ export function localPlan(text:string):Plan|null {
  const s=clean.toLowerCase()
  const taskRead=taskReadIntent(clean)
  if(taskRead)return {kind:'read',entity:'tasks',...taskRead}
+ if(/^(?:(?:saya\s+)?(?:mau|ingin)\s+)?(?:buat(?:kan)?|tambah(?:kan)?)\s+(?:tugas|task)(?:\s+baru)?(?:\s+untuk\s+.+?)?(?:\s+(?:ya|dong))?$/i.test(clean))return {kind:'clarify',question:'Apa judul tugas yang ingin dibuat? Balas dengan judulnya saja; setelah itu saya bantu lengkapi PIC, mulai, dan tenggat.'}
  const progress=/^(?:(?:ubah|update|perbarui|naikkan|turunkan|set|ganti)\s+)?(?:progres|progress|progresnya|progressnya)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:(?:menjadi|jadi|ke|sebesar)\s+)?(\d{1,3})\s*(?:%|persen)?$/i.exec(clean)
  if(progress)return {kind:'propose',operation:'task_progress',target:progress[1],data:{progres:progress[2]}}
  const progressAfter=/^(?:ubah|update|perbarui|set|ganti)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:progres|progress)(?:nya)?\s+(?:(?:menjadi|jadi|ke)\s+)?(\d{1,3})\s*(?:%|persen)?$/i.exec(clean)
@@ -34,7 +35,7 @@ export function localPlan(text:string):Plan|null {
  const menu=/^(?:(?:buka|lihat|tampilkan|akses|masuk ke)\s+)?(?:menu|halaman)?\s*(dashboard|dasbor|kanban|papan|linimasa|timeline|kinerja|evaluasi kinerja|persetujuan|audit|riwayat aktivitas|profil(?: saya)?|akun(?: saya)?|organisasi|organizations|kategori(?: tugas)?|tugas berulang|kalender|calendar|laporan|pengguna|notifikasi|keamanan|password)$/i.exec(clean)
  if(menu){const topic:Record<string,string>={kanban:'kanban',papan:'kanban',linimasa:'timeline',timeline:'timeline',kinerja:'performance','evaluasi kinerja':'performance',persetujuan:'approvals',audit:'audit','riwayat aktivitas':'audit',dashboard:'dashboard',dasbor:'dashboard',profil:'security','profil saya':'security',akun:'security','akun saya':'security',organisasi:'organizations',organizations:'organizations',kategori:'categories','kategori tugas':'categories','tugas berulang':'templates',kalender:'calendar',calendar:'calendar',laporan:'reports',pengguna:'users',notifikasi:'notifications',keamanan:'security',password:'security'};return {kind:'help',topic:topic[menu[1].toLowerCase()]}}
  if(/^(halo|hai|hi|menu|bantuan|fitur)(\s|$)/.test(s)) return {kind:'help',topic:'tasks'}
- if(/cara|bagaimana|gimana|apa fungsi/.test(s)) {
+ if(/^(?:cara\b|bagaimana\b|gimana\b|apa fungsi\b)/.test(s)) {
   const topic=/hapus.*(akun|user)|role|undang|pengguna/.test(s)?'users':/kategori/.test(s)?'categories':/ulang/.test(s)?'templates':/organisasi/.test(s)?'organizations':/ekspor|export|laporan/.test(s)?'reports':/review|tinjau/.test(s)?'review':/kalender/.test(s)?'calendar':/password|sandi|keamanan|akun/.test(s)?'security':/wbs/.test(s)?'wbs':/support/.test(s)?'support':/bukti|evidence/.test(s)?'evidence':/notifikasi|reminder/.test(s)?'notifications':'tasks'
   return {kind:'help',topic}
  }
@@ -48,3 +49,17 @@ export function localPlan(text:string):Plan|null {
 }
 
 export function containsAssistantSecret(message:string){return /(?:gsk_[a-z0-9]{20,}|sk-[a-z0-9]{20,}|(?:password|kata sandi|api[_ ]?key)\s*[:=])/i.test(message)}
+
+/** Model plans are proposals; required creation values must originate in the conversation. */
+export function groundCreation(plan:Plan,messages:string[]):Plan {
+ if(plan.kind!=='propose'||plan.operation!=='task_create')return plan
+ const source=messages.join('\n').toLowerCase().replace(/\s+/g,' ')
+ const title=plan.data?.judul?.toLowerCase().replace(/\s+/g,' ').trim()
+ if(!title||!source.includes(title))return {kind:'clarify',question:'Apa judul tugas yang ingin dibuat? Saya perlu judul dari Anda sebelum menyiapkan tugas.'}
+ const dates=source.match(/\b(?:\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|hari ini|besok|lusa|senin|selasa|rabu|kamis|jumat|sabtu|minggu depan|bulan depan|\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember))\b/g)??[]
+ const times=source.match(/\b(?:\d{1,2}[:.]\d{2}|(?:jam|pukul)\s*\d{1,2})\b/g)??[]
+ if(dates.length===0)return {kind:'clarify',question:'Kapan tugas ini mulai? Anda bisa menjawab seperti “besok jam 8 pagi”.'}
+ const bareHours=messages.filter(message=>/^(?:[01]?\d|2[0-3])(?:\s*(?:pagi|siang|sore|malam))?$/i.test(message.trim())).length
+ if(times.length+bareHours<2)return {kind:'clarify',question:'Kapan mulai dan tenggatnya, termasuk jam (WIB)? Misalnya “besok jam 8 pagi sampai lusa jam 4 sore”. Saya tidak akan menentukan waktu tanpa jawaban Anda.'}
+ return plan
+}

@@ -137,3 +137,11 @@ Common phrases such as `daftar tugas`, `lihat list tugas saya`, and `tugas yang 
 - Natural menu requests provide the appropriate app link. Account security, file uploads, export, invitation and role management continue through their existing web screens; the bot must not claim to execute an unavailable operation.
 - Native task creation accepts dates such as “besok jam 8 pagi” and “lusa jam 4 sore”, as well as explicit WIB timestamps. The final dates appear in the preview before saving.
 - Verification includes SQL/RLS operations, numbered disambiguation, per-channel isolation, single-use confirmation, complete list pagination, ordinary date answers, WhatsApp routing with colon-containing times, lint, types and production build. No test WhatsApp message is sent to a real recipient.
+
+
+### Conversation grounding
+
+- A request such as “buatkan tugas untuk nata ya” asks for the title first. Creation plans are rejected if the title was not supplied in the conversation, or if date/time information is missing. Preview confirmation remains mandatory.
+- PIC and support recipients accept an exact active display name or email. Ambiguous names require clarification. Section fields accept a unique exact section name, and the existing scope checks still decide whether the change is allowed.
+- Keep up to eight recent user messages per conversation/channel so ordinary short answers can complete the requested fields. No raw database task snapshots or confirmation tokens are sent to the planner.
+- Retry malformed provider tool calls once with the same free model; quota/authentication errors do not trigger retries or a paid fallback.
