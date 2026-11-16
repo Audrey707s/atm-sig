@@ -153,3 +153,10 @@ Common phrases such as `daftar tugas`, `lihat list tugas saya`, and `tugas yang 
 - `lihat tugas nata` resolves the active PIC name/email before falling back to a title search. `lihat tugas milik nata` explicitly selects the PIC; missing/ambiguous names require clarification. `cari tugas nata` remains a title search. PIC filters and pagination links use the same owner parameter as the web.
 - The owner lookup executes under authenticated RLS. It narrows existing access and cannot expose tasks outside the caller's role/organization scope. Super Admin retains the existing manager-level CRUD permissions across the authorized scope; role-restricted mutations give a clear permission response.
 - Regression covers exact-title deletion by Super Admin in disposable fixtures, denied Staff deletion, PIC name reads, cross-section read isolation, missing/ambiguous names and title fallback. Production checks validate deletion only as a rolled-back preview; the real `pertama` task is preserved.
+
+
+### Explicit per-role AI profiles — 16 November 2026
+
+All six role levels now have a named AI policy and scope guidance. The server filters operation tools from the existing database catalog and filters readable entities by the verified role. SM receives unit/child-section scope guidance; GM receives the GM-wide task scope while organization CRUD stays Super Admin-only. Invalid role levels fail closed. Model output cannot widen readable feature access, and database RLS rechecks actual task/organization scope and role at preview/confirmation. PIC, reviewer, evidence, own-notification and confirmation rules still apply at every level.
+
+Regression tests separately exercise within-section and cross-unit task update/delete for Spectator, PIC, Manager, SM, GM and Super Admin, as well as the Super Admin-only organization boundary. No live business records are changed for these checks.

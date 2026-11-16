@@ -49,5 +49,18 @@ describe('free-only AI planner',()=>{
   expect(await planRequest('hapus tugas "pertama" ya',2,ops)).toMatchObject({kind:'clarify',question:expect.stringContaining('izin')})
   expect(generateText).not.toHaveBeenCalled()
  })
+ it.each([[4,'SM'],[5,'GM']])('provides the specific %s policy to the model without exposing Super Admin tools',async(level,name)=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
+  generateText.mockResolvedValue({toolCalls:[{toolName:'read_atm',input:{entity:'tasks'}}]})
+  await planRequest('apa pekerjaan yang membutuhkan perhatian?',level as number,catalog)
+  const request=generateText.mock.calls[0][0]
+  expect(request.system).toContain('role '+name+' (level '+level+')')
+  expect(request.tools.org_delete).toBeUndefined()
+ })
+ it('blocks a provider-selected read feature outside the actual role',async()=>{
+  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true')
+  generateText.mockResolvedValue({toolCalls:[{toolName:'read_atm',input:{entity:'users'}}]})
+  expect(await planRequest('tampilkan semua pengguna',2,catalog)).toMatchObject({kind:'clarify',question:expect.stringContaining('izin')})
+ })
 
 })

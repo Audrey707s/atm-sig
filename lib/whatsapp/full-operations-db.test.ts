@@ -434,6 +434,14 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   expect(first.message).not.toContain('cari tugas PIC')
   expect((await ai(sa,'read',{entity:'tasks',pic:'PIC',query:'',page:'2'})).rows).toHaveLength(2)
  })
+ it.each([[spectator,false,false],[pic,false,false],[manager,true,false],[sm,true,false],[gm,true,true],[sa,true,true]])('checks section and cross-unit task CRUD separately for role actor %s',async(actor,ownScope,otherScope)=>{
+  const foreign=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,9,'Lintas unit',now(),now()+interval '2 days') returning id`,[sa])).rows[0].id
+  expect((await apply(actor as string,'task_update',task,{judul:'Dalam cakupan'},true)).ok).toBe(ownScope)
+  expect((await apply(actor as string,'task_delete',task,{},true)).ok).toBe(ownScope)
+  expect((await apply(actor as string,'task_update',foreign,{judul:'Luar cakupan'},true)).ok).toBe(otherScope)
+  expect((await apply(actor as string,'task_delete',foreign,{},true)).ok).toBe(otherScope)
+  expect((await apply(actor as string,'org_create',null,{nama:'Organisasi uji role',tipe:'section',induk:'2'},true)).ok).toBe(actor===sa)
+ })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')
   const r=await apply(pic,'task_comment',task,{komentar:'Pesan dari WhatsApp'})
