@@ -53,7 +53,7 @@ function answer(field:string,message:string,draft:GuidedDraft):Record<string,str
  const chosen=option?options[Number(option[1])-1]:options.find(o=>o.label.toLowerCase()===text.toLowerCase()||o.value.toLowerCase()===text.toLowerCase())
  if(chosen)return {[field]:chosen.value}
  if(field==='update'){
-  const patch=/^(judul|nama|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(text)
+  const patch=/^(judul|nama|status|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(text)
   return patch?{[patch[1].toLowerCase()]:normalizeTaskReference(patch[2]).text}:{}
  }
  if(field==='status'){const value=statusValue(text.replace(/^(?:jadi|menjadi|ke)\s+/i,''));return value?{status:value}:{}}
@@ -77,8 +77,8 @@ function answer(field:string,message:string,draft:GuidedDraft):Record<string,str
 }
 export function conversationPlan(message:string,draft?:GuidedDraft|null):Plan|null {
  if(draft?.payload.guided&&draft.payload.field==='update'){
-  const patch=/^(?:(?:ganti|ubah|edit)\s+)?(judul|nama|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(clean(message))
-  if(patch)return {kind:'propose',operation:draft.operation,target:draft.target??undefined,data:{...draft.payload.data,[patch[1].toLowerCase()]:normalizeTaskReference(patch[2]).text}}
+  const patch=/^(?:(?:ganti|ubah|edit)\s+)?(judul|nama|status|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(clean(message))
+  if(patch){const key=patch[1].toLowerCase(),isTask=draft.operation.startsWith('task_');const operation=isTask&&key==='status'?'task_status':isTask&&key==='pic'?'task_reassign':draft.operation;const value=key==='status'?statusValue(patch[2]):normalizeTaskReference(patch[2]).text;return {kind:'propose',operation,target:draft.target??undefined,context:!draft.target,data:{...(operation===draft.operation?draft.payload.data:{}),...(value?{[key]:value}:{})}}}
  }
  let spoken=spokenPlan(message)
  if(!draft?.payload.guided)return spoken
@@ -86,7 +86,8 @@ export function conversationPlan(message:string,draft?:GuidedDraft|null):Plan|nu
  if(spoken&&spoken.kind!=='propose'&&!/^(?:lihat|liat|buka|bukain|cek|cari|carikan|tampilkan|tunjukkan|tunjukin|menu|bantuan|cara|bagaimana|gimana)\b|^(?:tugas|task)\s+(?:saya|aku|tim)\b/i.test(clean(message)))spoken=null
  const reference=/^(?:tugas|task)(?:\s+berjudul)?\s+(.+)$/i.exec(clean(message))
  if(reference&&['task_create','template_create'].includes(draft.operation)&&field==='judul'){const title=ref(message);return {kind:'propose',operation:draft.operation,data:{...data,judul:title.target,...(title.pic?{pic:title.pic}:{})}}}
- if(reference&&(field==='target'||/berjudul|[\"“”']/i.test(message)))return {kind:'propose',operation:draft.operation,...ref(message),data}
+ if(reference&&spoken?.kind!=='propose'&&(field==='target'||/berjudul|[\"“”']/i.test(message)))return {kind:'propose',operation:draft.operation,...ref(message),data}
+ if(spoken?.kind==='propose'&&spoken.operation==='task_update'&&draft.operation.startsWith('task_')&&draft.operation!=='task_update'&&Object.keys(spoken.data??{}).length===0)return {...spoken,operation:draft.operation,data}
  if(spoken){
   if(spoken.kind!=='propose'||spoken.operation!==draft.operation)return spoken
   if(/^(?:buat|tambah)/i.test(clean(message)))return spoken

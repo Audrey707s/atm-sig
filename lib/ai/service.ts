@@ -22,7 +22,7 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  const {data:stored,error:draftError}=await assistantStore().from('atm_ai_sessions').select('operation,target,payload,expires_at,conversation_id,phone,linked_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
  if(draftError)throw new Error('Conversation state unavailable')
  const validDraft=stored&&Date.parse(stored.expires_at)>Date.now()&&(stored.conversation_id??null)===(turn.threadId??null)&&(turn.channel==='web'||(stored.phone===turn.phone&&stored.linked_at===turn.linkedAt))
- const draft=validDraft&&stored.payload?.guided?stored as GuidedDraft:null
+ const draft:GuidedDraft|null=validDraft&&stored.payload?.guided?stored as GuidedDraft:validDraft&&stored.operation&&Array.isArray(stored.payload?.choices)&&!/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(message.trim())?{operation:stored.operation,payload:{guided:true,field:'target',data:stored.payload.data??{}}}:null
  if(/^(ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan)$/i.test(message.trim())&&!['aktif','wajib','selesai','keputusan'].includes(draft?.payload.field??'')){
   if(draft)return dispatch(turn,'propose',{operation:draft.operation,target:draft.target??undefined,data:draft.payload.data??{},pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target})
   return dispatch(turn,'confirm',{},token)

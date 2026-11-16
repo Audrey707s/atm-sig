@@ -35,3 +35,9 @@ Popup dapat digeser melalui pegangan logo dengan mouse/sentuhan atau tombol pana
 ## Verifikasi
 
 Uji matriks mencocokkan setiap operasi dengan katalog database agar operasi baru tidak diam-diam terlewat. Percakapan lengkap dijalankan pada fixture database sekali pakai melalui parser → RPC pratinjau → token konfirmasi → pemeriksaan hasil. Uji tambahan memeriksa enam role, RLS, task ambigu, pilihan angka, state kedaluwarsa, perubahan versi data, isolasi thread/channel dan generasi nomor WhatsApp. Data bisnis asli tidak dihapus/dipindahkan untuk pengujian.
+
+## Perubahan status: bahasa dan prasyarat
+
+Pola “ubah status task Ada deh milik Sevtuari menjadi Terhambat”, “mengubah status tugas Ada deh”, dan “mengubah tugas Sevtuari dengan nama Ada deh” dipisahkan menjadi aksi, judul, PIC, serta nilai status. Klarifikasi target mempertahankan aksi status yang aktif. Nama sebelum “dengan nama/berjudul” adalah pemilik, bukan bagian judul. Judul “Ada deh” tidak dipotong menjadi “Ada” saat memuat nama PIC. Jawaban “Terhambat” diterjemahkan menjadi Blocked.
+
+Pengenalan bahasa tidak melewati state machine ATM: Belum Dimulai harus ke Berjalan dahulu; Terhambat memerlukan permintaan support aktif. Bot menjelaskan prasyarat dan mempertahankan target agar pengguna dapat menjawab “Berjalan”, lalu meninjau/konfirmasi perubahan. Tidak ada langkah tambahan atau permintaan support yang disimpan secara otomatis.

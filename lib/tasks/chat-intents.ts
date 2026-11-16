@@ -25,17 +25,19 @@ export function normalizeTaskReference(value:string):{text:string;exact:boolean}
  const text=value.trim().replace(/[.!?]+$/,'').trim()
  const quoted=/^["“”'](.+?)["“”'](?:\s+(?:ya|dong|deh|tolong|please))*$/i.exec(text)
  if(quoted)return {text:quoted[1].trim(),exact:true}
- return {text:text.replace(/\s+(?:ya|dong|deh|tolong|please)$/i,'').trim(),exact:false}
+ return {text:text.replace(/\s+(?:ya|dong|tolong|please)$/i,'').trim(),exact:false}
 }
 
 export function taskMutationReference(value:string):{target:string;exact:boolean;pic?:string;context?:boolean} {
  const text=value.trim().replace(/[.!?]+$/,'').trim()
+ const ownerFirst=/^(?:(?:milik|punya|pic)\s+)?(.+?)\s+(?:dengan\s+(?:nama|judul)|(?:yang\s+)?berjudul|bernama)\s+(.+)$/i.exec(text)
+ if(ownerFirst){const title=normalizeTaskReference(ownerFirst[2]);return {target:title.text,exact:title.exact,pic:normalizeTaskReference(ownerFirst[1]).text}}
  const quoted=/^["“”'](.+?)["“”'](?:\s+(?:milik|punya|punyanya|pic|oleh)\s+(.+?))?(?:\s+(?:ya|dong|deh|tolong|please))*$/i.exec(text)
  if(quoted)return {target:quoted[1].trim(),exact:true,...(quoted[2]?{pic:normalizeTaskReference(quoted[2]).text}:{})}
  const unmarked=/^[\"“”'](.+?)[\"“”']\s+(.+)$/i.exec(text)
  if(unmarked)return {target:unmarked[1].trim(),exact:true,pic:normalizeTaskReference(unmarked[2]).text}
  const owned=/^(.+?)\s+(?:milik|punya|punyanya|pic|oleh)\s+(.+)$/i.exec(text)
- if(owned){const title=normalizeTaskReference(owned[1]);return {target:title.text,exact:title.exact,pic:normalizeTaskReference(owned[2]).text}}
+ if(owned){const title=normalizeTaskReference(owned[1]);if(!title.exact)title.text=owned[1].trim();return {target:title.text,exact:title.exact,pic:normalizeTaskReference(owned[2]).text}}
  const reference=normalizeTaskReference(text)
  return {target:reference.text,exact:reference.exact,...(/^(?:ya|dong|deh|itu|ini|tersebut|yang tadi|yang dipilih|terpilih)$/i.test(reference.text)?{context:true}:{})}
 }

@@ -19,6 +19,13 @@ export function statusValue(value:string){return statuses[value.trim().toLowerCa
 /** Additional deterministic intents cover the entire operation catalogue. */
 export function featurePlan(text:string):Plan|null {
  let m:RegExpExecArray|null
+ // Status is an explicit field, with or without its value in the first message.
+ m=/^(?:ubah|ganti|edit|update|perbarui|set)\s+status(?:-?nya)?(?:\s+(?:tugas|task))?\s*(.*?)\s+(?:menjadi|jadi|ke)\s+(.+)$/i.exec(text)
+ if(m){const status=statusValue(m[2]);return mutate('task_status',m[1],status?{status}:{})}
+ m=/^(?:ubah|ganti|edit|update|perbarui|set)\s+status(?:-?nya)?(?:\s+(?:tugas|task))?\s*(.*)$/i.exec(text)
+ if(m)return mutate('task_status',m[1])
+ m=/^(?:tugas|task)\s+(.+?)\s+status(?:-?nya)?\s+(?:diubah|diganti|diupdate|diperbarui|jadi|menjadi)(?:\s+(?:jadi|menjadi|ke))?\s+(.+)$/i.exec(text)
+ if(m){const status=statusValue(m[2]);return mutate('task_status',m[1],status?{status}:{})}
  m=/^(?:pic|penanggung jawab)\s+(?:tugas|task)\s+(.+?)\s+(?:diganti|diubah|dipindahkan)(?:\s+(?:menjadi|jadi|ke))?\s+(.+)$/i.exec(text)
  if(m)return mutate('task_reassign',m[1],{pic:named(m[2])})
  m=/^(?:tugas|task)\s+(.+?)\s+(?:tolong\s+)?(?:hapus|delete)$/i.exec(text)

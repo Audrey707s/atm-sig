@@ -19,3 +19,11 @@ describe('every operation has a provider-independent everyday entry point',()=>{
  it('keeps guided boolean answers as field values rather than creating another operation',()=>expect(conversationPlan('belum selesai',{operation:'wbs_toggle',target:'x',payload:{guided:true,field:'selesai',data:{}}})).toMatchObject({data:{selesai:'tidak'}}))
  it('supports passive kanban moves without confusing a status with a PIC',()=>expect(spokenPlan('tugas A milik nata dipindahkan ke berjalan')).toMatchObject({operation:'task_status',target:'A',pic:'nata',data:{status:'In progress'}}))
 })
+
+describe('reported status requests and owner-first task references',()=>{
+ it.each(['ubah status task Ada deh milik Sevtuari menjadi Terhambat','mengubah status tugas "Ada deh" milik Sevtuari jadi terhambat','ganti status tugas Ada deh punya Sevtuari ke blocked','tugas "Ada deh" milik Sevtuari statusnya diubah menjadi Terhambat'])('recognizes %s',text=>expect(spokenPlan(text)).toMatchObject({operation:'task_status',target:'Ada deh',pic:'Sevtuari',data:{status:'Blocked'}}))
+ it('retains status intent when the value is missing',()=>expect(spokenPlan('mengubah status tugas "Ada deh"')).toMatchObject({operation:'task_status',target:'Ada deh',exact:true,data:{}}))
+ it('separates the owner before the quoted title',()=>expect(spokenPlan('mengubah tugas Sevtuari dengan nama "Ada deh"')).toMatchObject({operation:'task_update',target:'Ada deh',exact:true,pic:'Sevtuari'}))
+ it('accepts a short status answer after a selected task',()=>expect(conversationPlan('Terhambat',{operation:'task_status',target:'id',payload:{guided:true,field:'status',data:{}}})).toMatchObject({operation:'task_status',target:'id',data:{status:'Blocked'}}))
+ it('changes status from a general edit draft without submitting an invalid task_update field',()=>expect(conversationPlan('status jadi Terhambat',{operation:'task_update',target:'id',payload:{guided:true,field:'update',data:{}}})).toMatchObject({operation:'task_status',target:'id',data:{status:'Blocked'}}))
+})
