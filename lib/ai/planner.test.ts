@@ -6,6 +6,9 @@ vi.mock('@ai-sdk/groq',()=>({createGroq:()=>()=>({})}))
 import {planRequest} from './planner'
 const catalog={task_status:{label:'Status',entity:'tasks',minimumRole:2,fields:{status:'value'},required:['status'],task:true},org_delete:{label:'Delete org',entity:'organizations',minimumRole:6,fields:{},required:[],task:false}}
 describe('free-only AI planner',()=>{
+ it.each(['tugas saya','lihat list tugas','tugas yang perlu saya review'])('handles %s even with the AI provider unavailable',async text=>{
+  expect((await planRequest(text,2,catalog)).kind).toBe('read');expect(generateText).not.toHaveBeenCalled()
+ })
  beforeEach(()=>{vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','false');vi.stubEnv('GROQ_API_KEY','test-key')})
  it('makes no provider request without the Free Plan verification switch',async()=>{expect((await planRequest('buatkan sesuatu',2,catalog)).kind).toBe('clarify');expect(generateText).not.toHaveBeenCalled()})
  it('keeps ordinary reads and curated help independent of provider availability',async()=>{expect((await planRequest('lihat tugas saya',2,catalog)).kind).toBe('read');expect(generateText).not.toHaveBeenCalled()})

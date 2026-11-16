@@ -4,6 +4,13 @@ const now=Date.parse('2026-11-12T16:00:00Z')
 const device='6281111111111'
 const base={device,sender:'6282222222222',timestamp:now/1000,message:'MENU'}
 describe('Fonnte incoming validation',()=>{
+  it.each([['lihat daftar tugas','tasks'],['tugas saya','mine'],['lihat list tugas saya','mine'],['tugas yang perlu saya review','reviews']])('routes natural lists to paged WhatsApp results: %s', (message,command)=>{
+    expect(parseFonnteIncoming({...base,message},device,now)?.command).toBe(command)
+  })
+  it.each(['buat tugas','buatkan tugas baru','mau buat tugas','saya ingin buat tugas','tolong tambah tugas','tugas baru'])('starts the native creation workflow for %s',message=>{
+    const incoming=parseFonnteIncoming({...base,message},device,now)!
+    expect(incoming.command).toBe('feature');expect(incoming.args.feature).toBe('BUAT')
+  })
   it('creates stable receipts without exposing raw linking codes',()=>{
     const a=parseFonnteIncoming({...base,message:'HUBUNGKAN '+'a'.repeat(36)},device,now)!
     expect(a.command).toBe('link');expect(a.codeHash).toMatch(/^[a-f0-9]{64}$/)

@@ -3,6 +3,19 @@ import { localPlan,validatePlan,type Operation } from './contracts'
 import { helpReply,allowedKnowledge } from './knowledge'
 const catalog:Record<string,Operation>={task_status:{label:'Status',entity:'tasks',minimumRole:2,fields:{status:'Status'},required:['status'],task:true}}
 describe('AI intent boundary',()=>{
+ it.each(['tugas saya','daftar tugas saya','lihat list tugas saya','tolong tampilkan tugas saya','semua tugas saya'])('understands personal lists: %s',text=>{
+  expect(localPlan(text)).toMatchObject({kind:'read',entity:'tasks',mode:'mine',query:''})
+ })
+ it.each(['daftar tugas','lihat daftar semua tugas','list tugas tim','lihat semua tugas'])('understands scoped lists: %s',text=>{
+  expect(localPlan(text)).toMatchObject({kind:'read',entity:'tasks',mode:'list',query:''})
+ })
+ it.each(['tugas yang perlu saya review','lihat tugas untuk saya tinjau','tugas yang menunggu review','review saya'])('distinguishes assigned reviews: %s',text=>{
+  expect(localPlan(text)).toMatchObject({kind:'read',entity:'tasks',mode:'review',query:''})
+ })
+ it('extracts explicit title searches and task detail IDs',()=>{
+  expect(localPlan('carikan tugas Rekonsiliasi')).toMatchObject({kind:'read',query:'Rekonsiliasi'})
+  expect(localPlan('detail tugas 11111111-1111-4111-8111-111111111111')).toMatchObject({kind:'read',query:'11111111-1111-4111-8111-111111111111'})
+ })
  it('parses ordinary Indonesian requests without any model or API cost',()=>{
   expect(localPlan('lihat tugas saya')).toMatchObject({kind:'read',mode:'mine'})
   expect(localPlan('tolong tandain tugas PPN Oktober jadi beres')).toMatchObject({kind:'propose',operation:'task_status',target:'PPN Oktober',data:{status:'Done'}})

@@ -1,3 +1,4 @@
+import {taskReadIntent} from '@/lib/tasks/chat-intents'
 export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
 export type Operation = { label:string; entity:string; minimumRole:number; fields:Record<string,string>; required:string[]; task:boolean }
 export type AssistantReply = { ok:boolean; message:string; path?:string; pending?:boolean; token?:string; changed?:boolean; rows?:Array<Record<string,unknown>>|Record<string,unknown>; duplicate?:boolean; history?:string[] }
@@ -21,6 +22,8 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
 }
 export function localPlan(text:string):Plan|null {
  const s=text.trim().toLowerCase()
+ const taskRead=taskReadIntent(text)
+ if(taskRead)return {kind:'read',entity:'tasks',...taskRead}
  if(/^(halo|hai|hi|menu|bantuan|fitur)(\s|$)/.test(s)) return {kind:'help',topic:'tasks'}
  if(/cara|bagaimana|gimana|apa fungsi/.test(s)) {
   const topic=/hapus.*(akun|user)|role|undang|pengguna/.test(s)?'users':/kategori/.test(s)?'categories':/ulang/.test(s)?'templates':/organisasi/.test(s)?'organizations':/ekspor|export|laporan/.test(s)?'reports':/review|tinjau/.test(s)?'review':/kalender/.test(s)?'calendar':/password|sandi|keamanan|akun/.test(s)?'security':/wbs/.test(s)?'wbs':/support/.test(s)?'support':/bukti|evidence/.test(s)?'evidence':/notifikasi|reminder/.test(s)?'notifications':'tasks'
