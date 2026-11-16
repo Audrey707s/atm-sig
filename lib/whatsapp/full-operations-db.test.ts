@@ -1,3 +1,5 @@
+import {validatePlan} from '@/lib/ai/contracts'
+import {conversationPlan,type GuidedDraft} from '@/lib/ai/conversation'
 import { PGlite } from '@electric-sql/pglite'
 import { readFileSync } from 'node:fs'
 import { afterAll,afterEach,beforeAll,beforeEach,describe,expect,it } from 'vitest'
@@ -12,7 +14,7 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role authenticator noinherit;grant authenticated,service_role to authenticator;
    create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    create function auth.role() returns text language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role','service_role')$$;`)
-  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','027_task_reminder_scheduler.sql','028_reminder_recipient_guard.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','031_reminder_email_delivery.sql','032_notification_reminder_reference.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql','20261116121257_ai_task_context_and_delete_cleanup.sql']
+  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','027_task_reminder_scheduler.sql','028_reminder_recipient_guard.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','031_reminder_email_delivery.sql','032_notification_reminder_reference.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql','20261116121257_ai_task_context_and_delete_cleanup.sql','20261116155418_ai_guided_conversation.sql']
   for(const file of files){let sql=readFileSync('supabase/migrations/'+file,'utf8');if(file.includes('full_operations')&&!sql.trim().endsWith('commit;'))sql+='\ncommit;';try{await db.exec(sql)}catch(e){throw new Error('Migration '+file+': '+String(e))}}
   await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits,public.atm_ai_task_context from anon,authenticated;`)
  })
@@ -528,6 +530,63 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   await db.query('update public.tasks set title=$1 where id=$2',['UAT MANUAL 20261030',task])
   const p=await ai(sa,'propose',{operation:'task_delete',target:'2',exact:true,data:{}})
   expect(p.pending).not.toBe(true);expect(p.ok).toBe(false)
+ })
+
+ async function say(message:string,actor=sa,thread?:string){
+  const row=(await db.query<{operation:string;target:string;payload:GuidedDraft['payload'];conversation_id:string|null;expires_at:string}>('select operation,target,payload,conversation_id,expires_at from public.atm_ai_sessions where user_id=$1 and channel=\'web\'',[actor])).rows[0]
+  const draft=row?.payload?.guided&&(row.conversation_id??null)===(thread??null)?row:null
+  if(/^batal$/i.test(message))return ai(actor,'cancel',thread?{threadId:thread}:{})
+  const parsed=conversationPlan(message,draft)
+  const catalog=(await db.query<{c:Record<string,import('@/lib/ai/contracts').Operation>}>('select public.wa_operation_catalog() c')).rows[0].c
+  const plan=parsed?validatePlan(parsed,catalog):null
+  if(!plan)throw new Error('Everyday phrase unexpectedly needs a model: '+message)
+  return ai(actor,plan.kind==='propose'?'propose':plan.kind==='read'?'read':'reply',{...plan,...(thread?{threadId:thread}:{})})
+ }
+ it('completes the reported reassignment conversation without switching to task creation or calling an LLM',async()=>{
+  await db.query('update public.users set name=$1 where id=$2',['Audrey',pic])
+  const nata='88888888-8888-4888-8888-888888888888'
+  await db.query(`insert into public.users(id,name,email,role_id,org_unit_id,supervisor_id) values($1,'nata','nata@example.test',2,4,$2)`,[nata,manager])
+  await db.query('update public.tasks set title=$1 where id=$2',['pertama',task])
+  const start=await say('ganti PIC tugas "pertama" audrey menjadi "nata" ya')
+  expect(start.message).toContain('alasan');expect(start.message).toContain('pertama')
+  const repeated=await say('tugas berjudul "pertama" milik audrey');expect(repeated.message).toContain('alasan');expect(repeated.message).not.toContain('mulai')
+  const follow=await say('ganti PIC-nya menjadi nata');expect(follow.message).toContain('alasan')
+  const preview=await say('karena tugas dialihkan ke tim nata');expect(preview.pending,preview.message).toBe(true)
+  expect((await db.query<{owner_id:string}>('select owner_id from public.tasks where id=$1',[task])).rows[0].owner_id).toBe(pic)
+  expect((await ai(sa,'confirm',{},preview.token)).changed).toBe(true)
+  expect((await db.query<{owner_id:string}>('select owner_id from public.tasks where id=$1',[task])).rows[0].owner_id).toBe(nata)
+ })
+ it('creates a recurring task through ordinary answers, section/category choices and offsets',async()=>{
+  await db.query('update public.users set name=$1 where id=$2',['Audrey',gm])
+  await apply(manager,'category_create',null,{nama:'Rekonsiliasi',seksi:'4'})
+  expect((await say('buatkan tugas berulang untuk Audrey')).message).toContain('judul')
+  expect((await say('Rekonsiliasi bank mingguan')).message).toContain('seksi')
+  expect((await say('Section Cost Accounting')).message).toContain('Kategori')
+  expect((await say('1')).message).toContain('mingguan atau bulanan')
+  expect((await say('setiap minggu')).message).toContain('hari apa')
+  expect((await say('setiap Senin')).message).toContain('Mulai berapa hari')
+  expect((await say('hari yang sama')).message).toContain('Tenggat berapa hari')
+  const p=await say('dua hari setelah jadwal');expect(p.pending,p.message).toBe(true)
+  expect((await db.query('select id from public.task_templates')).rows).toHaveLength(0)
+  expect((await ai(sa,'confirm',{},p.token)).changed).toBe(true)
+  const row=(await db.query<{owner_id:string;recurrence:string;recurrence_day:number;start_offset_days:number;due_offset_days:number}>('select owner_id,recurrence,recurrence_day,start_offset_days,due_offset_days from public.task_templates')).rows[0]
+  expect(row).toEqual({owner_id:gm,recurrence:'weekly',recurrence_day:1,start_offset_days:0,due_offset_days:2})
+ })
+ it('keeps ordinary task creation fields and corrects invalid dates without losing the title',async()=>{
+  expect((await say('buatkan tugas untuk PIC')).message).toContain('judul')
+  expect((await say('Laporan harian')).message).toContain('Kapan mulai')
+  expect((await say('besok jam 8 pagi')).message).toContain('tenggat')
+  expect((await say('tanggal tidak valid')).message).toContain('Kapan tenggat')
+  const p=await say('lusa jam 4 sore');expect(p.pending,p.message).toBe(true)
+  await ai(sa,'cancel')
+  expect((await db.query("select id from public.tasks where title='Laporan harian'")).rows).toHaveLength(0)
+ })
+ it('isolates pending intent between web threads and rechecks the actual role',async()=>{
+  const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const p=await say('edit tugas "Task asal"',sa,a);expect(p.message).toContain('Bagian mana')
+  expect((await say('hapus ya',sa,b)).pending).not.toBe(true)
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+  expect((await ai(pic,'propose',{operation:'task_reassign',context:true,data:{pic:'Manager'}})).ok).toBe(false)
  })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')

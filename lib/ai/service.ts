@@ -1,48 +1,59 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { planRequest } from './planner'
+import {conversationPlan,type GuidedDraft} from './conversation'
+import {aiRoleOperations} from './role-policy'
 import { helpReply } from './knowledge'
-import {containsAssistantSecret,groundCreation,type AssistantReply,type Operation,type Plan} from './contracts'
+import {containsAssistantSecret,groundCreation,validatePlan,type AssistantReply,type Operation,type Plan} from './contracts'
 export function assistantStore() {
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY
  if(!url||!key) throw new Error('Assistant store unavailable')
  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})
 }
-export type Turn = { actor:string; level:number; channel:'web'|'whatsapp'; phone?:string; receipt?:string; linkedAt?:string }
+export type Turn = { actor:string; level:number; channel:'web'|'whatsapp'; phone?:string; receipt?:string; linkedAt?:string; threadId?:string }
 export async function dispatch(turn:Turn,kind:string,payload:Record<string,unknown>={},token?:string):Promise<AssistantReply> {
- const {data,error}=await assistantStore().rpc('atm_ai_turn',{p_actor:turn.actor,p_channel:turn.channel,p_kind:kind,p_payload:{...payload,...(turn.channel==='whatsapp'?{linkGeneration:turn.linkedAt}:{})},p_token:token??null,p_phone:turn.phone??null,p_receipt:turn.receipt??null})
+ const {data,error}=await assistantStore().rpc('atm_ai_turn',{p_actor:turn.actor,p_channel:turn.channel,p_kind:kind,p_payload:{...payload,...(turn.threadId?{threadId:turn.threadId}:{}),...(turn.channel==='whatsapp'?{linkGeneration:turn.linkedAt}:{})},p_token:token??null,p_phone:turn.phone??null,p_receipt:turn.receipt??null})
  if(error) throw new Error('Assistant operation unavailable')
  return data as AssistantReply
 }
 export async function requestAssistant(turn:Turn,message:string,token?:string,historyOverride?:string[]):Promise<AssistantReply> {
- if(/^(ya|konfirmasi)$/i.test(message.trim())) return dispatch(turn,'confirm',{},token)
  if(/^batal$/i.test(message.trim())) return dispatch(turn,'cancel')
  if(containsAssistantSecret(message))return dispatch(turn,'reply',{message:'Jangan kirim password atau API key melalui asisten. Gunakan pengaturan akun yang sesuai.'})
+ const {data:stored,error:draftError}=await assistantStore().from('atm_ai_sessions').select('operation,target,payload,expires_at,conversation_id,phone,linked_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
+ if(draftError)throw new Error('Conversation state unavailable')
+ const validDraft=stored&&Date.parse(stored.expires_at)>Date.now()&&(stored.conversation_id??null)===(turn.threadId??null)&&(turn.channel==='web'||(stored.phone===turn.phone&&stored.linked_at===turn.linkedAt))
+ const draft=validDraft&&stored.payload?.guided?stored as GuidedDraft:null
+ if(/^(ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan)$/i.test(message.trim())){
+  if(draft)return dispatch(turn,'propose',{operation:draft.operation,target:draft.target??undefined,data:draft.payload.data??{},pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target})
+  return dispatch(turn,'confirm',{},token)
+ }
+ const local=conversationPlan(message,draft)
  const choice=/^(?:(?:pilih|nomor|no\.?|yang)\s+)?([1-9]\d?)$/i.exec(message.trim())
  const next=/^(?:lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(message.trim())
- if(choice||next){
-  const {data:selection}=await assistantStore().from('atm_ai_sessions').select('payload,expires_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
-  if(selection&&Date.parse(selection.expires_at)>Date.now()){
+ if((choice||next)&&!draft){
+  const {data:selection}=await assistantStore().from('atm_ai_sessions').select('payload,expires_at,conversation_id').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
+  if(selection&&Date.parse(selection.expires_at)>Date.now()&&(selection.conversation_id??null)===(turn.threadId??null)){
    if(choice&&Array.isArray(selection.payload?.choices))return dispatch(turn,'select',{choice:Number(choice[1])})
    if(next&&selection.payload?.lastRead)return dispatch(turn,'read',{...selection.payload.lastRead,page:String(Number(selection.payload.lastRead.page??1)+1)})
   }
   if(choice){
-   const {data:context}=await assistantStore().from('atm_ai_task_context').select('choices,expires_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
-   if(context&&Date.parse(context.expires_at)>Date.now()&&Array.isArray(context.choices)&&context.choices.length)return dispatch(turn,'select',{choice:Number(choice[1])})
+   const {data:context}=await assistantStore().from('atm_ai_task_context').select('choices,expires_at,conversation_id').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
+   if(context&&Date.parse(context.expires_at)>Date.now()&&(context.conversation_id??null)===(turn.threadId??null)&&Array.isArray(context.choices)&&context.choices.length)return dispatch(turn,'select',{choice:Number(choice[1])})
   }
  }
- const reserved=await dispatch({...turn,channel:'web'},'reserve',{message,contextChannel:turn.channel})
+ const reserved=await dispatch({...turn,channel:'web'},'reserve',{message,contextChannel:turn.channel,local:Boolean(local)})
  if(!reserved.ok) return dispatch(turn,'reply',{message:'Batas permintaan sementara tercapai. Tunggu satu menit lalu coba lagi.'})
  const {data,error}=await assistantStore().rpc('wa_operation_catalog')
  if(error) throw new Error('Catalogue unavailable')
  let plan:Plan
- try {plan=await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
+ if(local?.kind==='propose'&&!Object.hasOwn(aiRoleOperations(turn.level,data as Record<string,Operation>),local.operation??''))return dispatch(turn,'reply',{message:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'})
+ try {plan=local?validatePlan(local,aiRoleOperations(turn.level,data as Record<string,Operation>)):await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
  catch(error) {
   const reason=error as {name?:unknown;statusCode?:unknown;data?:{error?:{code?:unknown;type?:unknown}}}
   console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined,code:typeof reason?.data?.error?.code==='string'?reason.data.error.code:undefined,type:typeof reason?.data?.error?.type==='string'?reason.data.error.type:undefined})
   if(reason?.statusCode===429)return dispatch(turn,'reply',{message:'Kuota AI gratis sementara tercapai. Coba lagi nanti, atau gunakan perintah seperti “lihat tugas saya” dan “ringkasan tugas”. Tidak ada perubahan yang disimpan.'})
   return dispatch(turn,'reply',{message:'Permintaan belum dapat diproses. Coba tulis judul/ID tugas dan perubahan secara lengkap, atau gunakan menu ATM. Tidak ada perubahan yang disimpan.'})}
- plan=groundCreation(plan,historyOverride??reserved.history??[message])
+ if(!local)plan=groundCreation(plan,historyOverride??reserved.history??[message])
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})

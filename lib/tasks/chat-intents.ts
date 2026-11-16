@@ -1,6 +1,6 @@
 /** Common read requests do not depend on a model or its quota. */
 export function taskReadIntent(message: string): {mode:'list'|'mine'|'review'|'mine_open'|'open';query:string;page?:string;pic?:string} | null {
-  const text=message.trim().replace(/[.!?]+$/,'').replace(/\s+/g,' ')
+  const text=message.trim().replace(/\s+(?:apa saja|apasaja|saja|dong|ya)$/i,'').replace(/[.!?]+$/,'').replace(/\s+/g,' ')
     .replace(/^(?:tolong|mohon|boleh|bisa)(?:\s+(?:kamu|anda))?\s+/i,'')
   const paged=/^(.*?)\s+(?:halaman|page)\s+([1-9]\d{0,3})$/i.exec(text)
   if(paged){const intent=taskReadIntent(paged[1]);return intent?{...intent,page:paged[2]}:null}
@@ -15,7 +15,7 @@ export function taskReadIntent(message: string): {mode:'list'|'mine'|'review'|'m
   if(details)return {mode:'list',query:details[1].toLowerCase()}
   const owner=/^(?:(?:lihat|liat|tampilkan|cek|cari|carikan)\s+)?(?:(?:daftar|list)\s+)?(?:tugas|task|pekerjaan)\s+(?:milik|punya|pic|untuk|yang dikerjakan oleh)\s+(.+)$/i.exec(text)
   if(owner)return {mode:'list',query:'',pic:normalizeTaskReference(owner[1]).text}
-  const search=/^(?:cari|carikan|lihat|tampilkan|cek)\s+(?:(?:daftar|list)\s+)?(?:tugas|task|pekerjaan)\s+(.+)$/i.exec(text)
+  const search=/^(?:cari|carikan|lihat|liat|tampilkan|tunjukkan|tunjukin|cek|buka|bukain)\s+(?:(?:daftar|list)\s+)?(?:tugas|task|pekerjaan)\s+(.+)$/i.exec(text)
   if(search){const reference=normalizeTaskReference(search[1]);return {mode:'list',query:reference.text,...(!/^(?:cari|carikan)\b/i.test(text)&&!reference.exact?{pic:reference.text}:{})}}
   return null
 }
@@ -32,6 +32,8 @@ export function taskMutationReference(value:string):{target:string;exact:boolean
  const text=value.trim().replace(/[.!?]+$/,'').trim()
  const quoted=/^["“”'](.+?)["“”'](?:\s+(?:milik|punya|pic|oleh)\s+(.+?))?(?:\s+(?:ya|dong|deh|tolong|please))*$/i.exec(text)
  if(quoted)return {target:quoted[1].trim(),exact:true,...(quoted[2]?{pic:normalizeTaskReference(quoted[2]).text}:{})}
+ const unmarked=/^[\"“”'](.+?)[\"“”']\s+(.+)$/i.exec(text)
+ if(unmarked)return {target:unmarked[1].trim(),exact:true,pic:normalizeTaskReference(unmarked[2]).text}
  const owned=/^(.+?)\s+(?:milik|punya|pic|oleh)\s+(.+)$/i.exec(text)
  if(owned){const title=normalizeTaskReference(owned[1]);return {target:title.text,exact:title.exact,pic:normalizeTaskReference(owned[2]).text}}
  const reference=normalizeTaskReference(text)

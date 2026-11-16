@@ -1,7 +1,8 @@
 import 'server-only'
 import { generateText,jsonSchema,tool,type ToolSet } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
-import { localPlan,validatePlan,type Plan,type Operation } from './contracts'
+import { validatePlan,type Plan,type Operation } from './contracts'
+import {spokenPlan} from './conversation'
 import {aiRolePolicy,aiRoleOperations,aiRoleReadAllowed} from './role-policy'
 import { allowedKnowledge } from './knowledge'
 export function aiConfigured() {return process.env.ATM_AI_FREE_PLAN_CONFIRMED==='true'&&Boolean(process.env.GROQ_API_KEY)}
@@ -10,7 +11,7 @@ export async function planRequest(text:string,level:number,catalog:Record<string
  const policy=aiRolePolicy(level)
  if(!policy)return {kind:'clarify',question:'Role akun tidak valid atau belum tersedia. Hubungi administrator melalui pengaturan akun.'}
  const allowed=aiRoleOperations(level,catalog)
- const local=localPlan(text)
+ const local=spokenPlan(text)
  if(local){if(local.kind==='propose'&&!Object.hasOwn(allowed,local.operation??''))return {kind:'clarify',question:'Role akun Anda tidak memiliki izin untuk aksi tersebut. Saya dapat menampilkan data yang termasuk dalam hak akses Anda.'};return validatePlan(local,allowed)}
  if(!aiConfigured())return {kind:'clarify',question:'Bahasa alami AI belum diaktifkan. Sementara gunakan “lihat tugas saya”, “ringkasan tugas”, “hapus tugas <judul lengkap>”, atau “cara menggunakan tugas”.'}
  const tools:ToolSet={}

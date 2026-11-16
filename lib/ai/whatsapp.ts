@@ -18,13 +18,19 @@ export async function receiveAssistantWhatsApp(incoming:FonnteIncoming):Promise<
  const {data:pending}=await store.from('atm_ai_sessions').select('token,payload,phone,linked_at,expires_at').eq('user_id',link.user_id).eq('channel','whatsapp').maybeSingle()
  const {data:taskContext}=await store.from('atm_ai_task_context').select('task_id,choices,phone,linked_at,expires_at').eq('user_id',link.user_id).eq('channel','whatsapp').maybeSingle()
  const validTaskContext=Boolean(taskContext&&taskContext.phone===incoming.sender&&taskContext.linked_at===link.linked_at&&Date.parse(taskContext.expires_at)>Date.now())
- const confirmation=/^(ya|konfirmasi|batal)$/i.test(incoming.text.trim())
+ const confirmation=/^(ya|iya|konfirmasi|simpan|batal)$/i.test(incoming.text.trim())
  const validSession=Boolean(pending&&pending.phone===incoming.sender&&pending.linked_at===link.linked_at&&Date.parse(pending.expires_at)>Date.now())
  const validPending=validSession&&Boolean(pending?.token)
  const choosing=((validSession&&Array.isArray(pending?.payload?.choices))||(validTaskContext&&Array.isArray(taskContext?.choices)&&taskContext.choices.length>0))&&/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(incoming.text.trim())
+ const guided=validSession&&pending?.payload?.guided===true&&incoming.command!=='feature'
  const continuing=validSession&&pending?.payload?.lastRead&&/^(?:lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(incoming.text.trim())
+ if(['link','stop','start','disconnect'].includes(incoming.command)){
+  await store.from('atm_ai_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
+  await store.from('atm_ai_task_context').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
+  return false
+ }
  if(confirmation&&!validPending&&!validSession) return false
- if(!confirmation&&!choosing&&!continuing) {
+ if(!confirmation&&!choosing&&!continuing&&!guided) {
   // Preserve linking, STOP/MULAI/PUTUS, menu commands, numeric selections and native forms.
   if((incoming.command!=='help'&&!taskReadIntent(incoming.text))||/^(menu|bantuan)$/i.test(incoming.text)) {
    const {error:resetError}=await store.from('atm_ai_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
