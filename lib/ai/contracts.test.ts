@@ -21,6 +21,17 @@ describe('AI intent boundary',()=>{
   expect(localPlan('tolong tandain tugas PPN Oktober jadi beres')).toMatchObject({kind:'propose',operation:'task_status',target:'PPN Oktober',data:{status:'Done'}})
   expect(localPlan('ringkasan tugas')).toMatchObject({mode:'report'})
  })
+ it.each(['update progress rekonsiliasi jadi 70%','tolong ubah progres rekonsiliasi ke 70 persen','progres rekonsiliasi 70','perbarui tugas rekonsiliasi progressnya jadi 70%'])('extracts keyword progress without a fixed command: %s',text=>{
+  expect(localPlan(text)).toMatchObject({kind:'propose',operation:'task_progress',target:'rekonsiliasi',data:{progres:'70'}})
+ })
+ it('keeps explicit open filters, keywords and pages',()=>{
+  expect(localPlan('tampilkan daftar tugas saya yang masih open halaman 2')).toMatchObject({kind:'read',mode:'mine_open',page:'2'})
+  expect(localPlan('lihat tugas rekonsiliasi')).toMatchObject({kind:'read',query:'rekonsiliasi'})
+  expect(localPlan('cari tugas rekonsiliasi halaman 3')).toMatchObject({kind:'read',query:'rekonsiliasi',page:'3'})
+  expect(localPlan('update progress rekonsiliasi')).toMatchObject({kind:'clarify'})
+  expect(localPlan('buka profil saya')).toMatchObject({kind:'help',topic:'security'})
+  expect(localPlan('buka menu organisasi')).toMatchObject({kind:'help',topic:'organizations'})
+ })
  it('does not parse confirmation as a model-generated action',()=>{
   expect(localPlan('YA')).toBeNull()
   expect(()=>validatePlan({kind:'confirm'},catalog)).toThrow()

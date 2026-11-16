@@ -18,6 +18,15 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  if(/^(ya|konfirmasi)$/i.test(message.trim())) return dispatch(turn,'confirm',{},token)
  if(/^batal$/i.test(message.trim())) return dispatch(turn,'cancel')
  if(containsAssistantSecret(message))return dispatch(turn,'reply',{message:'Jangan kirim password atau API key melalui asisten. Gunakan pengaturan akun yang sesuai.'})
+ const choice=/^(?:(?:pilih|nomor|no\.?|yang)\s+)?([1-9]\d?)$/i.exec(message.trim())
+ const next=/^(?:lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(message.trim())
+ if(choice||next){
+  const {data:selection}=await assistantStore().from('atm_ai_sessions').select('payload,expires_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
+  if(selection&&Date.parse(selection.expires_at)>Date.now()){
+   if(choice&&Array.isArray(selection.payload?.choices))return dispatch(turn,'select',{choice:Number(choice[1])})
+   if(next&&selection.payload?.lastRead)return dispatch(turn,'read',{...selection.payload.lastRead,page:String(Number(selection.payload.lastRead.page??1)+1)})
+  }
+ }
  const reserved=await dispatch({...turn,channel:'web'},'reserve',{message,contextChannel:turn.channel})
  if(!reserved.ok) return dispatch(turn,'reply',{message:'Batas permintaan sementara tercapai. Tunggu satu menit lalu coba lagi.'})
  const {data,error}=await assistantStore().rpc('wa_operation_catalog')
@@ -25,13 +34,14 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  let plan:Plan
  try {plan=await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
  catch(error) {
-  const reason=error as {name?:unknown;statusCode?:unknown}
-  console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined})
+  const reason=error as {name?:unknown;statusCode?:unknown;data?:{error?:{code?:unknown;type?:unknown}}}
+  console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined,code:typeof reason?.data?.error?.code==='string'?reason.data.error.code:undefined,type:typeof reason?.data?.error?.type==='string'?reason.data.error.type:undefined})
   if(reason?.statusCode===429)return dispatch(turn,'reply',{message:'Kuota AI gratis sementara tercapai. Coba lagi nanti, atau gunakan perintah seperti “lihat tugas saya” dan “ringkasan tugas”. Tidak ada perubahan yang disimpan.'})
   return dispatch(turn,'reply',{message:'Permintaan belum dapat diproses. Coba tulis judul/ID tugas dan perubahan secara lengkap, atau gunakan menu ATM. Tidak ada perubahan yang disimpan.'})}
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,data:plan.data})
+ if(plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
  if(plan.entity==='tasks'&&plan.mode==='calendar'&&/\b(saya|pribadi|milikku)\b/i.test(message))plan.mode='mine_calendar'
- return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task})
+ return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task,page:plan.page})
 }

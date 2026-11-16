@@ -1,4 +1,10 @@
 const topics:Record<string,{minimum:number;path:string;text:string}>={
+ dashboard:{minimum:2,path:'/dashboard',text:'Dashboard menampilkan ringkasan dan evaluasi tugas sesuai hak akses Anda.'},
+ kanban:{minimum:1,path:'/kanban',text:'Papan Kanban menampilkan tugas menurut status dalam cakupan akses Anda.'},
+ timeline:{minimum:1,path:'/timeline',text:'Linimasa menampilkan rentang pengerjaan dan tenggat tugas sesuai hak akses Anda.'},
+ performance:{minimum:2,path:'/jobload',text:'Evaluasi kinerja dan beban kerja periode dapat dilihat dari halaman ini sesuai hak akses Anda.'},
+ approvals:{minimum:4,path:'/approvals',text:'Persetujuan perubahan tenggat ditampilkan di sini. Keputusan mengikuti hak akses dan alur penanggung jawab.'},
+ audit:{minimum:3,path:'/audit-log',text:'Riwayat aktivitas menampilkan perubahan dalam cakupan akses Anda.'},
  tasks:{minimum:1,path:'/tasks',text:'Buka Tugas untuk melihat pekerjaan sesuai hak akses. Pilih tugas untuk detail, progres, WBS, support, bukti, dan komentar. Pembuatan serta perubahan mengikuti role dan cakupan Anda. Kirim permintaan lengkap, misalnya judul tugas dan perubahan yang diinginkan. Perubahan dari asisten selalu perlu konfirmasi.'},
  review:{minimum:2,path:'/review-inbox',text:'Antrean review menampilkan tugas yang dapat Anda tinjau. Keputusan hanya dapat dijalankan jika aturan ATM mengizinkan Anda. PIC melengkapi bukti wajib dan mengajukan Review; status Selesai tetap mengikuti alur persetujuan.'},
  categories:{minimum:2,path:'/task-templates',text:'Kategori Tasks mengelompokkan pekerjaan. Pengelolaan kategori mengikuti role pengelola dan cakupan unit yang diberikan ATM.'},

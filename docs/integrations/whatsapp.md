@@ -125,3 +125,15 @@ Release validation: 543 tests, TypeScript, targeted ESLint, optimized build and 
 Creation remains preview-only until YA/1. BATAL cancels. The original five-minute confirmation, fifteen-minute form expiry, sender rate limit, receipt deduplication and atomic outbox semantics remain in place. The hosted migration is `20261116102741_whatsapp_create_guidance.sql`. A hosted transaction verified title → dates → section → preview → confirmation and was rolled back; zero smoke-test tasks remain and no test WhatsApp reply was sent externally.
 
 Common phrases such as `daftar tugas`, `lihat list tugas saya`, and `tugas yang perlu saya review` now use a shared deterministic parser. WhatsApp maps unfiltered lists to the existing paged numeric-selection workflow. Web AI uses the corresponding role-scoped read operation. Queries by title and explicit task-detail UUIDs stay scoped; raw task rows are not supplied to the model. Read responses distinguish personal PIC assignments from assigned-reviewer tasks and general accessible tasks, with matching page links. Other free-form language may still use the free model and its quota.
+
+
+## Everyday language and matching — 16 November 2026
+
+- Web and WhatsApp share the role-filtered operation catalog. Supported chat operations can be requested in ordinary Indonesian; the model translates the request to a validated proposal and asks for missing fields. No paid provider or paid fallback is added.
+- “Tampilkan daftar tugas saya” defaults to open PIC-owned tasks, including overdue/blocked/review/revisi, with WIB deadlines and progress. Lists are paged (5 per page); reply LANJUT or specify a page to read the rest.
+- “Update progress rekonsiliasi jadi 70%” searches accessible titles by keyword. Multiple matches produce numbered choices; reply “pilih 2”, review the preview, and confirm YA. No automatic bulk update or arbitrary first match.
+- Progress is owner-only, 0–100, for active tasks. WBS-managed progress must be updated through WBS; review/evidence/role gates remain intact. Selections and confirmations expire and are tied to the linked phone generation.
+- Names can identify category/template/organization/WBS/support/requirement/notification records, with ambiguity resolved before preview. All writes still run under the existing authenticated RLS and transactional rules.
+- Natural menu requests provide the appropriate app link. Account security, file uploads, export, invitation and role management continue through their existing web screens; the bot must not claim to execute an unavailable operation.
+- Native task creation accepts dates such as “besok jam 8 pagi” and “lusa jam 4 sore”, as well as explicit WIB timestamps. The final dates appear in the preview before saving.
+- Verification includes SQL/RLS operations, numbered disambiguation, per-channel isolation, single-use confirmation, complete list pagination, ordinary date answers, WhatsApp routing with colon-containing times, lint, types and production build. No test WhatsApp message is sent to a real recipient.

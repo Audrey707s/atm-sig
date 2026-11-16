@@ -1,14 +1,15 @@
 import {taskReadIntent} from '@/lib/tasks/chat-intents'
-export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
+export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; page?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
 export type Operation = { label:string; entity:string; minimumRole:number; fields:Record<string,string>; required:string[]; task:boolean }
-export type AssistantReply = { ok:boolean; message:string; path?:string; pending?:boolean; token?:string; changed?:boolean; rows?:Array<Record<string,unknown>>|Record<string,unknown>; duplicate?:boolean; history?:string[] }
+export type AssistantReply = { ok:boolean; message:string; path?:string; pending?:boolean; token?:string; changed?:boolean; rows?:Array<Record<string,unknown>>|Record<string,unknown>; duplicate?:boolean; selection?:boolean; history?:string[] }
 const entities=new Set(['tasks','wbs','supports','requirements','comments','approvals','categories','templates','organizations','users','notifications','reminders','audit'])
 export function validatePlan(value:unknown,catalog:Record<string,Operation>):Plan {
  if(!value||typeof value!=='object'||Array.isArray(value)) throw new Error('Invalid plan')
  const p=value as Plan
  if(!['read','propose','help','clarify'].includes(p.kind)) throw new Error('Invalid kind')
- for(const k of ['query','target','topic','question','operation','task','mode','entity'] as const) if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k]!.length>500)) throw new Error('Invalid value')
- if(p.kind==='read'&&(!entities.has(p.entity??'')||!['list','mine','review','calendar','mine_calendar','report'].includes(p.mode??'list'))) throw new Error('Invalid read')
+ for(const k of ['query','target','topic','question','operation','task','mode','entity','page'] as const) if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k]!.length>500)) throw new Error('Invalid value')
+ if(p.kind==='read'&&(!entities.has(p.entity??'')||!['list','mine','review','calendar','mine_calendar','mine_open','open','report'].includes(p.mode??'list'))) throw new Error('Invalid read')
+ if(p.page!==undefined&&!/^[1-9]\d{0,3}$/.test(p.page))throw new Error('Invalid page')
  if(p.task&&!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(p.task)) throw new Error('Invalid task')
  if(p.kind==='propose') {
   const spec=Object.hasOwn(catalog,p.operation??'')?catalog[p.operation!]:undefined;if(!spec) throw new Error('Operation denied')
@@ -21,15 +22,22 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
  return p
 }
 export function localPlan(text:string):Plan|null {
- const s=text.trim().toLowerCase()
- const taskRead=taskReadIntent(text)
+ const clean=text.trim().replace(/^(?:(?:tolong|mohon|bantu|bisa|boleh)(?:\s+(?:saya|aku|kamu|anda))?\s+)+/i,'').replace(/[.!?]+$/,'')
+ const s=clean.toLowerCase()
+ const taskRead=taskReadIntent(clean)
  if(taskRead)return {kind:'read',entity:'tasks',...taskRead}
+ const progress=/^(?:(?:ubah|update|perbarui|naikkan|turunkan|set|ganti)\s+)?(?:progres|progress|progresnya|progressnya)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:(?:menjadi|jadi|ke|sebesar)\s+)?(\d{1,3})\s*(?:%|persen)?$/i.exec(clean)
+ if(progress)return {kind:'propose',operation:'task_progress',target:progress[1],data:{progres:progress[2]}}
+ const progressAfter=/^(?:ubah|update|perbarui|set|ganti)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:progres|progress)(?:nya)?\s+(?:(?:menjadi|jadi|ke)\s+)?(\d{1,3})\s*(?:%|persen)?$/i.exec(clean)
+ if(progressAfter)return {kind:'propose',operation:'task_progress',target:progressAfter[1],data:{progres:progressAfter[2]}}
+ if(/^(?:ubah|update|perbarui)\s+(?:progres|progress)\s+/i.test(clean))return {kind:'clarify',question:'Berapa persen progres yang ingin disimpan? Sebutkan judul atau kata kunci tugas dan persentasenya, misalnya “progres rekonsiliasi jadi 70%”.'}
+ const menu=/^(?:(?:buka|lihat|tampilkan|akses|masuk ke)\s+)?(?:menu|halaman)?\s*(dashboard|dasbor|kanban|papan|linimasa|timeline|kinerja|evaluasi kinerja|persetujuan|audit|riwayat aktivitas|profil(?: saya)?|akun(?: saya)?|organisasi|organizations|kategori(?: tugas)?|tugas berulang|kalender|calendar|laporan|pengguna|notifikasi|keamanan|password)$/i.exec(clean)
+ if(menu){const topic:Record<string,string>={kanban:'kanban',papan:'kanban',linimasa:'timeline',timeline:'timeline',kinerja:'performance','evaluasi kinerja':'performance',persetujuan:'approvals',audit:'audit','riwayat aktivitas':'audit',dashboard:'dashboard',dasbor:'dashboard',profil:'security','profil saya':'security',akun:'security','akun saya':'security',organisasi:'organizations',organizations:'organizations',kategori:'categories','kategori tugas':'categories','tugas berulang':'templates',kalender:'calendar',calendar:'calendar',laporan:'reports',pengguna:'users',notifikasi:'notifications',keamanan:'security',password:'security'};return {kind:'help',topic:topic[menu[1].toLowerCase()]}}
  if(/^(halo|hai|hi|menu|bantuan|fitur)(\s|$)/.test(s)) return {kind:'help',topic:'tasks'}
  if(/cara|bagaimana|gimana|apa fungsi/.test(s)) {
   const topic=/hapus.*(akun|user)|role|undang|pengguna/.test(s)?'users':/kategori/.test(s)?'categories':/ulang/.test(s)?'templates':/organisasi/.test(s)?'organizations':/ekspor|export|laporan/.test(s)?'reports':/review|tinjau/.test(s)?'review':/kalender/.test(s)?'calendar':/password|sandi|keamanan|akun/.test(s)?'security':/wbs/.test(s)?'wbs':/support/.test(s)?'support':/bukti|evidence/.test(s)?'evidence':/notifikasi|reminder/.test(s)?'notifications':'tasks'
   return {kind:'help',topic}
  }
- if(/^(lihat|tampilkan|cek|cari|daftar)\b/.test(s)&&/tugas|task|pekerjaan/.test(s)) return {kind:'read',entity:'tasks',mode:/saya|pribadi/.test(s)?'mine':'list',query:/cari/.test(s)?text.replace(/^.*?cari\s+(?:tugas\s+)?/i,'').trim():''}
  const create=/^(?:tolong\s+)?buat(?:kan)?\s+tugas\s+["“]?(.+?)["”]?\s+mulai\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\s+(?:tenggat|deadline)\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$/i.exec(text.trim())
  if(create)return {kind:'propose',operation:'task_create',data:{judul:create[1],mulai:create[2],tenggat:create[3]}}
  if(/^(laporan|ringkasan|rangkum)(\b|$)/.test(s)) return {kind:'read',entity:'tasks',mode:'report'}
