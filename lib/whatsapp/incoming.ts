@@ -35,7 +35,7 @@ export function parseFonnteIncoming(value:unknown,device:string,now=Date.now()):
     command='feature';args.feature='BUAT'
   }
   const taskRead=taskReadIntent(text)
-  if(taskRead&&!taskRead.query) {command=['mine','mine_open'].includes(taskRead.mode)?'mine':taskRead.mode==='review'?'reviews':'tasks';args.page=Number(taskRead.page??1)}
+  if(taskRead&&!taskRead.query&&!taskRead.pic) {command=['mine','mine_open'].includes(taskRead.mode)?'mine':taskRead.mode==='review'?'reviews':'tasks';args.page=Number(taskRead.page??1)}
   if(/^(?:tolong\s+)?(?:matikan|hentikan|berhenti(?:kan)?)\s+(?:kirim\s+)?notifikasi(?:\s+(?:whatsapp|wa))?[.!?]?$/i.test(text))command='stop'
   if(/^(?:tolong\s+)?(?:aktifkan|nyalakan|mulai(?:kan)?)\s+notifikasi(?:\s+(?:whatsapp|wa))?[.!?]?$/i.test(text))command='start'
   if(/^(?:tolong\s+)?putuskan\s+(?:koneksi|hubungan)\s+(?:whatsapp|wa)[.!?]?$/i.test(text))command='disconnect'

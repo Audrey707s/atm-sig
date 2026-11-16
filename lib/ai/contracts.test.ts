@@ -78,4 +78,15 @@ describe('AI intent boundary',()=>{
   expect(groundCreation(p,['buat tugas Rekonsiliasi bank untuk nata','besok jam 8 pagi','16'])).toEqual(p)
  })
 
+ it.each(['hapus tugas "pertama" ya','tolong hapus tugas “pertama” dong'])('keeps only an explicitly quoted deletion title: %s',message=>{
+  expect(localPlan(message)).toMatchObject({operation:'task_delete',target:'pertama',exact:true,data:{}})
+ })
+ it('preserves politeness words inside a quoted title and distinguishes PIC from title searches',()=>{
+  expect(localPlan('hapus tugas "Laporan ya" dong')).toMatchObject({target:'Laporan ya',exact:true})
+  expect(localPlan('lihat tugas nata')).toMatchObject({kind:'read',pic:'nata',query:'nata'})
+  expect(localPlan('lihat tugas milik nata')).toMatchObject({kind:'read',pic:'nata',query:''})
+  expect(localPlan('lihat tugas nata yang masih open halaman 2')).toMatchObject({pic:'nata',mode:'open',page:'2'})
+  expect(localPlan('cari tugas nata')).not.toHaveProperty('pic')
+ })
+
 })

@@ -145,3 +145,11 @@ Common phrases such as `daftar tugas`, `lihat list tugas saya`, and `tugas yang 
 - PIC and support recipients accept an exact active display name or email. Ambiguous names require clarification. Section fields accept a unique exact section name, and the existing scope checks still decide whether the change is allowed.
 - Keep up to eight recent user messages per conversation/channel so ordinary short answers can complete the requested fields. No raw database task snapshots or confirmation tokens are sent to the planner.
 - Retry malformed provider tool calls once with the same free model; quota/authentication errors do not trigger retries or a paid fallback.
+
+
+### Quoted titles, PIC filters and role checks — 16 November 2026
+
+- `hapus tugas "pertama" ya` treats only the quoted text as the exact task title. Politeness outside quotes is excluded; words inside quoted titles remain intact. An exact unique match produces a preview, never immediate deletion. Duplicate exact titles still require selection.
+- `lihat tugas nata` resolves the active PIC name/email before falling back to a title search. `lihat tugas milik nata` explicitly selects the PIC; missing/ambiguous names require clarification. `cari tugas nata` remains a title search. PIC filters and pagination links use the same owner parameter as the web.
+- The owner lookup executes under authenticated RLS. It narrows existing access and cannot expose tasks outside the caller's role/organization scope. Super Admin retains the existing manager-level CRUD permissions across the authorized scope; role-restricted mutations give a clear permission response.
+- Regression covers exact-title deletion by Super Admin in disposable fixtures, denied Staff deletion, PIC name reads, cross-section read isolation, missing/ambiguous names and title fallback. Production checks validate deletion only as a rolled-back preview; the real `pertama` task is preserved.

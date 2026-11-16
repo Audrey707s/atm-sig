@@ -12,7 +12,7 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role authenticator noinherit;grant authenticated,service_role to authenticator;
    create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    create function auth.role() returns text language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role','service_role')$$;`)
-  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql']
+  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql']
   for(const file of files){let sql=readFileSync('supabase/migrations/'+file,'utf8');if(file.includes('full_operations')&&!sql.trim().endsWith('commit;'))sql+='\ncommit;';try{await db.exec(sql)}catch(e){throw new Error('Migration '+file+': '+String(e))}}
   await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits from anon,authenticated;`)
  })
@@ -398,6 +398,34 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   const category=await apply(manager,'category_create',null,{nama:'Kategori nama',seksi:'Section Cost Accounting'})
   expect(category.ok,category.error).toBe(true)
   expect((await apply(pic,'support_add',task,{penerima:'Manager',deskripsi:'Bantu periksa'})).ok).toBe(true)
+ })
+
+ it('lets Super Admin preview and confirm deletion of an exact title while preserving a longer matching title',async()=>{
+  await db.query('update public.tasks set title=$1 where id=$2',['pertama',task])
+  const other=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,8,'tugas pertama',now(),now()+interval '2 days') returning id`,[sa])).rows[0].id
+  const preview=await ai(sa,'propose',{operation:'task_delete',target:'pertama',exact:true,data:{}})
+  expect(preview.pending,preview.message).toBe(true);expect(preview.message).toContain('pertama')
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+  expect((await ai(sa,'confirm',{},preview.token)).changed).toBe(true)
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(0)
+  expect((await db.query('select id from public.tasks where id=$1',[other])).rows).toHaveLength(1)
+  expect((await ai(pic,'propose',{operation:'task_delete',target:other,data:{}})).ok).toBe(false)
+ })
+ it('filters by PIC name and links to the same owner filter as the web without expanding Staff scope',async()=>{
+  const named=await ai(sa,'read',{entity:'tasks',pic:'PIC',query:'PIC'})
+  expect(named.rows?.map(r=>r.id)).toEqual([task]);expect(named.message).toContain('PIC: PIC')
+  const path=(await db.query<{r:{path:string}}>(`select public.atm_ai_turn($1,'web','read','{"entity":"tasks","pic":"PIC"}') r`,[sa])).rows[0].r.path
+  expect(path).toBe('/tasks?owner='+pic)
+  await db.query(`insert into public.tasks(owner_id,assigner_id,org_unit_id,title,start_date,due_date) values($1,$1,8,'Bukan lingkup PIC',now(),now()+interval '2 days')`,[sa])
+  expect((await ai(pic,'read',{entity:'tasks',pic:'SA',query:''})).rows).toHaveLength(0)
+  expect((await ai(sa,'read',{entity:'tasks',pic:'SA',query:''})).rows).toHaveLength(1)
+ })
+ it('keeps title search as fallback, rejects missing explicit PICs and asks about ambiguous names',async()=>{
+  expect((await ai(sa,'read',{entity:'tasks',pic:'Task asal',query:'Task asal'})).rows?.map(r=>r.id)).toEqual([task])
+  expect((await ai(sa,'read',{entity:'tasks',pic:'Tidak ada PIC',query:''})).ok).toBe(false)
+  await db.query('update public.users set name=$1 where id=$2',['PIC',gm])
+  const ambiguous=await ai(sa,'read',{entity:'tasks',pic:'PIC',query:'PIC'})
+  expect(ambiguous.ok).toBe(false);expect(ambiguous.message).toContain('nama yang sama')
  })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')

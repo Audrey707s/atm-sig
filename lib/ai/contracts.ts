@@ -1,5 +1,5 @@
-import {taskReadIntent} from '@/lib/tasks/chat-intents'
-export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; page?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
+import {taskReadIntent,normalizeTaskReference} from '@/lib/tasks/chat-intents'
+export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; pic?:string; exact?:boolean; page?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
 export type Operation = { label:string; entity:string; minimumRole:number; fields:Record<string,string>; required:string[]; task:boolean }
 export type AssistantReply = { ok:boolean; message:string; path?:string; pending?:boolean; token?:string; changed?:boolean; rows?:Array<Record<string,unknown>>|Record<string,unknown>; duplicate?:boolean; selection?:boolean; history?:string[] }
 const entities=new Set(['tasks','wbs','supports','requirements','comments','approvals','categories','templates','organizations','users','notifications','reminders','audit'])
@@ -7,8 +7,10 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
  if(!value||typeof value!=='object'||Array.isArray(value)) throw new Error('Invalid plan')
  const p=value as Plan
  if(!['read','propose','help','clarify'].includes(p.kind)) throw new Error('Invalid kind')
- for(const k of ['query','target','topic','question','operation','task','mode','entity','page'] as const) if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k]!.length>500)) throw new Error('Invalid value')
+ for(const k of ['query','target','topic','question','operation','task','mode','entity','page','pic'] as const) if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k]!.length>500)) throw new Error('Invalid value')
  if(p.kind==='read'&&(!entities.has(p.entity??'')||!['list','mine','review','calendar','mine_calendar','mine_open','open','report'].includes(p.mode??'list'))) throw new Error('Invalid read')
+ if(p.exact!==undefined&&typeof p.exact!=='boolean')throw new Error('Invalid exact match')
+ if(p.target){const target=normalizeTaskReference(p.target);p.target=target.text;if(target.exact)p.exact=true}
  if(p.page!==undefined&&!/^[1-9]\d{0,3}$/.test(p.page))throw new Error('Invalid page')
  if(p.task&&!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(p.task)) throw new Error('Invalid task')
  if(p.kind==='propose') {
@@ -43,7 +45,9 @@ export function localPlan(text:string):Plan|null {
  if(create)return {kind:'propose',operation:'task_create',data:{judul:create[1],mulai:create[2],tenggat:create[3]}}
  if(/^(laporan|ringkasan|rangkum)(\b|$)/.test(s)) return {kind:'read',entity:'tasks',mode:'report'}
  if(/^(kalender|tenggat minggu)/.test(s)) return {kind:'read',entity:'tasks',mode:'calendar'}
- const patterns:[RegExp,string][]=[[/^(?:tolong\s+)?(?:hapus)\s+(?:tugas\s+)?["“]?(.+?)["”]?$/i,'task_delete'],[/^(?:tolong\s+)?(?:ubah|update|tandai|tandain)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:menjadi|jadi|ke)\s+(selesai|beres|done|berjalan|blocked|review|belum dimulai)$/i,'task_status']]
+ const deletion=/^(?:hapus|delete|buang)\s+(?:tugas\s+)?(.+)$/i.exec(clean)
+ if(deletion){const target=normalizeTaskReference(deletion[1]);return {kind:'propose',operation:'task_delete',target:target.text,exact:target.exact,data:{}}}
+ const patterns:[RegExp,string][]=[[/^(?:tolong\s+)?(?:ubah|update|tandai|tandain)\s+(?:tugas\s+)?["“]?(.+?)["”]?\s+(?:menjadi|jadi|ke)\s+(selesai|beres|done|berjalan|blocked|review|belum dimulai)$/i,'task_status']]
  for(const [re,op] of patterns) {const m=re.exec(text.trim());if(m) return {kind:'propose',operation:op,target:m[1],data:op==='task_status'?{status:({selesai:'Done',beres:'Done',done:'Done',berjalan:'In progress',blocked:'Blocked',review:'Review','belum dimulai':'To do'} as Record<string,string>)[m[2].toLowerCase()]}:{}}}
  return null
 }

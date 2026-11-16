@@ -43,4 +43,11 @@ describe('free-only AI planner',()=>{
    generateText.mockResolvedValue({toolCalls});await expect(planRequest('bypass role',2,catalog)).rejects.toThrow()
   }
  })
+ it('uses live role permissions for a natural delete request without a provider call',async()=>{
+  const ops={...catalog,task_delete:{label:'Hapus',entity:'tasks',minimumRole:3,fields:{},required:[],task:true}}
+  expect(await planRequest('hapus tugas "pertama" ya',6,ops)).toMatchObject({operation:'task_delete',target:'pertama',exact:true})
+  expect(await planRequest('hapus tugas "pertama" ya',2,ops)).toMatchObject({kind:'clarify',question:expect.stringContaining('izin')})
+  expect(generateText).not.toHaveBeenCalled()
+ })
+
 })
