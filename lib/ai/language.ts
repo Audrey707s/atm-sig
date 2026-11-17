@@ -1,4 +1,5 @@
 import type {Plan} from './contracts'
+import {taskFieldPlan} from './task-fields'
 import {normalizeTaskReference,taskMutationReference} from '@/lib/tasks/chat-intents'
 /** Normalize request words only; quoted titles and values are never rewritten. */
 export function requestLanguage(message:string):string {
@@ -18,6 +19,8 @@ const statuses:Record<string,string>={'to do':'To do','belum dimulai':'To do',be
 export function statusValue(value:string){return statuses[value.trim().toLowerCase()]}
 /** Additional deterministic intents cover the entire operation catalogue. */
 export function featurePlan(text:string):Plan|null {
+ const field=taskFieldPlan(text,statusValue)
+ if(field)return field
  let m:RegExpExecArray|null
  // Status is an explicit field, with or without its value in the first message.
  m=/^(?:ubah|ganti|edit|update|perbarui|set)\s+status(?:-?nya)?(?:\s+(?:tugas|task))?\s*(.*?)\s+(?:menjadi|jadi|ke)\s+(.+)$/i.exec(text)

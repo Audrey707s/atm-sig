@@ -22,9 +22,9 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  const {data:stored,error:draftError}=await assistantStore().from('atm_ai_sessions').select('operation,target,payload,expires_at,conversation_id,phone,linked_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
  if(draftError)throw new Error('Conversation state unavailable')
  const validDraft=stored&&Date.parse(stored.expires_at)>Date.now()&&(stored.conversation_id??null)===(turn.threadId??null)&&(turn.channel==='web'||(stored.phone===turn.phone&&stored.linked_at===turn.linkedAt))
- const draft:GuidedDraft|null=validDraft&&stored.payload?.guided?stored as GuidedDraft:validDraft&&stored.operation&&Array.isArray(stored.payload?.choices)&&!/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(message.trim())?{operation:stored.operation,payload:{guided:true,field:'target',data:stored.payload.data??{}}}:null
+ const draft:GuidedDraft|null=validDraft&&stored.payload?.guided?stored as GuidedDraft:validDraft&&stored.operation&&Array.isArray(stored.payload?.choices)&&!/^(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?$/i.test(message.trim())?{operation:stored.operation,payload:{guided:true,field:'target',data:stored.payload.data??{},intentField:stored.payload.intentField}}:null
  if(/^(ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan)$/i.test(message.trim())&&!['aktif','wajib','selesai','keputusan'].includes(draft?.payload.field??'')){
-  if(draft)return dispatch(turn,'propose',{operation:draft.operation,target:draft.target??undefined,data:draft.payload.data??{},pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target})
+  if(draft)return dispatch(turn,'propose',{operation:draft.operation,field:draft.payload.intentField??(draft.payload.field==='target'||draft.payload.field==='update'?undefined:draft.payload.field),target:draft.target??undefined,data:draft.payload.data??{},pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target})
   return dispatch(turn,'confirm',{},token)
  }
  const local=conversationPlan(message,draft)
@@ -55,7 +55,7 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  if(!aiRoleReadAllowed(turn.level,plan))return dispatch(turn,'reply',{message:'Role akun Anda tidak memiliki izin membaca fitur tersebut.'})
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
- if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})
+ if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,field:plan.field,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})
  if(plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
  if(plan.entity==='tasks'&&plan.mode==='calendar'&&/\b(saya|pribadi|milikku)\b/i.test(message))plan.mode='mine_calendar'
  return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task,page:plan.page,pic:plan.pic})

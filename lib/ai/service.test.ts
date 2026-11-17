@@ -21,3 +21,10 @@ it('accepts a bare Indonesian status as the missing field',async()=>{
  await requestAssistant({actor:'actor',level:6,channel:'web'},'Terhambat')
  expect(mocks.rpc).toHaveBeenLastCalledWith('atm_ai_turn',expect.objectContaining({p_kind:'propose',p_payload:expect.objectContaining({operation:'task_status',target:'chosen-id',data:{status:'Blocked'}})}))
 })
+
+it('dispatches the reported passive priority sentence with separate title, PIC and field',async()=>{
+ mocks.stored=null
+ mocks.rpc.mockImplementation(async name=>({data:name==='wa_operation_catalog'?{task_update:{label:'Ubah',entity:'tasks',minimumRole:3,fields:{prioritas:'enum'},required:[],task:true}}:{ok:true,message:'Response'},error:null}))
+ await requestAssistant({actor:'actor',level:6,channel:'web'},'tugas "mengerjakan paper" milik PIC nata tolong diubah prioritasnya menjadi tinggi')
+ expect(mocks.rpc).toHaveBeenLastCalledWith('atm_ai_turn',expect.objectContaining({p_kind:'propose',p_payload:expect.objectContaining({operation:'task_update',target:'mengerjakan paper',pic:'nata',field:'prioritas',data:{prioritas:'tinggi'}})}))
+})

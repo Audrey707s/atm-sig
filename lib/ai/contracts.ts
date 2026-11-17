@@ -1,5 +1,5 @@
 import {taskReadIntent,normalizeTaskReference,taskMutationReference} from '@/lib/tasks/chat-intents'
-export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; pic?:string; exact?:boolean; context?:boolean; page?:string; task?:string; operation?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
+export type Plan = { kind:'read'|'propose'|'help'|'clarify'; entity?:string; mode?:string; query?:string; pic?:string; exact?:boolean; context?:boolean; page?:string; task?:string; operation?:string; field?:string; target?:string; data?:Record<string,string>; topic?:string; question?:string }
 export type Operation = { label:string; entity:string; minimumRole:number; fields:Record<string,string>; required:string[]; task:boolean }
 export type AssistantReply = { ok:boolean; message:string; path?:string; pending?:boolean; token?:string; changed?:boolean; rows?:Array<Record<string,unknown>>|Record<string,unknown>; duplicate?:boolean; selection?:boolean; history?:string[] }
 const entities=new Set(['tasks','wbs','supports','requirements','comments','approvals','categories','templates','organizations','users','notifications','reminders','audit'])
@@ -16,6 +16,7 @@ export function validatePlan(value:unknown,catalog:Record<string,Operation>):Pla
  if(p.task&&!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(p.task)) throw new Error('Invalid task')
  if(p.kind==='propose') {
   const spec=Object.hasOwn(catalog,p.operation??'')?catalog[p.operation!]:undefined;if(!spec) throw new Error('Operation denied')
+  if(p.field!==undefined&&(typeof p.field!=='string'||!Object.hasOwn(spec.fields,p.field)))throw new Error('Invalid requested field')
   if(!p.data||typeof p.data!=='object'||Array.isArray(p.data)) throw new Error('Invalid data')
   for(const [k,v] of Object.entries(p.data)) if(!Object.hasOwn(spec.fields,k)||typeof v!=='string'||v.length>2000) throw new Error('Invalid field')
   // New records and own-account actions never accept a model-selected target.

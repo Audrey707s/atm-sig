@@ -41,3 +41,10 @@ Uji matriks mencocokkan setiap operasi dengan katalog database agar operasi baru
 Pola “ubah status task Ada deh milik Sevtuari menjadi Terhambat”, “mengubah status tugas Ada deh”, dan “mengubah tugas Sevtuari dengan nama Ada deh” dipisahkan menjadi aksi, judul, PIC, serta nilai status. Klarifikasi target mempertahankan aksi status yang aktif. Nama sebelum “dengan nama/berjudul” adalah pemilik, bukan bagian judul. Judul “Ada deh” tidak dipotong menjadi “Ada” saat memuat nama PIC. Jawaban “Terhambat” diterjemahkan menjadi Blocked.
 
 Pengenalan bahasa tidak melewati state machine ATM: Belum Dimulai harus ke Berjalan dahulu; Terhambat memerlukan permintaan support aktif. Bot menjelaskan prasyarat dan mempertahankan target agar pengguna dapat menjawab “Berjalan”, lalu meninjau/konfirmasi perubahan. Tidak ada langkah tambahan atau permintaan support yang disimpan secara otomatis.
+
+
+## Perubahan field dan jawaban berlabel
+
+Perintah field dibaca bersama untuk pola aktif, pasif, dan field di awal: “ubah prioritas ...”, “tugas ... diubah prioritasnya ...”, “prioritas tugas ... diganti ...”. Judul bertanda kutip diperlakukan sebagai literal sehingga kata instruksi di dalam judul tidak mengubah arti perintah. Prioritas menerima Tinggi/Sedang/Rendah serta padanan High/Medium/Low dan Urgent.
+
+Permintaan tanpa nilai, misalnya “mengubah prioritas tugas X”, menyimpan field prioritas dan meminta nilainya. Informasi judul/PIC dapat diberikan sebagai “judul: X, PIC-nya Y”, dengan titik koma/baris baru atau urutan PIC terlebih dahulu. Kata PIC pada “milik PIC Nata” adalah label, bukan bagian nama. Hint field divalidasi terhadap katalog server dan disimpan dalam draft/seleksi; tidak memperluas role atau cakupan akses. Konfirmasi dan pembatalan tetap wajib.

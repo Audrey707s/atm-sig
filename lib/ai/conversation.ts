@@ -1,7 +1,8 @@
 import {localPlan,type Plan} from './contracts'
+import {priorityValue} from './task-fields'
 import {requestLanguage,featurePlan,statusValue} from './language'
 import {normalizeTaskReference,taskMutationReference} from '@/lib/tasks/chat-intents'
-export type GuidedDraft={operation:string;target?:string|null;payload:{guided?:boolean;field?:string;data?:Record<string,string>;pic?:string;exact?:boolean;options?:Array<{label:string;value:string}>}}
+export type GuidedDraft={operation:string;target?:string|null;payload:{guided?:boolean;field?:string;intentField?:string;data?:Record<string,string>;pic?:string;exact?:boolean;options?:Array<{label:string;value:string}>}}
 function clean(text:string){return text.trim().replace(/^(?:(?:tolong|mohon|bantu|coba|bisa|boleh|loh|oh|oke)(?:\s+(?:saya|aku|kamu|anda))?\s+)+/i,'').replace(/[.!?]+$/,'').trim()}
 function ref(text:string){return taskMutationReference(text.replace(/^(?:tugas|task)(?:\s+berjudul)?\s+/i,'').trim())}
 function proposal(operation:string,reference:string,data:Record<string,string>):Plan{
@@ -69,31 +70,34 @@ function answer(field:string,message:string,draft:GuidedDraft):Record<string,str
   const n=number(text);return n?{[field]:n}:{}
  }
  if(field==='progres'||field==='bobot'){const n=number(text);return n?{[field]:n}:{}}
- if(field==='prioritas'){const v=/tinggi|mendesak|urgent/i.test(text)?'tinggi':/rendah|low/i.test(text)?'rendah':/sedang|normal|medium/i.test(text)?'sedang':undefined;return v?{prioritas:v}:{}}
+ if(field==='prioritas'){const v=priorityValue(text.replace(/^(?:prioritas(?:-?nya)?\s*:?\s+)?(?:(?:jadi|menjadi|ke)\s+)?/i,''));return v?{prioritas:v}:{}}
  if(field==='alasan'&&(!/[a-z]/i.test(text)||text.length<3))return {}
  const fieldText=field==='pic'||field==='penerima'?text.replace(/^(?:ke|untuk|jadi|menjadi)\s+/i,''):text
  const value=normalizeTaskReference(fieldText.replace(new RegExp('^(?:judul(?:nya)?|nama(?:nya)?|PIC(?:-?nya)?|kategori(?:nya)?|seksi(?:nya)?|alasannya|alasan)(?:\\s+(?:jadi|menjadi|adalah))?\\s+','i'),'')).text
  return {[field]:value}
 }
 export function conversationPlan(message:string,draft?:GuidedDraft|null):Plan|null {
- if(draft?.payload.guided&&draft.payload.field==='update'){
+ let spoken=spokenPlan(message)
+ if(draft?.payload.guided&&draft.payload.field==='update'&&(!spoken||(spoken.kind==='propose'&&spoken.context&&!spoken.target&&!draft.operation.startsWith('task_')))){
   const patch=/^(?:(?:ganti|ubah|edit)\s+)?(judul|nama|status|prioritas|mulai|tenggat|pic|kategori|seksi|aktif|tipe|induk|frekuensi|hari)(?:-?nya)?(?:\s+(?:jadi|menjadi|ke|adalah))?\s+(.+)$/i.exec(clean(message))
   if(patch&&!(/^(?:pic|status)$/i.test(patch[1])&&/^(?:tugas|task)\b/i.test(patch[2]))){const key=patch[1].toLowerCase(),isTask=draft.operation.startsWith('task_');const operation=isTask&&key==='status'?'task_status':isTask&&key==='pic'?'task_reassign':draft.operation;const value=key==='status'?statusValue(patch[2]):normalizeTaskReference(patch[2]).text;if(value)return {kind:'propose',operation,target:draft.target??undefined,context:!draft.target,data:{...(operation===draft.operation?draft.payload.data:{}),[key]:value}}}
  }
- let spoken=spokenPlan(message)
  if(!draft?.payload.guided)return spoken
  const data=draft.payload.data??{},field=draft.payload.field??''
+ const intentField=draft.payload.intentField??(field==='update'||field==='target'?undefined:field)
  if(spoken&&spoken.kind!=='propose'&&!/^(?:lihat|liat|buka|bukain|cek|cari|carikan|tampilkan|tunjukkan|tunjukin|menu|bantuan|cara|bagaimana|gimana)\b|^(?:tugas|task)\s+(?:saya|aku|tim)\b/i.test(clean(message)))spoken=null
+ if(draft.operation.startsWith('task_')&&/^(?:judul|nama(?: tugas| task)?|pic(?:-?nya)?)\s*:/i.test(message)&&/[,;\n]\s*(?:pic|penanggung jawab|judul|nama)/i.test(message))return {kind:'propose',operation:draft.operation,field:intentField,...ref(message),data}
  const reference=/^(?:tugas|task)(?:\s+berjudul)?\s+(.+)$/i.exec(clean(message))
  if(reference&&['task_create','template_create'].includes(draft.operation)&&field==='judul'){const title=ref(message);return {kind:'propose',operation:draft.operation,data:{...data,judul:title.target,...(title.pic?{pic:title.pic}:{})}}}
- if(reference&&spoken?.kind!=='propose'&&(field==='target'||/berjudul|[\"“”']/i.test(message)))return {kind:'propose',operation:draft.operation,...ref(message),data}
- if(spoken?.kind==='propose'&&spoken.operation==='task_update'&&draft.operation.startsWith('task_')&&draft.operation!=='task_update'&&Object.keys(spoken.data??{}).length===0)return {...spoken,operation:draft.operation,data}
+ if(reference&&spoken?.kind!=='propose'&&(field==='target'||/berjudul|[\"“”']/i.test(message)))return {kind:'propose',operation:draft.operation,field:intentField,...ref(message),data}
+ if(spoken?.kind==='propose'&&spoken.operation==='task_update'&&draft.operation.startsWith('task_')&&draft.operation!=='task_update'&&Object.keys(spoken.data??{}).length===0)return {...spoken,operation:draft.operation,field:intentField,data}
+ if(spoken?.kind==='propose'&&spoken.context&&draft.target&&draft.operation.startsWith('task_')&&spoken.operation?.startsWith('task_')&&spoken.operation!==draft.operation)return {...spoken,target:draft.target,context:false}
  if(spoken){
   if(spoken.kind!=='propose'||spoken.operation!==draft.operation)return spoken
   if(/^(?:buat|tambah)/i.test(clean(message)))return spoken
-  return {...spoken,target:spoken.target??draft.target??undefined,context:spoken.target?spoken.context:!draft.target,data:{...data,...spoken.data}}
+  return {...spoken,target:spoken.target??draft.target??undefined,context:spoken.target?spoken.context:!draft.target,field:spoken.field??intentField,data:{...data,...spoken.data}}
  }
- if(field==='target')return {kind:'propose',operation:draft.operation,...ref(message),data}
+ if(field==='target')return {kind:'propose',operation:draft.operation,field:intentField,...ref(message),data}
  const filled=answer(field,message,draft)
- return {kind:'propose',operation:draft.operation,target:draft.target??undefined,pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target&&field!=='target',data:{...data,...filled}}
+ return {kind:'propose',operation:draft.operation,target:draft.target??undefined,field:intentField,pic:draft.payload.pic??undefined,exact:draft.payload.exact??undefined,context:!draft.target&&field!=='target',data:{...data,...filled}}
 }

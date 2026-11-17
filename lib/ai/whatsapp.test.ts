@@ -36,4 +36,10 @@ describe('WhatsApp conversational routing',()=>{
   expect(mocks.request).toHaveBeenCalledWith(expect.anything(),'2')
  })
 
+ it.each(['tugas "mengerjakan paper" milik PIC nata tolong diubah prioritasnya menjadi tinggi','mengubah prioritas "mengerjakan paper"','mengubah','judul: mengerjakan paper, PIC-nya nata'])('routes the reported everyday priority sentence: %s',async message=>{
+  mocks.tables.atm_ai_sessions={phone:'6281111111111',linked_at:linkedAt,expires_at:new Date(Date.now()+60000).toISOString(),payload:{guided:true,field:'target',intentField:'prioritas'}}
+  expect(await receiveAssistantWhatsApp(incoming(message))).toBe(true)
+  expect(mocks.request).toHaveBeenLastCalledWith(expect.objectContaining({channel:'whatsapp',level:2}),message)
+ })
+
 })
