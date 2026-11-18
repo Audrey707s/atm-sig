@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest'
-import {resolveTask,rolloutEnabled,validateAgentPlan,type Candidate} from './agent-policy'
+import {resolveTask,rolloutEnabled,validateAgentPlan,normalizeAgentRead,type Candidate} from './agent-policy'
 const candidates:Candidate[]=[{id:'a',title:'mengerjakan paper',pic:'Nata',status:'To do'},{id:'b',title:'pertama',pic:'Audrey',status:'Review'},{id:'c',title:'pertama',pic:'Nata',status:'To do'}]
 const catalog={task_delete:{label:'Hapus',entity:'tasks',minimumRole:3,fields:{},required:[],task:true}}
 afterEach(()=>vi.unstubAllEnvs())
@@ -29,4 +29,26 @@ describe('agent trust and resolution policy',()=>{
   vi.stubEnv('ATM_AGENT_V2','canary');expect(rolloutEnabled('actor',5)).toBe(false);expect(rolloutEnabled('actor',6)).toBe(true)
   vi.stubEnv('ATM_AGENT_V2','20');expect(rolloutEnabled('actor',6)).toBe(rolloutEnabled('actor',6))
  })
+})
+
+it.each([['mine','list'],['mine_open','open'],['mine_calendar','calendar']])('an explicit PIC replaces the personal filter: %s', (mode,expected)=>{
+ expect(validateAgentPlan({steps:[{kind:'read',entity:'tasks',mode,pic:'nata'}]},5,{}).steps[0]).toMatchObject({mode:expected,pic:'nata'})
+})
+it('keeps personal lists and assigned-reviewer scope when explicitly requested',()=>{
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'mine_open'}).mode).toBe('mine_open')
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'review',pic:'Nata'}).mode).toBe('review')
+})
+
+it('normalizes the observed model owner-filter output before it reaches the backend',()=>{
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'mine_open',query:'pic:nata'})).toMatchObject({mode:'open',pic:'nata',query:''})
+})
+
+it('honors an explicit request to include completed tasks',()=>{
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'mine_open',pic:'Nata'},'tampilkan semua tugas milik Nata, termasuk yang sudah selesai')).toMatchObject({mode:'list',pic:'Nata'})
+})
+
+it('decodes the observed compound tool query and preserves a literal user title',()=>{
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',query:'title:"Ada deh" AND pic:Sevtuari'},'lihat tugas "Ada deh" milik Sevtuari')).toMatchObject({query:'Ada deh',pic:'Sevtuari'})
+ expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',query:'pic:invoice'},'cari tugas "pic:invoice"')).toMatchObject({query:'pic:invoice'})
+ expect(()=>normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',pic:'Nata',query:'title:"Ada deh" AND pic:Sevtuari'})).toThrow('Conflicting owners')
 })

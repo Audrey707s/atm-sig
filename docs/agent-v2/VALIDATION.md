@@ -24,3 +24,15 @@ Production was not promoted. Preview branch has `ATM_AGENT_V2=on`; production de
 The 902 passing tests are software regression/policy/executor checks, including mocked orchestration boundaries. They are not 902 real-model conversations or physical WhatsApp deliveries. The read-only hosted smoke is not a production CRUD UAT.
 
 Remaining release gate: sign in to the preview, run representative real-model conversations and disposable fixture UAT, investigate failures, measure the target metrics, then verify Fonnte before expanding the production rollout. Do not promote merely because the local regression suite passes.
+
+## Live browser findings after preview sign-in
+
+Signed in as GM; tested the actual Groq runtime, not a mock. Three read-only utterances did not return the expected visible tasks:
+
+- `tolong buka task nata`: model combined an explicit PIC with `mine_open`.
+- `tampilkan semua tugas milik Nata, termasuk yang sudah selesai`: model put `pic:nata` into the title query and selected a personal/open mode.
+- `lihat tugas "Ada deh" milik Sevtuari`: model invented a `title:... AND pic:...` query syntax which the backend does not support.
+
+No business data was changed. This is a failed live recognition/resolution checkpoint, not an acceptance pass. Trace metadata verified the configured `openai/gpt-oss-20b` provider was invoked.
+
+Follow-up patch adds field descriptions and read examples, normalizes an explicit PIC away from implicit personal scope, recognizes the observed internal owner-filter representation and honors explicit inclusion of completed tasks. The legacy default-open postprocessing no longer overrides a validated model plan. These fixes require redeployment and another live run. Use the stable branch preview alias for future iterations so its login is retained across deployments.
