@@ -31,7 +31,7 @@ export async function POST(request:Request){
   const assessment=assessPlan(test,result.plan,catalog as Record<string,Operation>)
   const {error:traceError}=await store.from('atm_agent_traces').insert({user_id:user.id,channel:'web',operation:'agent_evaluation:'+test.id,model:result.model,input_tokens:result.usage.input,output_tokens:result.usage.output,latency_ms:Date.now()-started,outcome:'evaluation_'+assessment.status.toLowerCase()})
   if(traceError)console.warn('[agent-evaluation] metadata unavailable')
-  return Response.json({id:test.id,role:test.role,category:test.category,...assessment,actual:result.plan,model:result.model,usage:result.usage,latency:Date.now()-started},{headers})
+  return Response.json({id:test.id,role:test.role,category:test.category,...assessment,actual:result.plan,revision:process.env.VERCEL_GIT_COMMIT_SHA??'unknown',model:result.model,usage:result.usage,latency:Date.now()-started},{headers})
  }catch(error){
   const status=typeof(error as {statusCode?:unknown}).statusCode==='number'?(error as {statusCode:number}).statusCode:undefined
   console.warn('[agent-evaluation] provider unavailable',{status,name:error instanceof Error?error.name:'Unknown'})
