@@ -21,6 +21,8 @@ export function resolveTask(plan:Plan,candidates:Candidate[],memory:AgentMemory)
  if(!ref)return {confidence:0,ambiguous:pool.slice(0,5)}
  const id=pool.filter(c=>c.id===ref);if(id.length===1)return {candidate:id[0],confidence:ownerConfidence,ambiguous:[]}
  const q=fold(ref),exact=pool.filter(c=>fold(c.title)===q);if(exact.length===1)return {candidate:exact[0],confidence:ownerConfidence,ambiguous:[]};if(exact.length>1)return {confidence:0,ambiguous:exact}
+ const stripped=q.replace(/^(?:tugas|task|pekerjaan)(?: berjudul| dengan judul| dengan nama)? /,'')
+ if(stripped!==q){const matches=pool.filter(c=>fold(c.title)===stripped);if(matches.length===1)return {candidate:matches[0],confidence:Math.min(.94,ownerConfidence),ambiguous:[]};if(matches.length>1)return {confidence:0,ambiguous:matches}}
  const ranked=pool.map(c=>{const t=fold(c.title),tokens=q.split(' ').filter(Boolean),overlap=tokens.filter(w=>t.includes(w)).length/Math.max(1,tokens.length);return {c,s:t.includes(q)?.94:distance(t,q)<=2?.9:overlap*.85}}).filter(x=>x.s>.35).sort((a,b)=>b.s-a.s)
  if(ranked.length===1&&ranked[0].s>=.85)return {candidate:ranked[0].c,confidence:ranked[0].s,ambiguous:[]}
  if(ranked.length>1&&ranked[0].s-ranked[1].s>=.18&&ranked[0].s>=.9)return {candidate:ranked[0].c,confidence:ranked[0].s,ambiguous:[]}
@@ -56,4 +58,17 @@ export function contextualTaskRead(message:string,memory:AgentMemory):Plan|null 
  const mutation=/\b(ubah|diubah|ganti|diganti|hapus|dihapus|update|perbarui|pindah|pindahkan|naikkan|turunkan|jadikan|jadi|menjadi|tambahkan|buatkan)\b/.test(text)
  if(!reference||!question||mutation)return null
  return {kind:'read',entity:'tasks',mode:'list',query:memory.activeTask}
+}
+
+/** Free-text audit fields must come from user text, not a model's plausible filler. */
+export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):Plan {
+ if(plan.kind!=='propose'||!plan.data)return plan
+ const source=fold([...(memory.recent??[]).filter(m=>m.role==='user').map(m=>m.text),message].join(' ')),data={...plan.data}
+ for(const field of ['alasan','komentar','deskripsi','judul','nama']){
+  const value=data[field];if(!value)continue
+  const previous=memory.pending?.find(p=>p.operation===plan.operation)?.data?.[field]
+  if(source.includes(fold(value))||(['judul','nama'].includes(field)&&previous===value))continue
+  delete data[field]
+ }
+ return {...plan,data}
 }

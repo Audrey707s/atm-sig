@@ -2,10 +2,11 @@
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react'
 import cases from '@/docs/agent-v2/conversation-uat.json'
 type Result={id:string;status:string;reason:string;actual?:unknown;model?:string;revision?:string;usage?:{input:number;output:number}}
-const cacheKey='atm-agent-planning-evaluation-v1'
+const cachePrefix='atm-agent-planning-evaluation-v1'
 const subscribe=()=>()=>{}
 function restored(raw:string):Result[]{try{const value=JSON.parse(raw);return Array.isArray(value)?value:[]}catch{return []}}
-export default function Runner(){
+export default function Runner({revision}:{revision:string}){
+ const cacheKey=cachePrefix+':'+revision
  const cached=useSyncExternalStore(subscribe,()=>sessionStorage.getItem(cacheKey)??'[]',()=>'[]')
  const [latest,setResults]=useState<Result[]|null>(null),[running,setRunning]=useState(false),[status,setStatus]=useState('Siap'),[current,setCurrent]=useState('')
  const results=latest??restored(cached)
@@ -24,7 +25,7 @@ export default function Runner(){
      const controller=new AbortController();request.current=controller
      const response=await fetch('/api/assistant/evaluation',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseId:test.id}),signal:controller.signal})
      const body=await response.json()
-     if(response.ok){result=body;break}
+     if(response.ok){if(body.revision&&body.revision!==revision)throw new Error('Versi preview berubah. Muat ulang halaman untuk mengevaluasi versi terbaru secara terpisah.');result=body;break}
      if(response.status!==429)throw new Error(body.reason??'Evaluasi tidak tersedia.')
      setStatus('Kuota gratis sementara terbatas; menunggu 60 detik sebelum mencoba kembali.')
      await pause(60000)

@@ -7,5 +7,5 @@ export default async function AgentEvaluation(){
  if(!user)notFound()
  const {data:profile}=await db.from('users').select('status,role:roles!users_role_id_fkey(level)').eq('id',user.id).single()
  if(profile?.status!=='aktif'||!profile.role||profile.role.level<5)notFound()
- return <Runner/>
+ return <Runner revision={process.env.VERCEL_GIT_COMMIT_SHA??'unknown'}/>
 }

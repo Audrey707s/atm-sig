@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest'
-import {resolveTask,rolloutEnabled,validateAgentPlan,normalizeAgentRead,contextualTaskRead,type Candidate} from './agent-policy'
+import {resolveTask,rolloutEnabled,validateAgentPlan,normalizeAgentRead,groundAgentFields,contextualTaskRead,type Candidate} from './agent-policy'
 const candidates:Candidate[]=[{id:'a',title:'mengerjakan paper',pic:'Nata',status:'To do'},{id:'b',title:'pertama',pic:'Audrey',status:'Review'},{id:'c',title:'pertama',pic:'Nata',status:'To do'}]
 const catalog={task_delete:{label:'Hapus',entity:'tasks',minimumRole:3,fields:{},required:[],task:true}}
 afterEach(()=>vi.unstubAllEnvs())
@@ -59,4 +59,15 @@ it.each(['yang tadi tenggatnya kapan?','berapa progres tugas itu?','cek status t
 it('never treats an ambiguous or mutating follow-up as a safe read',()=>{
  expect(contextualTaskRead('yang tadi tenggatnya kapan?',{})).toBeNull()
  expect(contextualTaskRead('yang tadi tenggatnya ganti jadi besok',{activeTask:'verified-task'})).toBeNull()
+})
+
+it('resolves a task label prefix within the explicit owner without overriding a literal exact title',()=>{
+ expect(resolveTask({kind:'propose',target:'tugas pertama',pic:'Audrey',data:{}},candidates,{}).candidate?.id).toBe('b')
+ const literal=[...candidates,{id:'literal',title:'tugas pertama',pic:'Nata',status:'To do'}]
+ expect(resolveTask({kind:'propose',target:'tugas pertama',pic:'Nata',data:{}},literal,{}).candidate?.id).toBe('literal')
+})
+it('drops an invented reassignment reason and retains the user-provided reason',()=>{
+ const plan={kind:'propose' as const,operation:'task_reassign',data:{pic:'Nata',alasan:'permintaan reassign'}}
+ expect(groundAgentFields(plan,'ganti PIC tugas pertama Audrey ke Nata',{}).data).toEqual({pic:'Nata'})
+ expect(groundAgentFields({...plan,data:{pic:'Nata',alasan:'pembagian tim'}},'karena pembagian tim',{}).data?.alasan).toBe('pembagian tim')
 })
