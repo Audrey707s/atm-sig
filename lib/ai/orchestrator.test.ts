@@ -50,3 +50,10 @@ it('answers a verified contextual read without invoking the provider',async()=>{
  expect(m.plan).not.toHaveBeenCalled()
  expect(m.legacy).toHaveBeenCalledWith(expect.anything(),'yang tadi tenggatnya kapan?',undefined,undefined,{kind:'read',entity:'tasks',mode:'list',query:'task-a'})
 })
+
+it('fills a known pending reason from everyday text without asking the model again',async()=>{
+ m.rpc.mockResolvedValueOnce({data:{lease:'lease',memory:{draft:{operation:'task_reassign',target:'task-a',payload:{guided:true,field:'alasan',data:{pic:'Nata'}}}}},error:null})
+ await requestAgent(turn,'karena pembagian tim')
+ expect(m.plan).not.toHaveBeenCalled()
+ expect(m.legacy).toHaveBeenCalledWith(expect.anything(),'karena pembagian tim',undefined,undefined,expect.objectContaining({operation:'task_reassign',target:'task-a',data:{pic:'Nata',alasan:expect.stringContaining('pembagian tim')}}))
+})
