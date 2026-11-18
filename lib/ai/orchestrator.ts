@@ -3,7 +3,7 @@ import {createHash,randomUUID} from 'node:crypto'
 import {assistantStore,dispatch,requestLegacyAssistant,type Turn} from './service'
 import {modelPlan,modelConfigured} from './agent-model'
 import {containsAssistantSecret,groundCreation,type Operation,type Plan,type AssistantReply} from './contracts'
-import {resolveTask,type AgentMemory,type Candidate} from './agent-policy'
+import {resolveTask,contextualTaskRead,type AgentMemory,type Candidate} from './agent-policy'
 
 type StoredMemory=AgentMemory&{draft?:{operation?:string;target?:string;payload?:Record<string,unknown>};context?:{task_id?:string}}
 /** The provider only plans. All writes still pass through the existing authenticated SQL executor. */
@@ -20,6 +20,8 @@ export async function requestAgent(turn:Turn,message:string,token?:string,histor
  if(memory.draft?.operation)memory.pending=[{kind:'propose',operation:memory.draft.operation,target:memory.draft.target,data:(memory.draft.payload?.data??memory.draft.payload??{}) as Record<string,string>,field:memory.draft.payload?.field as string|undefined}]
  // Explicit confirmation/cancellation/selection are not interpreted by a probabilistic model.
  if(containsAssistantSecret(message)||/^(?:batal|ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan|(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?|lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(message.trim()))return requestLegacyAssistant(trusted,message,token,history)
+ const contextRead=contextualTaskRead(message,memory)
+ if(contextRead){trusted.agent!.model='deterministic-context';return requestLegacyAssistant(trusted,message,token,history,contextRead)}
  if(!modelConfigured())return requestLegacyAssistant(trusted,message,token,history)
  const {data:catalog,error:catalogError}=await store.rpc('wa_operation_catalog')
  if(catalogError)throw new Error('Tool registry unavailable')
@@ -42,7 +44,8 @@ export async function requestAgent(turn:Turn,message:string,token?:string,histor
   }
   plan=result.plan.steps[0]
  }catch(error){
-  console.warn('[agent] provider unavailable',{name:error instanceof Error?error.name:'Unknown'})
+  const reason=error as {statusCode?:unknown};trusted.agent!.model='deterministic-fallback'
+  console.warn('[agent] provider unavailable',{name:error instanceof Error?error.name:'Unknown',status:typeof reason.statusCode==='number'?reason.statusCode:undefined})
   // Same trusted executor and receipt; no paid-provider fallback and no invented success.
   return requestLegacyAssistant(trusted,message,token,history)
  }
@@ -52,6 +55,10 @@ export async function requestAgent(turn:Turn,message:string,token?:string,histor
   if(found.candidate){plan={...plan,target:found.candidate.id,pic:found.candidate.pic,exact:found.confidence===1,context:false}}
   else if(plan.context&&!memory.activeTask)return dispatch(trusted,'reply',{message:'Tugas yang mana? Sebutkan judul atau PIC-nya agar saya tidak salah mengubah.'})
   // Unmatched/ambiguous references remain for the backend's scoped disambiguation.
+ }
+ if(plan.kind==='read'&&plan.entity==='tasks'&&plan.context){
+  if(!memory.activeTask)return dispatch(trusted,'reply',{message:'Tugas yang mana? Ada beberapa kemungkinan; sebutkan judul atau PIC-nya.'})
+  plan={...plan,query:memory.activeTask,pic:undefined,mode:'list'}
  }
  plan=groundCreation(plan,[...(memory.recent??[]).filter(x=>x.role==='user').map(x=>x.text),...(history??[]),message])
  return requestLegacyAssistant(trusted,message,token,history,plan)

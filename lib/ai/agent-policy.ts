@@ -46,3 +46,14 @@ export function normalizeAgentRead(plan:Plan,message?:string):Plan {
  const modes:Record<string,string>={mine:'list',mine_open:'open',mine_calendar:'calendar'}
  return modes[plan.mode??'']?{...plan,mode:modes[plan.mode!]}:plan
 }
+
+/** Safe offline follow-up: resolve only an already verified, singular task. */
+export function contextualTaskRead(message:string,memory:AgentMemory):Plan|null {
+ if(!memory.activeTask)return null
+ const text=fold(message)
+ const reference=/\b(yang tadi|tugas tadi|task tadi|yang itu|tugas itu|task itu|tugas tersebut|task tersebut)\b/.test(text)
+ const question=/\b(kapan|berapa|siapa|apa|lihat|liat|buka|cek|tampilkan|tenggatnya|deadlinenya|statusnya|progresnya|prioritasnya|picnya)\b/.test(text)
+ const mutation=/\b(ubah|diubah|ganti|diganti|hapus|dihapus|update|perbarui|pindah|pindahkan|naikkan|turunkan|jadikan|jadi|menjadi|tambahkan|buatkan)\b/.test(text)
+ if(!reference||!question||mutation)return null
+ return {kind:'read',entity:'tasks',mode:'list',query:memory.activeTask}
+}

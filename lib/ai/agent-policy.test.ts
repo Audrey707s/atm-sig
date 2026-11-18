@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest'
-import {resolveTask,rolloutEnabled,validateAgentPlan,normalizeAgentRead,type Candidate} from './agent-policy'
+import {resolveTask,rolloutEnabled,validateAgentPlan,normalizeAgentRead,contextualTaskRead,type Candidate} from './agent-policy'
 const candidates:Candidate[]=[{id:'a',title:'mengerjakan paper',pic:'Nata',status:'To do'},{id:'b',title:'pertama',pic:'Audrey',status:'Review'},{id:'c',title:'pertama',pic:'Nata',status:'To do'}]
 const catalog={task_delete:{label:'Hapus',entity:'tasks',minimumRole:3,fields:{},required:[],task:true}}
 afterEach(()=>vi.unstubAllEnvs())
@@ -51,4 +51,12 @@ it('decodes the observed compound tool query and preserves a literal user title'
  expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',query:'title:"Ada deh" AND pic:Sevtuari'},'lihat tugas "Ada deh" milik Sevtuari')).toMatchObject({query:'Ada deh',pic:'Sevtuari'})
  expect(normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',query:'pic:invoice'},'cari tugas "pic:invoice"')).toMatchObject({query:'pic:invoice'})
  expect(()=>normalizeAgentRead({kind:'read',entity:'tasks',mode:'list',pic:'Nata',query:'title:"Ada deh" AND pic:Sevtuari'})).toThrow('Conflicting owners')
+})
+
+it.each(['yang tadi tenggatnya kapan?','berapa progres tugas itu?','cek status task tadi','yang itu siapa PIC-nya?'])('resolves a safe contextual read without provider quota: %s',message=>{
+ expect(contextualTaskRead(message,{activeTask:'verified-task'})).toMatchObject({kind:'read',query:'verified-task'})
+})
+it('never treats an ambiguous or mutating follow-up as a safe read',()=>{
+ expect(contextualTaskRead('yang tadi tenggatnya kapan?',{})).toBeNull()
+ expect(contextualTaskRead('yang tadi tenggatnya ganti jadi besok',{activeTask:'verified-task'})).toBeNull()
 })

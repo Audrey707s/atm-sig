@@ -43,3 +43,10 @@ it('keeps an honest legacy path when the free provider is unavailable',async()=>
  await requestAgent(turn,'tugas saya')
  expect(m.plan).not.toHaveBeenCalled();expect(m.legacy).toHaveBeenCalledWith(expect.anything(),'tugas saya',undefined,undefined)
 })
+
+it('answers a verified contextual read without invoking the provider',async()=>{
+ m.rpc.mockResolvedValueOnce({data:{lease:'lease',memory:{activeTask:'task-a'}},error:null})
+ await requestAgent(turn,'yang tadi tenggatnya kapan?')
+ expect(m.plan).not.toHaveBeenCalled()
+ expect(m.legacy).toHaveBeenCalledWith(expect.anything(),'yang tadi tenggatnya kapan?',undefined,undefined,{kind:'read',entity:'tasks',mode:'list',query:'task-a'})
+})
