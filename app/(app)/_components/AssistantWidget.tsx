@@ -64,7 +64,7 @@ export default function AssistantWidget({helpTopics=[]}:{helpTopics?:HelpTopic[]
   try{
    let id=conversation
    if(!id){const r=await fetch('/api/assistant/conversations',{method:'POST',credentials:'same-origin',signal:controller.signal});if(!r.ok)throw new Error('Conversation unavailable');const body=await r.json();id=body.thread.id as string;setConversation(id)}
-   const response=await fetch('/api/assistant',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,token,conversationId:id}),signal:controller.signal})
+   const response=await fetch('/api/assistant',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,token,conversationId:id,requestId:crypto.randomUUID()}),signal:controller.signal})
    if(response.status===401||(response.redirected&&new URL(response.url).pathname.startsWith('/login'))){router.push('/login');return}
    if(!response.headers.get('content-type')?.includes('application/json'))throw new Error('Invalid response')
    const reply=await response.json() as AssistantReply

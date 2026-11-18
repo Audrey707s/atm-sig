@@ -18,7 +18,7 @@ describe('ATM assistant widget',()=>{
   fireEvent.change(screen.getByLabelText('Pesan untuk asisten'),{target:{value:'buat tugas'}});fireEvent.click(screen.getByRole('button',{name:'Kirim'}))
   await screen.findByText('Pratinjau');expect(fetch).toHaveBeenCalledTimes(2)
   fireEvent.click(screen.getByRole('button',{name:'Konfirmasi'}));await screen.findByText('Berhasil')
-  expect(JSON.parse(vi.mocked(fetch).mock.calls[2][1]!.body as string)).toEqual({message:'YA',token:'server-token',conversationId:'12345678-1234-4234-8234-123456789abc'})
+  expect(JSON.parse(vi.mocked(fetch).mock.calls[2][1]!.body as string)).toEqual({message:'YA',token:'server-token',requestId:expect.any(String),conversationId:'12345678-1234-4234-8234-123456789abc'})
   expect(refresh).toHaveBeenCalled();expect(screen.getByRole('link',{name:/Buka halaman/}).getAttribute('href')).toBe('/tasks')
  })
  it('handles failed replies and renders model text without HTML execution',async()=>{
