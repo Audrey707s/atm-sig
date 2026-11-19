@@ -15,9 +15,9 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role authenticator noinherit;grant authenticated,service_role to authenticator;
    create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    create function auth.role() returns text language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role','service_role')$$;`)
-  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','027_task_reminder_scheduler.sql','028_reminder_recipient_guard.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','031_reminder_email_delivery.sql','032_notification_reminder_reference.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql','20261116121257_ai_task_context_and_delete_cleanup.sql','20261116155418_ai_guided_conversation.sql','20261116164754_ai_local_language.sql','20261116172347_ai_status_feedback.sql','20261117044504_ai_field_conversations.sql']
+  const files=['001_init_schema.sql','002_rls_policies.sql','004_spectator_read_only.sql','005_wbs_items.sql','006_rls_write_policies.sql','009_organization_scope_rls.sql','011_spectator_scope_tree.sql','012_scoped_task_delete.sql','013_task_support_transitions.sql','015_validate_task_evidence_locations.sql','016_task_progress_history.sql','017_task_status_transitions.sql','018_task_status_gates.sql','019_scoped_task_reassignment.sql','020_notify_new_task_owner.sql','021_task_reviewer_chain.sql','023_validate_pic_deadline_requests.sql','024_atomic_deadline_decisions.sql','025_audit_direct_deadline_updates.sql','026_privileged_owner_self_review.sql','027_task_reminder_scheduler.sql','028_reminder_recipient_guard.sql','029_pic_reminder_responses.sql','030_reminder_supervisor_notifications.sql','031_reminder_email_delivery.sql','032_notification_reminder_reference.sql','033_task_categories_templates.sql','034_task_category_scope_and_missed_runs.sql','035_scoped_manager_kanban_transitions.sql','036_guard_pic_timeline_dates.sql','20261022013000_pic_self_create_rls.sql','20261022015000_atomic_task_audit.sql','20261024202000_r03_task_bundle_and_org_guard.sql','20261024204000_r03_atomic_wbs_progress.sql','20261031000500_gm_review_override.sql','20261029032714_remove_legacy_wbs_hierarchy_trigger.sql','20261031162038_expand_categories_recurring_roles.sql','20261104031955_self_service_profile.sql','20261103113000_notify_only_assigned_reviewer_for_task_events.sql','20261112161939_whatsapp_channel.sql','20261112174755_whatsapp_task_commands.sql','20261112181649_whatsapp_guided_menu.sql','20261113101843_whatsapp_full_operations.sql','20261113160217_atm_ai_assistant.sql','20261113160704_ai_personal_calendar_scope.sql','20261116102741_whatsapp_create_guidance.sql','20261116104627_ai_natural_task_actions.sql','20261116105757_ai_conversation_grounding.sql','20261116113832_ai_role_task_lookup.sql','20261116114447_ai_pic_pagination_hint.sql','20261116121257_ai_task_context_and_delete_cleanup.sql','20261116155418_ai_guided_conversation.sql','20261116164754_ai_local_language.sql','20261116172347_ai_status_feedback.sql','20261117044504_ai_field_conversations.sql','20261113170042_ai_chat_history.sql','20261118173956_conversational_agent_v2.sql','20261118182215_agent_multi_read_selection.sql','20261119102602_persistent_agent_evaluation.sql','20261119104401_agent_evaluation_preview_access.sql','20261119105036_agent_evaluation_safe_worker_heartbeat.sql','20261119105516_agent_evaluation_minute_bucket.sql','20261119135648_agent_evaluation_restore_active_run.sql']
   for(const file of files){let sql=readFileSync('supabase/migrations/'+file,'utf8');if(file.includes('full_operations')&&!sql.trim().endsWith('commit;'))sql+='\ncommit;';try{await db.exec(sql)}catch(e){throw new Error('Migration '+file+': '+String(e))}}
-  await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits,public.atm_ai_task_context from anon,authenticated;`)
+  await db.exec(`select setval(pg_get_serial_sequence('public.org_units','id'),(select max(id) from public.org_units));grant usage on schema public,auth to anon,authenticated,service_role,authenticator;grant select,insert,update,delete on all tables in schema public to authenticated;grant usage,select on all sequences in schema public to authenticated;grant all on all tables in schema public to service_role;revoke update on public.task_categories from authenticated;grant update(org_unit_id,name,is_active) on public.task_categories to authenticated;revoke all on public.whatsapp_action_sessions,public.whatsapp_links,public.whatsapp_receipts,public.whatsapp_outbox,public.atm_ai_sessions,public.atm_ai_limits,public.atm_ai_task_context,public.atm_agent_sessions,public.atm_agent_requests,public.atm_agent_traces,public.atm_eval_runs,public.atm_eval_cases,public.atm_eval_worker_config from anon,authenticated;revoke all on public.atm_eval_worker_config from service_role;grant select(last_seen),update(last_seen) on public.atm_eval_worker_config to service_role;`)
  })
  afterAll(async()=>db?.close())
  beforeEach(async()=>{
@@ -705,6 +705,206 @@ describe('WhatsApp operations with existing ATM RLS and transactional rules',()=
   expect(prompt.message).toContain('Prioritasnya')
   const later=await say('mengubah');expect(later.message).toContain('Prioritasnya')
   const preview=await say('prioritasnya menjadi tinggi');expect(preview.pending,preview.message).toBe(true)
+ })
+ async function claimAgent(actor=sa,key=crypto.randomUUID(),scope='default',channel='web',phone:string|null=null,generation:string|null=null,hash='a'.repeat(64)){
+  const r=(await db.query<{r:{lease?:string;memory?:Record<string,unknown>;cached?:Record<string,unknown>}}>('select public.atm_agent_claim($1,$2,$3,$4,$5,$6,$7) r',[actor,channel,scope,key,hash,phone,generation])).rows[0].r
+  return {...r,key,scope,channel,phone,generation,actor}
+ }
+ async function executeAgent(c:Awaited<ReturnType<typeof claimAgent>>,kind:string,payload:Record<string,unknown>,token:string|null=null){
+  return (await db.query<{r:{ok:boolean;changed?:boolean;message:string;pending?:boolean;token?:string;rows?:Array<{id:string}>}}>('select public.atm_agent_execute($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11) r',[c.actor,c.channel,c.scope,c.key,c.lease,kind,JSON.stringify(payload),token,c.phone,c.channel==='whatsapp'?c.key:null,c.generation])).rows[0].r
+ }
+ it('agent atomically auto-applies an exact low-risk priority change and caches replay',async()=>{
+  const c=await claimAgent()
+  const r=await executeAgent(c,'propose',{operation:'task_update',target:task,exact:true,data:{prioritas:'tinggi'}})
+  expect(r.ok,r.message).toBe(true);expect(r.changed).toBe(true)
+  expect((await claimAgent(sa,c.key)).cached).toEqual(r)
+  expect((await db.query("select * from public.audit_logs where action='ai_web_task_update'")).rows).toHaveLength(1)
+ })
+ it('agent does not auto-apply a fuzzy reference or destructive operation',async()=>{
+  const c=await claimAgent()
+  expect((await executeAgent(c,'propose',{operation:'task_delete',target:task,exact:true,data:{}})).pending).toBe(true)
+  expect((await db.query('select id from public.tasks where id=$1',[task])).rows).toHaveLength(1)
+ })
+ it('agent preserves a draft across a second web conversation without leaking it',async()=>{
+  const thread=crypto.randomUUID();await db.query('insert into public.ai_chat_threads(id,user_id) values($1,$2)',[thread,sa])
+  const c=await claimAgent();await executeAgent(c,'propose',{operation:'task_delete',target:task,data:{}})
+  const other=await claimAgent(sa,crypto.randomUUID(),thread)
+  expect(other.memory?.draft).toBeUndefined();await executeAgent(other,'read',{entity:'tasks'})
+  const back=await claimAgent();expect((back.memory?.draft as {operation:string}).operation).toBe('task_delete')
+  expect((await db.query('select operation from public.atm_ai_sessions where user_id=$1',[sa])).rows[0]).toEqual({operation:'task_delete'})
+ })
+ it('agent rejects a concurrent lease before it can execute',async()=>{
+  await claimAgent()
+  await expect(claimAgent()).rejects.toThrow('Conversation busy')
+ })
+ it('agent rejects an expired execution lease without changing data',async()=>{
+  const c=await claimAgent();await db.exec("update public.atm_agent_sessions set lease_until=now()-interval '1 second'")
+  await expect(executeAgent(c,'propose',{operation:'task_delete',target:task,data:{}})).rejects.toThrow('Stale execution lease')
+ })
+ it('agent rejects request ID reuse with another payload',async()=>{
+  const c=await claimAgent();await executeAgent(c,'read',{entity:'tasks'})
+  await expect(claimAgent(sa,c.key,'default','web',null,null,'b'.repeat(64))).rejects.toThrow('Request identity reused')
+ })
+ it.each([spectator,pic,manager,sm,gm,sa])('agent validates all six actual role permissions: %s',async actor=>{
+  const c=await claimAgent(actor)
+  const r=await executeAgent(c,'propose',{operation:'org_delete',target:'4',exact:true,data:{}})
+  if(actor!==sa)expect(r.ok).toBe(false)
+  expect(r.changed).not.toBe(true)
+ })
+ it('agent keeps retrieval under RLS and restores the caller role',async()=>{
+  const before=(await db.query('select current_user')).rows[0]
+  expect((await db.query<{r:Array<{id:string;pic:string}>}>('select public.atm_agent_candidates($1,$2) r',[sa,'Task asal'])).rows[0].r).toEqual(expect.arrayContaining([expect.objectContaining({id:task,pic:'PIC'})]))
+  expect((await db.query('select current_user')).rows[0]).toEqual(before)
+ })
+ it('agent cannot claim another user’s conversation',async()=>{
+  const thread=crypto.randomUUID();await db.query('insert into public.ai_chat_threads(id,user_id) values($1,$2)',[thread,pic])
+  await expect(claimAgent(sa,crypto.randomUUID(),thread)).rejects.toThrow('Conversation not owned')
+ })
+ it('agent commits one WhatsApp receipt and final outbox for an auto-applied operation',async()=>{
+  await db.query('insert into public.whatsapp_links(user_id,phone,linked_at,notifications_enabled) values($1,$2,now(),true)',[sa,chatPhones[sa]])
+  const generation=(await db.query<{g:string}>('select linked_at::text g from public.whatsapp_links where user_id=$1',[sa])).rows[0].g
+  const c=await claimAgent(sa,'c'.repeat(64),chatPhones[sa],'whatsapp',chatPhones[sa],generation)
+  const r=await executeAgent(c,'propose',{operation:'task_update',target:task,exact:true,data:{prioritas:'tinggi'}})
+  expect(r.changed,r.message).toBe(true)
+  expect((await db.query('select * from public.whatsapp_outbox where receipt_id=$1',[c.key])).rows).toHaveLength(1)
+  expect((await db.query<{body:string}>('select body from public.whatsapp_outbox where receipt_id=$1',[c.key])).rows[0].body).toContain('Berhasil')
+  expect((await claimAgent(sa,c.key,chatPhones[sa],'whatsapp',chatPhones[sa],generation)).cached?.changed).toBe(true)
+ })
+ it('agent refuses a disconnected WhatsApp generation before executing',async()=>{
+  await expect(claimAgent(sa,'d'.repeat(64),chatPhones[sa],'whatsapp',chatPhones[sa],'2020-01-01')).rejects.toThrow('Link changed')
+ })
+ it('agent exposes neither its tables nor its RPCs to browser database roles',async()=>{
+  for(const role of ['anon','authenticated']){
+   expect((await db.query<{ok:boolean}>('select has_table_privilege($1,$2,$3) ok',[role,'public.atm_agent_sessions','select'])).rows[0].ok).toBe(false)
+   expect((await db.query<{ok:boolean}>('select has_function_privilege($1,$2,$3) ok',[role,'public.atm_agent_claim(uuid,text,text,text,text,text,timestamptz)','execute'])).rows[0].ok).toBe(false)
+  }
+ })
+ it('agent previews and confirms multiple writes as one atomic batch',async()=>{
+  const c=await claimAgent()
+  const preview=await executeAgent(c,'batch',{steps:[{kind:'propose',operation:'task_update',target:task,data:{prioritas:'tinggi'}},{kind:'propose',operation:'task_comment',target:task,data:{komentar:'Bukti batch'}}]})
+  expect(preview.pending,preview.message).toBe(true)
+  expect((await db.query("select id from public.task_comments where body='Bukti batch'")).rows).toHaveLength(0)
+  const c2=await claimAgent();const result=await executeAgent(c2,'confirm',{},preview.token)
+  expect(result.changed,result.message).toBe(true)
+  expect((await db.query("select id from public.task_comments where body='Bukti batch'")).rows).toHaveLength(1)
+  expect((await db.query("select * from public.audit_logs where action in ('ai_web_task_update','ai_web_task_comment')")).rows).toHaveLength(2)
+ })
+ it('agent rolls the entire batch back when a later write fails',async()=>{
+  const c=await claimAgent()
+  const preview=await executeAgent(c,'batch',{steps:[{kind:'propose',operation:'task_update',target:task,data:{prioritas:'tinggi'}},{kind:'propose',operation:'task_comment',target:task,data:{komentar:'Gagal batch'}}]})
+  expect(preview.pending,preview.message).toBe(true)
+  await db.exec("create function public.agent_fail_comment() returns trigger language plpgsql as $$begin raise exception 'simulated failure';end$$;create trigger agent_fail_comment before insert on public.task_comments for each row execute function public.agent_fail_comment();")
+  const before=(await db.query('select priority from public.tasks where id=$1',[task])).rows[0]
+  const c2=await claimAgent();const result=await executeAgent(c2,'confirm',{},preview.token)
+  expect(result.ok).toBe(false);expect(result.changed).toBe(false)
+  expect((await db.query('select priority from public.tasks where id=$1',[task])).rows[0]).toEqual(before)
+  expect((await db.query("select * from public.audit_logs where action in ('ai_web_task_update','ai_web_task_comment')")).rows).toHaveLength(0)
+ })
+ it('agent never executes the valid half of a partly invalid multi-intent',async()=>{
+  const c=await claimAgent()
+  const result=await executeAgent(c,'batch',{steps:[{kind:'propose',operation:'task_update',target:task,data:{prioritas:'tinggi'}},{kind:'propose',operation:'task_status',target:task,data:{status:'Blocked'}}]})
+  expect(result.changed).not.toBe(true)
+  expect((await db.query("select * from public.audit_logs where action='ai_web_task_update'")).rows).toHaveLength(0)
+ })
+ it('agent aligns merged multi-read results with the numbered task context',async()=>{
+  const other=(await db.query<{id:string}>(`insert into public.tasks(owner_id,assigner_id,reviewer_id,org_unit_id,title,start_date,due_date) values($1,$2,$2,4,'Another task',now(),now()+interval '2 days') returning id`,[manager,sm])).rows[0].id
+  const c=await claimAgent()
+  const r=await executeAgent(c,'batch',{steps:[{kind:'read',entity:'tasks',query:'Task asal'},{kind:'read',entity:'tasks',query:'Another task'}]})
+  expect(r.rows?.map(x=>x.id)).toEqual([task,other])
+  const c2=await claimAgent();await executeAgent(c2,'select',{choice:1})
+  expect((await db.query<{task_id:string}>('select task_id from public.atm_ai_task_context where user_id=$1 and channel=$2',[sa,'web'])).rows[0].task_id).toBe(task)
+ })
+ const evalRevision='a'.repeat(40)
+ type EvalState={run:{id:string;status:string;revision:string;reason:string;next_at:string}|null;results:Array<{id:string;state:string;attempts:number;result:{status:string;revision:string}|null}>}
+ async function evalManage(actor=gm,action='start',run:string|null=null,revision=evalRevision){return (await db.query<{r:EvalState}>('select public.atm_eval_manage($1,$2,$3,$4::jsonb,$5) r',[actor,action,revision,JSON.stringify(['01-R1','01-R2']),run])).rows[0].r}
+ async function evalClaim(){return (await db.query<{r:{run:string;caseId:string;lease:string;attempt:number}|null}>('select public.atm_eval_claim($1) r',[evalRevision])).rows[0].r}
+ async function evalFinish(c:NonNullable<Awaited<ReturnType<typeof evalClaim>>>,status='PASS',retry=false){return (await db.query<{r:boolean}>('select public.atm_eval_finish($1,$2,$3,$4::jsonb,$5,60) r',[c.run,c.caseId,c.lease,JSON.stringify({status,reason:'fixture'}),retry])).rows[0].r}
+ it('persists evaluation across separate requests without browser storage',async()=>{
+  const job=await evalManage();expect(job.results).toHaveLength(2)
+  const c=(await evalClaim())!;expect(c.caseId).toBe('01-R1');expect(await evalFinish(c)).toBe(true)
+  const restored=await evalManage(gm,'status',job.run!.id)
+  expect(restored.results[0].result).toMatchObject({status:'PASS',revision:evalRevision})
+  expect((await evalClaim())?.caseId).toBe('01-R2')
+ })
+ it('deduplicates starts and refuses cross-user access',async()=>{
+  const a=await evalManage();expect((await evalManage()).run?.id).toBe(a.run?.id)
+  await expect(evalManage(sa,'status',a.run!.id)).rejects.toThrow('not owned')
+ })
+ it('denies evaluation to a lower role',async()=>{
+  await expect(evalManage(pic)).rejects.toThrow('access denied')
+ })
+ it('does not claim a second case while a worker holds the first lease',async()=>{
+  await evalManage();expect(await evalClaim()).toBeTruthy();expect(await evalClaim()).toBeNull()
+ })
+ it('recovers an expired worker lease and fences its stale result',async()=>{
+  await evalManage();const old=(await evalClaim())!
+  await db.exec("update public.atm_eval_cases set lease_until=now()-interval '1 second'")
+  const next=(await evalClaim())!;expect(next.caseId).toBe(old.caseId);expect(next.lease).not.toBe(old.lease)
+  expect(await evalFinish(old)).toBe(false);expect(await evalFinish(next)).toBe(true)
+ })
+ it('retries a temporary failure on the server and records the next scheduled time',async()=>{
+  const job=await evalManage();const c=(await evalClaim())!
+  expect(await evalFinish(c,'RETRY',true)).toBe(true)
+  const state=await evalManage(gm,'status',job.run!.id);expect(state.run?.status).toBe('waiting');expect(state.results[0].state).toBe('retry')
+  expect(await evalClaim()).toBeNull()
+  await db.exec("update public.atm_eval_runs set next_at=now()-interval '1 second'")
+  expect((await evalClaim())?.caseId).toBe(c.caseId)
+ })
+ it('finishes the queue after a FAIL without confusing it with provider errors',async()=>{
+  const job=await evalManage();await evalFinish((await evalClaim())!,'FAIL');await evalFinish((await evalClaim())!,'PASS')
+  const done=await evalManage(gm,'status',job.run!.id);expect(done.run?.status).toBe('completed');expect(done.results.map(r=>r.result?.status)).toEqual(['FAIL','PASS'])
+ })
+ it('marks a repeatedly unavailable case as ERROR then permits the next case',async()=>{
+  const job=await evalManage();const c=(await evalClaim())!
+  await db.query('update public.atm_eval_cases set attempts=5 where case_id=$1',[c.caseId])
+  await evalFinish(c,'RETRY',true)
+  const current=await evalManage(gm,'status',job.run!.id);expect(current.results[0].result?.status).toBe('ERROR')
+  expect((await evalClaim())?.caseId).toBe('01-R2')
+ })
+ it('pauses obsolete revisions instead of mixing result versions',async()=>{
+  const job=await evalManage()
+  await db.query('select public.atm_eval_claim($1)',['b'.repeat(40)])
+  const current=await evalManage(gm,'status',job.run!.id);expect(current.run?.status).toBe('paused')
+  await expect(evalManage(gm,'resume',job.run!.id,'b'.repeat(40))).rejects.toThrow('Revision changed')
+ })
+ it('retains previous attempts when explicitly retrying failed cases',async()=>{
+  const job=await evalManage();const c=(await evalClaim())!;await evalFinish(c,'FAIL')
+  await evalManage(gm,'pause',job.run!.id);const again=await evalManage(gm,'retry',job.run!.id)
+  expect(again.results[0].state).toBe('pending');expect(again.results[0].result).toBeNull()
+  expect((await db.query<{n:number}>('select jsonb_array_length(history) n from public.atm_eval_cases where case_id=$1',[c.caseId])).rows[0].n).toBe(1)
+ })
+ it('rejects a missing worker claim instead of reporting a saved result',async()=>{
+  const missing={run:crypto.randomUUID(),caseId:'01-R1',lease:crypto.randomUUID(),attempt:1}
+  expect(await evalFinish(missing)).toBe(false)
+ })
+ it('restores the resumed run ahead of a newer empty paused run',async()=>{
+  const original=await evalManage()
+  await evalManage(gm,'pause',original.run!.id)
+  const empty=await evalManage(gm,'new')
+  await db.query("update public.atm_eval_runs set created_at=now()+interval '1 minute' where id=$1",[empty.run!.id])
+  await evalManage(gm,'pause',empty.run!.id)
+  await evalManage(gm,'resume',original.run!.id)
+  const restored=await evalManage(gm,'status')
+  expect(restored.run?.id).toBe(original.run!.id)
+ })
+ it('scopes the worker heartbeat update for Supabase safe-update enforcement',async()=>{
+  const definition=(await db.query<{def:string}>("select pg_get_functiondef('public.atm_eval_claim(text)'::regprocedure) def")).rows[0].def
+  expect(definition).toContain('set last_seen=now() where last_seen is distinct from now()')
+  expect(definition).toContain("last_attempt>=date_trunc('minute',now())")
+ })
+ it('pauses evaluation when the temporary preview access expires',async()=>{
+  const job=await evalManage()
+  await db.exec("insert into public.atm_eval_worker_config(id,url,secret,headers,access_expires_at) values(true,'https://preview.invalid','test','{}',now()-interval '1 second')")
+  await db.query('select public.atm_eval_tick()')
+  const state=await evalManage(gm,'status',job.run!.id)
+  expect(state.run?.status).toBe('paused')
+ })
+ it('does not expose evaluation tables, RPCs or scheduler secrets to browser roles',async()=>{
+  for(const role of ['anon','authenticated']){
+   expect((await db.query<{ok:boolean}>('select has_table_privilege($1,$2,$3) ok',[role,'public.atm_eval_runs','select'])).rows[0].ok).toBe(false)
+   expect((await db.query<{ok:boolean}>('select has_function_privilege($1,$2,$3) ok',[role,'public.atm_eval_manage(uuid,text,text,jsonb,uuid)','execute'])).rows[0].ok).toBe(false)
+  }
+  expect((await db.query<{ok:boolean}>("select has_column_privilege('service_role','public.atm_eval_worker_config','secret','select') ok")).rows[0].ok).toBe(false)
  })
  it('switches to authenticated under an actual authenticator session and restores service role',async()=>{
   await db.exec('set session authorization authenticator;set local role service_role;')

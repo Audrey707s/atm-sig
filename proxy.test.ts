@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server'
-import { config } from './proxy'
+import { NextRequest } from 'next/server'
+import { config, proxy } from './proxy'
+vi.mock('@/lib/supabase/middleware',()=>({updateSession:vi.fn(()=>{throw new Error('Cookie session must not be used by worker')})}))
 
 describe('PWA public assets', () => {
   it.each(['/manifest.webmanifest', '/sw.js'])(
@@ -13,4 +15,10 @@ describe('PWA public assets', () => {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true)
     },
   )
+})
+
+it('lets the evaluation worker reach its own bearer authentication without a cookie redirect',async()=>{
+ const response=await proxy(new NextRequest('https://preview.invalid/api/cron/agent-evaluation',{method:'POST'}))
+ expect(response.headers.get('location')).toBeNull()
+ expect(response.status).toBe(200)
 })

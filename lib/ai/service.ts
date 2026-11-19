@@ -1,5 +1,6 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
+import {rolloutEnabled} from './agent-policy'
 import { planRequest } from './planner'
 import {conversationPlan,type GuidedDraft} from './conversation'
 import {aiRoleOperations,aiRoleReadAllowed} from './role-policy'
@@ -10,13 +11,23 @@ export function assistantStore() {
  if(!url||!key) throw new Error('Assistant store unavailable')
  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})
 }
-export type Turn = { actor:string; level:number; channel:'web'|'whatsapp'; phone?:string; receipt?:string; linkedAt?:string; threadId?:string }
+export type Turn = { actor:string; level:number; channel:'web'|'whatsapp'; phone?:string; receipt?:string; linkedAt?:string; threadId?:string; requestId?:string; agent?:{scope:string;request:string;lease:string;message:string;model?:string;input?:number;output?:number;started:number} }
 export async function dispatch(turn:Turn,kind:string,payload:Record<string,unknown>={},token?:string):Promise<AssistantReply> {
+ if(turn.agent&&kind!=='reserve'){
+  const a=turn.agent
+  const {data,error}=await assistantStore().rpc('atm_agent_execute',{p_actor:turn.actor,p_channel:turn.channel,p_scope:a.scope,p_request:a.request,p_lease:a.lease,p_kind:kind,p_payload:{...payload,_message:a.message,_model:a.model,_input:a.input??0,_output:a.output??0,_latency:Date.now()-a.started},p_token:token??null,p_phone:turn.phone??null,p_receipt:turn.receipt??null,p_generation:turn.linkedAt??null})
+  if(error)throw new Error('Agent execution unavailable')
+  return data as AssistantReply
+ }
  const {data,error}=await assistantStore().rpc('atm_ai_turn',{p_actor:turn.actor,p_channel:turn.channel,p_kind:kind,p_payload:{...payload,...(turn.threadId?{threadId:turn.threadId}:{}),...(turn.channel==='whatsapp'?{linkGeneration:turn.linkedAt}:{})},p_token:token??null,p_phone:turn.phone??null,p_receipt:turn.receipt??null})
  if(error) throw new Error('Assistant operation unavailable')
  return data as AssistantReply
 }
 export async function requestAssistant(turn:Turn,message:string,token?:string,historyOverride?:string[]):Promise<AssistantReply> {
+ if(rolloutEnabled(turn.actor,turn.level)){const {requestAgent}=await import('./orchestrator');return requestAgent(turn,message,token,historyOverride)}
+ return requestLegacyAssistant(turn,message,token,historyOverride)
+}
+export async function requestLegacyAssistant(turn:Turn,message:string,token?:string,historyOverride?:string[],preparedPlan?:Plan):Promise<AssistantReply> {
  if(/^batal$/i.test(message.trim())) return dispatch(turn,'cancel')
  if(containsAssistantSecret(message))return dispatch(turn,'reply',{message:'Jangan kirim password atau API key melalui asisten. Gunakan pengaturan akun yang sesuai.'})
  const {data:stored,error:draftError}=await assistantStore().from('atm_ai_sessions').select('operation,target,payload,expires_at,conversation_id,phone,linked_at').eq('user_id',turn.actor).eq('channel',turn.channel).maybeSingle()
@@ -46,8 +57,8 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  const {data,error}=await assistantStore().rpc('wa_operation_catalog')
  if(error) throw new Error('Catalogue unavailable')
  let plan:Plan
- if(local?.kind==='propose'&&!Object.hasOwn(aiRoleOperations(turn.level,data as Record<string,Operation>),local.operation??''))return dispatch(turn,'reply',{message:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'})
- try {plan=local?validatePlan(local,aiRoleOperations(turn.level,data as Record<string,Operation>)):await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
+ if(!preparedPlan&&local?.kind==='propose'&&!Object.hasOwn(aiRoleOperations(turn.level,data as Record<string,Operation>),local.operation??''))return dispatch(turn,'reply',{message:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'})
+ try {plan=preparedPlan?validatePlan(preparedPlan,aiRoleOperations(turn.level,data as Record<string,Operation>)):local?validatePlan(local,aiRoleOperations(turn.level,data as Record<string,Operation>)):await planRequest(message,turn.level,data as Record<string,Operation>,historyOverride??reserved.history??[])}
  catch(error) {
   const reason=error as {name?:unknown;statusCode?:unknown;data?:{error?:{code?:unknown;type?:unknown}}}
   console.warn('[assistant] planning unavailable',{name:typeof reason?.name==='string'?reason.name:'Unknown',status:typeof reason?.statusCode==='number'?reason.statusCode:undefined,code:typeof reason?.data?.error?.code==='string'?reason.data.error.code:undefined,type:typeof reason?.data?.error?.type==='string'?reason.data.error.type:undefined})
@@ -56,7 +67,7 @@ export async function requestAssistant(turn:Turn,message:string,token?:string,hi
  if(plan.kind==='help') {const r=helpReply(plan.topic??'tasks',turn.level);return dispatch(turn,'reply',r)}
  if(plan.kind==='clarify') return dispatch(turn,'reply',{message:(plan.question??'Lengkapi judul/ID, isian, dan aksi yang diinginkan.').slice(0,1000)})
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,field:plan.field,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})
- if(plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
+ if(!preparedPlan&&plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
  if(plan.entity==='tasks'&&plan.mode==='calendar'&&/\b(saya|pribadi|milikku)\b/i.test(message))plan.mode='mine_calendar'
  return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task,page:plan.page,pic:plan.pic})
 }

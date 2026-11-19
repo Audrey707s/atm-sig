@@ -98,3 +98,11 @@ describe('AI intent boundary',()=>{
  })
 
 })
+
+it.each([
+ ['lihat tugas "Ada deh" milik Sevtuari','Ada deh','Sevtuari'],
+ ['buka task Ada deh punya Sevtuari','Ada deh','Sevtuari'],
+ ['tolong tampilkan tugas "mengerjakan paper" milik PIC nata','mengerjakan paper','nata'],
+])('keeps title and owner separate when the provider is unavailable: %s',(message,title,pic)=>{
+ expect(localPlan(message)).toMatchObject({kind:'read',entity:'tasks',query:title,pic})
+})

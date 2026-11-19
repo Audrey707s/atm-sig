@@ -1,4 +1,5 @@
 import 'server-only'
+import {rolloutEnabled} from './agent-policy'
 import {taskReadIntent} from '@/lib/tasks/chat-intents'
 import type { FonnteIncoming } from '@/lib/whatsapp/incoming'
 import { assistantStore,requestAssistant } from './service'
@@ -27,12 +28,18 @@ export async function receiveAssistantWhatsApp(incoming:FonnteIncoming):Promise<
  if(['link','stop','start','disconnect'].includes(incoming.command)){
   await store.from('atm_ai_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
   await store.from('atm_ai_task_context').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
+  if(rolloutEnabled(link.user_id,role.level))await store.from('atm_agent_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
   return false
  }
- if(confirmation&&!validPending&&!validSession) return false
+ if(confirmation&&!validPending&&!validSession){
+  if(!rolloutEnabled(link.user_id,role.level))return false
+  const {data:agentState,error:agentError}=await store.from('atm_agent_sessions').select('memory,expires_at').eq('user_id',link.user_id).eq('channel','whatsapp').eq('scope',incoming.sender).maybeSingle()
+  if(agentError)throw new Error('Agent context unavailable')
+  if(!agentState||Date.parse(agentState.expires_at)<=Date.now()||!Array.isArray(agentState.memory?.batch))return false
+ }
  if(!confirmation&&!choosing&&!continuing&&!guided) {
   // Preserve linking, STOP/MULAI/PUTUS, menu commands, numeric selections and native forms.
-  if((incoming.command!=='help'&&!taskReadIntent(incoming.text))||/^(menu|bantuan)$/i.test(incoming.text)) {
+  if((incoming.command!=='help'&&!taskReadIntent(incoming.text)&&!rolloutEnabled(link.user_id,role.level))||/^(menu|bantuan)$/i.test(incoming.text)||incoming.command==='feature'&&incoming.text.trim().split(/\s+/).length===1) {
    const {error:resetError}=await store.from('atm_ai_sessions').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
    if(resetError)throw new Error('Assistant reset unavailable')
    const {error:contextError}=await store.from('atm_ai_task_context').delete().eq('user_id',link.user_id).eq('channel','whatsapp')
