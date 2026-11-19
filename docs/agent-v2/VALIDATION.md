@@ -61,3 +61,9 @@ The old evaluator could stop when its tab closed, timers were throttled, or a re
 Final local checks for this queue revision: **951 tests passed across 94 files**, TypeScript passed, ESLint had zero errors (two existing unused-variable warnings), production build passed. Queue tests cover retry, expired leases, stale completions, ownership, revoked roles, revision changes, crash exhaustion, permission grants, configuration failure and UI restoration/unmount behavior.
 
 Hosted worker and real-model results must still be observed after deployment. The queue repair does not prove the 120 planning cases passed, 95% model accuracy, real CRUD UAT or physical WhatsApp delivery. Production remains held until those release gates pass.
+
+### Preview scheduler access follow-up
+
+The first hosted callback returned Vercel protection HTTP 401. After the owner explicitly approved a two-hour preview access window, a temporary alias-scoped share token was created. Its Vercel auth cookie is retained only in private worker configuration. A second issue was identified: the new cron path was missing from the machine-to-machine proxy exclusions and was being sent through the cookie-login flow. The proxy now lets this exact route reach its existing constant-time worker-secret verification; production still returns 404.
+
+Migration `20261119104401_agent_evaluation_preview_access` adds private headers and an explicit access expiry. At expiry the cron pauses active runs with a visible reason rather than reporting continued progress. No global Vercel protection setting was disabled. Targeted follow-up checks: 137 tests passed (including expired-access pause and proxy/worker auth); TypeScript passed. Actual queued model results still require hosted observation.
