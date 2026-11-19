@@ -43,8 +43,21 @@ On the stable branch URL, `tolong buka task nata` returned the correct owner-qua
 
 `yang tadi tenggatnya kapan?` reached the fallback path when the provider call failed, and fallback did not understand the reference. Follow-up changes add a quota-independent read of an already-verified singular task and reduce provider context to title/PIC candidate pairs. The escalation attempt did not change role or data; its fallback wording remains generic.
 
-The preview-only `/agent-evaluation` page runs the fixed 120 synthetic planning cases against the real configured model, paced within the free quota. It never invokes business action tools and therefore is not a substitute for database or physical WhatsApp UAT. PASS/FAIL/REVIEW results are retained in that tab's session; no accuracy figure is asserted in advance. The API checks preview environment, same origin, verified active GM/SA identity and fixed case IDs. It is unavailable in production.
+The preview-only `/agent-evaluation` page runs the fixed 120 synthetic planning cases against the real configured model, paced within the free quota. It never invokes business action tools and therefore is not a substitute for database or physical WhatsApp UAT. That original browser-loop implementation retained results in the tab session; it has now been replaced by the server queue described below. No accuracy figure is asserted in advance. The API checks preview environment, same origin, verified active GM/SA identity and fixed case IDs. It is unavailable in production.
 
 The multi-read SQL fix merges displayed task rows and server-held numeric choices, preventing a selection from pointing into only the final group. Additional SQL regression coverage verifies the selected task.
 
 Latest local suite: 925 tests passed across 91 files; TypeScript, lint and build passed. Subsequent live evaluation is still a release gate.
+
+## Persistent evaluator revision — 19 November 2026
+
+The old evaluator could stop when its tab closed, timers were throttled, or a request hung. Model schema failures also lacked useful persisted detail. The revised evaluator stores the run and all 120 fixed case IDs in private Supabase tables and dispatches a preview-only authenticated worker from pg_cron/pg_net every minute. It runs at most two provider attempts per minute globally. The browser only reads status and submits start/pause/resume commands; it can be closed.
+
+- Leases, fenced completion, bounded fetches and five-attempt recovery prevent one lost request from blocking the run forever. Transient failures use backoff; schema/plan FAIL advances to the next case. Configuration errors pause visibly.
+- PASS, FAIL, REVIEW and infrastructure ERROR remain separate. An exhausted provider retry is never counted as PASS. Every saved result has the server-stamped full source revision. A new deployment pauses runs belonging to a different revision.
+- Owner/active-role checks and service-only RPCs protect progress. The worker bearer secret is preview-branch-only and held in private database configuration, not source or browser state. Migration `20261119102602_persistent_agent_evaluation` was applied; its one-minute cron job is active. Security advisory WARN categories are unchanged.
+- Old session-only results are not imported as verified server results or erased. Retry retains the server attempt history. Runs expire after 30 days.
+
+Final local checks for this queue revision: **951 tests passed across 94 files**, TypeScript passed, ESLint had zero errors (two existing unused-variable warnings), production build passed. Queue tests cover retry, expired leases, stale completions, ownership, revoked roles, revision changes, crash exhaustion, permission grants, configuration failure and UI restoration/unmount behavior.
+
+Hosted worker and real-model results must still be observed after deployment. The queue repair does not prove the 120 planning cases passed, 95% model accuracy, real CRUD UAT or physical WhatsApp delivery. Production remains held until those release gates pass.
