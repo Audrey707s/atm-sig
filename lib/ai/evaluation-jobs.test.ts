@@ -39,3 +39,9 @@ it('pauses non-retryable provider configuration errors instead of spending repea
  await processEvaluationQueue()
  expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'ERROR',errorKind:'configuration'})}))
 })
+
+it('records a model tool-schema error once rather than retrying it as a provider outage',async()=>{
+ m.plan.mockRejectedValueOnce({name:'AI_InvalidToolInputError',message:'invalid untrusted model text'})
+ await processEvaluationQueue()
+ expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'FAIL',errorKind:'validation',validationCode:'AI_InvalidToolInputError'})}))
+})

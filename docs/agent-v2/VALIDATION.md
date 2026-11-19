@@ -77,3 +77,13 @@ Private-cookie server access passed Vercel protection. Actual PostgREST executio
 The hosted run advanced from two to four completed real-model PASS cases on the next pg_cron invocation, with no browser start/resume action. Browser reload restored four results from the server. The full suite after access/proxy/heartbeat fixes passed 954 tests across 94 files; TypeScript passed. This is initial progress evidence, not a completed 120-case evaluation.
 
 A final scheduling adjustment uses a UTC calendar-minute bucket (two attempts per minute), avoiding unnecessary skipped cron rounds caused by a rolling 60-second boundary. Expiry remains enforced at the approved two-hour deadline; provider backoff can extend the run beyond that window, in which case it pauses with its saved progress.
+
+## Late-evening recovery and grounding revision — 19 November 2026
+
+The c575e34 baseline stopped at 44 completed cases (23 PASS, 21 FAIL) after model quota throttling and expiry of preview access. The owner explicitly authorized renewing the private Vercel cookie configuration. The same run was resumed, reaching 48 completed cases (24 PASS, 24 FAIL). No result was erased or reclassified as PASS. Empty manually restarted runs remain in history. Migration `20261119135648_agent_evaluation_restore_active_run` makes the default status lookup prefer a resumed active run over a newer empty paused one. Its 128 database tests passed.
+
+For preservation across the next preview deployment, baseline scheduling is pinned to its original immutable deployment. The baseline must not be mixed with results from a changed planner. Temporary automation access remains bounded by its recorded expiry.
+
+Observed failures informed a separate planner revision: operation labels and real field descriptions, explicit denied-operation instructions (never substitute another allowed tool), required internal owner field, bounded field-name enum, missing-value instructions, canonical percentage values and deterministic generation. Grounding drops invented priority/progress/status values and negated old priorities, preserves explicitly confirmed draft values, and keeps an explicit corrected task title ahead of stale contextual flags. An unresolved owner pronoun no longer broadens task resolution. Model tool-schema errors are classified as planning FAIL with bounded validation codes rather than retried as infrastructure outages.
+
+Full software regression: 963 tests passed in 94 files; TypeScript passed; targeted ESLint passed. These are software tests; the changed model prompt still requires actual provider/browser and WhatsApp evaluation. Production remains held. Model weights were not trained, and free-provider availability remains bounded by real quotas.

@@ -71,3 +71,31 @@ it('drops an invented reassignment reason and retains the user-provided reason',
  expect(groundAgentFields(plan,'ganti PIC tugas pertama Audrey ke Nata',{}).data).toEqual({pic:'Nata'})
  expect(groundAgentFields({...plan,data:{pic:'Nata',alasan:'pembagian tim'}},'karena pembagian tim',{}).data?.alasan).toBe('pembagian tim')
 })
+
+it('canonicalizes an explicitly stated progress percentage before backend execution',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_progress',data:{progres:'70%'}},'naikin progres rekonsilasi punya nata jd 70 persen dong',{}).data?.progres).toBe('70')
+})
+it('removes invented priority and retains the missing-field request',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}},'mengubah prioritas "mengerjakan paper"',{})).toMatchObject({field:'prioritas',data:{}})
+})
+it('does not lose a user-stated priority, status or previously confirmed pending value',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}},'tolong diubah prioritasnya menjadi tinggi',{}).data?.prioritas).toBe('tinggi')
+ expect(groundAgentFields({kind:'propose',operation:'task_status',data:{status:'Blocked'}},'ubah status task Ada deh milik Sevtuari menjadi Terhambat',{}).data?.status).toBe('Blocked')
+ expect(groundAgentFields({kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}},'ya lanjut',{pending:[{kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}}]}).data?.prioritas).toBe('tinggi')
+})
+it('does not ground invented progress against an unrelated old message',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_progress',data:{progres:'70'}},'ubah progresnya',{recent:[{role:'user',text:'laporan 70 hari'}]}).data).toEqual({})
+})
+
+it('rejects an explicitly negated old priority even if it was pending',()=>{
+ const memory={pending:[{kind:'propose' as const,operation:'task_update',data:{prioritas:'tinggi'}}]}
+ expect(groundAgentFields({kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}},'eh bukan tinggi, sedang aja',memory).data).toEqual({})
+ expect(groundAgentFields({kind:'propose',operation:'task_update',data:{prioritas:'sedang'}},'eh bukan tinggi, sedang aja',memory).data?.prioritas).toBe('sedang')
+})
+
+it('prefers an explicit corrected target over a stale context flag',()=>{
+ expect(resolveTask({kind:'propose',target:'mengerjakan paper',pic:'Nata',context:true,data:{}},candidates,{activeTask:'b'}).candidate?.id).toBe('a')
+})
+it('does not drop an unresolved owner pronoun and broaden the target search',()=>{
+ expect(resolveTask({kind:'propose',target:'mengerjakan paper',pic:'dia',data:{}},candidates,{}).candidate).toBeUndefined()
+})

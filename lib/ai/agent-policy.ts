@@ -14,9 +14,10 @@ export function validateAgentPlan(input:unknown,level:number,catalog:Record<stri
 const fold=(x:string)=>x.toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim()
 function distance(a:string,b:string){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const n=[i];for(let j=1;j<=b.length;j++)n[j]=Math.min(n[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1));row=n}return row[b.length]}
 export function resolveTask(plan:Plan,candidates:Candidate[],memory:AgentMemory):{candidate?:Candidate;confidence:number;ambiguous:Candidate[]}{
- const ref=plan.context||!plan.target||/^(ACTIVE_TASK|tugas tadi|yang itu|tugas itu|yang tadi|tadi)$/i.test(plan.target)?memory.activeTask:plan.target
+ const contextual=!plan.target||/^(ACTIVE_TASK|tugas tadi|yang itu|tugas itu|yang tadi|tadi)$/i.test(plan.target)
+ const ref=contextual?memory.activeTask:plan.target
  let pool=candidates,ownerConfidence=1
- if(plan.pic&&/^(dia|punya dia|PIC tadi)$/i.test(plan.pic))plan={...plan,pic:memory.activePIC}
+ if(plan.pic&&/^(dia|punya dia|PIC tadi)$/i.test(plan.pic)){if(!memory.activePIC)return {confidence:0,ambiguous:[]};plan={...plan,pic:memory.activePIC}}
  if(plan.pic){const owner=fold(plan.pic);const exact=pool.filter(c=>fold(c.pic)===owner);if(!exact.length)ownerConfidence=.9;pool=exact.length?exact:pool.filter(c=>fold(c.pic).includes(owner)||distance(fold(c.pic),owner)<=1)}
  if(!ref)return {confidence:0,ambiguous:pool.slice(0,5)}
  const id=pool.filter(c=>c.id===ref);if(id.length===1)return {candidate:id[0],confidence:ownerConfidence,ambiguous:[]}
@@ -70,5 +71,17 @@ export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):P
   if(source.includes(fold(value))||(['judul','nama'].includes(field)&&previous===value))continue
   delete data[field]
  }
- return {...plan,data}
+ // Canonical backend values are internal. Never invent an absent enum/number.
+ const current=fold(message).replace(/\b(?:bukan|jangan|tidak|gak|ga|nggak)\s+(?:jadi\s+)?(?:tinggi|sedang|rendah|high|medium|low)\b/g,''),pending=memory.pending?.find(p=>p.operation===plan.operation)?.data??{}
+ for(const field of ['progres','prioritas','status']){
+  const value=data[field];if(!value)continue
+  const normalized=field==='progres'?/^\d{1,3}\s*(?:%|persen)?$/i.exec(value.trim())?.[0].replace(/\s*(?:%|persen)$/i,''):value
+  const aliases:Record<string,string[]>={Blocked:['blocked','terhambat','tertunda'],Done:['done','selesai','beres','kelar'],'In progress':['in progress','berjalan','dikerjakan'],'To do':['to do','belum dimulai'],Review:['review','tinjau'],tinggi:['tinggi','high'],sedang:['sedang','medium'],rendah:['rendah','low']}
+  const stated=normalized&&(field==='progres'?new RegExp('(?:^| )'+normalized+'(?: |$)').test(current):(aliases[normalized]??[normalized]).some(x=>new RegExp('(?:^| )'+fold(x)+'(?: |$)').test(current)))
+  const replacement=field==='prioritas'&&['tinggi','sedang','rendah','high','medium','low'].some(x=>new RegExp('(?:^| )'+x+'(?: |$)').test(current))
+  if(normalized&&(stated||pending[field]===normalized&&!replacement)){data[field]=normalized;continue}
+  delete data[field]
+ }
+ const missingField=plan.field??(['prioritas','progres','status'].find(field=>Object.hasOwn(plan.data!,field)&&!data[field]&&new RegExp('\\b'+field+'(?:nya)?\\b','i').test(message)))
+ return {...plan,...(missingField?{field:missingField}:{}),data}
 }

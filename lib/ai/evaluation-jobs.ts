@@ -29,12 +29,12 @@ export async function processEvaluationQueue(){
    result={...assessPlan(test,planned.plan,catalog),actual:planned.plan,model:planned.model,usage:planned.usage,role:test.role,category:test.category}
   }catch(error){
    const fault=error as {statusCode?:number;responseHeaders?:Record<string,string>;name?:string;message?:string}
-   const invalid=fault.name==='Error'&&/^(Invalid|Operation denied|Read denied|Conflicting|Unknown fixed fixture)/.test(fault.message??'')
+   const invalid=(fault.name==='Error'&&/^(Invalid|Operation denied|Read denied|Conflicting|Unknown fixed fixture)/.test(fault.message??''))||['AI_InvalidToolInputError','AI_NoSuchToolError','AI_ToolCallRepairError'].includes(fault.name??'')
    const configuration=[401,403,404].includes(fault.statusCode??0)
    retry=!invalid&&!configuration
    const seconds=Number(fault.responseHeaders?.['retry-after'])
    delay=Number.isFinite(seconds)&&seconds>0?Math.min(3600,Math.ceil(seconds)):Math.min(900,60*2**Math.max(0,claim.attempt-1))
-   result={status:configuration?'ERROR':invalid?'FAIL':'RETRY',reason:configuration?'Konfigurasi layanan model perlu diperiksa sebelum evaluasi dapat dilanjutkan.':invalid?'Rencana model gagal validasi skema atau izin.':fault.statusCode===429?'Kuota gratis membatasi permintaan. Percobaan ulang dijadwalkan.':'Layanan atau permintaan terputus. Percobaan ulang dijadwalkan.',errorKind:configuration?'configuration':fault.statusCode===429?'quota':fault.name==='AbortError'||fault.name==='TimeoutError'?'timeout':invalid?'validation':'provider'}
+   result={status:configuration?'ERROR':invalid?'FAIL':'RETRY',reason:configuration?'Konfigurasi layanan model perlu diperiksa sebelum evaluasi dapat dilanjutkan.':invalid?'Rencana model gagal validasi skema atau izin.':fault.statusCode===429?'Kuota gratis membatasi permintaan. Percobaan ulang dijadwalkan.':'Layanan atau permintaan terputus. Percobaan ulang dijadwalkan.',...(invalid?{validationCode:/^(Invalid (?:action count|plan|kind|value|read|context|exact match|page|task|requested field|data|field)|Operation denied|Read denied|Conflicting owners|Unknown fixed fixture)$/.test(fault.message??'')?fault.message:fault.name}:{}),errorKind:configuration?'configuration':fault.statusCode===429?'quota':fault.name==='AbortError'||fault.name==='TimeoutError'?'timeout':invalid?'validation':'provider'}
    console.warn('[agent-evaluation-worker] attempt unavailable',{status:fault.statusCode,name:fault.name,caseId:claim.caseId})
   }
   const {data:saved,error:saveError}=await store.rpc('atm_eval_finish',{p_run:claim.run,p_case:claim.caseId,p_lease:claim.lease,p_result:result,p_retry:retry,p_delay:delay}).abortSignal(AbortSignal.timeout(10000))
