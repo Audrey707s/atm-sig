@@ -16,7 +16,7 @@ export function taskReadIntent(message: string): {mode:'list'|'mine'|'review'|'m
   const owner=/^(?:(?:lihat|liat|tampilkan|cek|cari|carikan)\s+)?(?:(?:daftar|list)\s+)?(?:tugas|task|pekerjaan)\s+(?:milik|punya|pic|untuk|yang dikerjakan oleh)\s+(.+)$/i.exec(text)
   if(owner)return {mode:'list',query:'',pic:normalizeTaskReference(owner[1]).text}
   const search=/^(?:cari|carikan|lihat|liat|tampilkan|tunjukkan|tunjukin|cek|buka|bukain)\s+(?:(?:daftar|list)\s+)?(?:tugas|task|pekerjaan)\s+(.+)$/i.exec(text)
-  if(search){const reference=normalizeTaskReference(search[1]);return {mode:'list',query:reference.text,...(!/^(?:cari|carikan)\b/i.test(text)&&!reference.exact?{pic:reference.text}:{})}}
+  if(search){const scoped=taskMutationReference(search[1]);if(scoped.pic)return {mode:'list',query:scoped.target,pic:scoped.pic};const reference=normalizeTaskReference(search[1]);return {mode:'list',query:reference.text,...(!/^(?:cari|carikan)\b/i.test(text)&&!reference.exact?{pic:reference.text}:{})}}
   return null
 }
 
