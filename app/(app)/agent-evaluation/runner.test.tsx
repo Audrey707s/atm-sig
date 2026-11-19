@@ -19,3 +19,11 @@ it('restores finished progress from the server without depending on sessionStora
  render(<Runner revision={revision}/>);await screen.findByText('1/2');expect(screen.getByRole('row',{name:/01-R1.*PASS/})).toBeTruthy()
  expect(screen.getByRole('button',{name:'Berjalan di server'}).hasAttribute('disabled')).toBe(true)
 })
+
+it('does not offer to replace an active old-version run after a deployment',async()=>{
+ vi.mocked(fetch).mockResolvedValue(Response.json(snapshot))
+ render(<Runner revision={'b'.repeat(40)}/>);await screen.findByText('1/2')
+ expect(screen.getByRole('button',{name:'Berjalan di server'}).hasAttribute('disabled')).toBe(true)
+ expect(screen.queryByRole('button',{name:'Mulai evaluasi baru'})).toBeNull()
+ expect(screen.getByText(/Evaluasi versi sebelumnya masih berjalan/)).toBeTruthy()
+})

@@ -91,3 +91,9 @@ Full software regression: 963 tests passed in 94 files; TypeScript passed; targe
 ### Provider-outage browser finding
 
 The updated preview built READY. Real GM browser read `lihat tugas "Ada deh" milik Sevtuari` reached the deterministic fallback, but it returned no rows although matching tasks remained in the database. The fallback search had treated the whole owner-qualified expression as the query/PIC. The follow-up uses the existing title/owner reference parser for owner-qualified reads. Three regression variants passed together with the conversation/language suites (104 tests). A fresh browser retest remains required; this finding is not counted as a passing model evaluation.
+
+### Confirmed quota-independent browser retest
+
+On preview 5512abb, the GM read `lihat tugas "Ada deh" milik Sevtuari` returned the correct task and owner. Trace metadata confirmed deterministic-fallback; the provider was returning HTTP 429. `yang tadi tenggatnya kapan?` retained the same task via deterministic-context without a model call. `mengubah prioritas "mengerjakan paper"` selected the existing Nata task and asked for the missing priority instead of inventing one. BATAL canceled the draft. No task data was changed.
+
+The evaluator now prevents replacing an active run after a preview deployment without deliberately pausing first; the old-version notice reflects this. Malformed provider tool-call errors are terminal planning FAIL, while actual rate limits and transient outages remain retryable. The old baseline is still incomplete and its next quota retry is shown explicitly; no live acceptance percentage or WhatsApp delivery claim is made.

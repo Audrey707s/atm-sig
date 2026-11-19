@@ -45,3 +45,9 @@ it('records a model tool-schema error once rather than retrying it as a provider
  await processEvaluationQueue()
  expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'FAIL',errorKind:'validation',validationCode:'AI_InvalidToolInputError'})}))
 })
+
+it('does not mistake a provider-reported malformed tool call for a temporary outage',async()=>{
+ m.plan.mockRejectedValueOnce({name:'AI_APICallError',statusCode:400,data:{error:{code:'tool_use_failed'}}})
+ await processEvaluationQueue()
+ expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'FAIL',errorKind:'validation'})}))
+})

@@ -99,3 +99,9 @@ it('prefers an explicit corrected target over a stale context flag',()=>{
 it('does not drop an unresolved owner pronoun and broaden the target search',()=>{
  expect(resolveTask({kind:'propose',target:'mengerjakan paper',pic:'dia',data:{}},candidates,{}).candidate).toBeUndefined()
 })
+
+it('does not turn a title that looks like a value into an invented update',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_update',target:'tinggi',data:{prioritas:'tinggi'}},'ubah prioritas tugas "tinggi"',{}).data).toEqual({})
+ expect(groundAgentFields({kind:'propose',operation:'task_progress',target:'70',data:{progres:'70'}},'ubah progres tugas "70"',{}).data).toEqual({})
+ expect(groundAgentFields({kind:'propose',operation:'task_progress',target:'70',data:{progres:'80%'}},'ubah progres tugas "70" jadi 80 persen',{}).data?.progres).toBe('80')
+})

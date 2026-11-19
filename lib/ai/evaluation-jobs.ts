@@ -28,8 +28,8 @@ export async function processEvaluationQueue(){
    const planned=await modelPlan(test.messages.join('\n'),test.role,catalog,test.memory,evaluationCandidates)
    result={...assessPlan(test,planned.plan,catalog),actual:planned.plan,model:planned.model,usage:planned.usage,role:test.role,category:test.category}
   }catch(error){
-   const fault=error as {statusCode?:number;responseHeaders?:Record<string,string>;name?:string;message?:string}
-   const invalid=(fault.name==='Error'&&/^(Invalid|Operation denied|Read denied|Conflicting|Unknown fixed fixture)/.test(fault.message??''))||['AI_InvalidToolInputError','AI_NoSuchToolError','AI_ToolCallRepairError'].includes(fault.name??'')
+   const fault=error as {statusCode?:number;responseHeaders?:Record<string,string>;name?:string;message?:string;data?:{error?:{code?:string}}}
+   const invalid=(fault.statusCode===400&&['tool_use_failed','json_validate_failed'].includes(fault.data?.error?.code??''))||(fault.name==='Error'&&/^(Invalid|Operation denied|Read denied|Conflicting|Unknown fixed fixture)/.test(fault.message??''))||['AI_InvalidToolInputError','AI_NoSuchToolError','AI_ToolCallRepairError'].includes(fault.name??'')
    const configuration=[401,403,404].includes(fault.statusCode??0)
    retry=!invalid&&!configuration
    const seconds=Number(fault.responseHeaders?.['retry-after'])

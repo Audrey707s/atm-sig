@@ -72,7 +72,8 @@ export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):P
   delete data[field]
  }
  // Canonical backend values are internal. Never invent an absent enum/number.
- const current=fold(message).replace(/\b(?:bukan|jangan|tidak|gak|ga|nggak)\s+(?:jadi\s+)?(?:tinggi|sedang|rendah|high|medium|low)\b/g,''),pending=memory.pending?.find(p=>p.operation===plan.operation)?.data??{}
+ const valueText=plan.target?message.toLowerCase().replace(plan.target.toLowerCase(),' '):message
+ const current=fold(valueText).replace(/\b(?:bukan|jangan|tidak|gak|ga|nggak)\s+(?:jadi\s+)?(?:tinggi|sedang|rendah|high|medium|low)\b/g,''),pending=memory.pending?.find(p=>p.operation===plan.operation)?.data??{}
  for(const field of ['progres','prioritas','status']){
   const value=data[field];if(!value)continue
   const normalized=field==='progres'?/^\d{1,3}\s*(?:%|persen)?$/i.exec(value.trim())?.[0].replace(/\s*(?:%|persen)$/i,''):value
