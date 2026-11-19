@@ -19,7 +19,7 @@ export async function processEvaluationQueue(){
  if(catalogError)throw new Error('Evaluation catalog unavailable')
  while(processed<2&&Date.now()-started<10000){
   const {data:claim,error}=await store.rpc('atm_eval_claim',{p_revision:revision}).abortSignal(AbortSignal.timeout(10000))
-  if(error)throw new Error('Evaluation claim unavailable')
+  if(error){console.error('[agent-evaluation-worker] claim database failure',{code:error.code,message:error.message?.slice(0,200)});throw new Error('Evaluation claim unavailable')}
   if(!claim)break
   const test=fixtures.find(c=>c.id===claim.caseId) as EvaluationCase|undefined
   let result:Record<string,unknown>,retry=false,delay=60
