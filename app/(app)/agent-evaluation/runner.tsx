@@ -41,7 +41,8 @@ export default function Runner({revision}:{revision:string}){
  const remaining=entries.filter(x=>x.state!=='done').length,visibleEntries=showPassed?entries:entries.filter(x=>x.result?.status!=='PASS')
  const count=(status:string)=>done.filter(x=>x.result?.status===status).length
  const casesById=new Map(fixtures.map(f=>[f.id,f]))
- const stale=active&&snapshot?.serverTime&&new Date(run!.next_at).getTime()<=new Date(snapshot.serverTime).getTime()&&new Date(snapshot.serverTime).getTime()-new Date(snapshot.workerLastSeen??run!.created_at).getTime()>180000
+ const nextCase=entries.find(entry=>entry.state!=='done')
+ const stale=active&&snapshot?.serverTime&&new Date(snapshot.serverTime).getTime()-Math.max(new Date(run!.next_at).getTime(),new Date(snapshot.workerLastSeen??run!.created_at).getTime())>180000
  return <section className={s.page}>
   <header className={s.header}><span className={s.eyebrow}>PREVIEW · EVALUASI</span><h1>Evaluasi ATM Agent</h1><p>120 skenario sintetis untuk enam role. Proses berjalan di server; tab ini boleh ditutup dan dibuka kembali.</p></header>
   <div className={s.panel}>
@@ -55,6 +56,7 @@ export default function Runner({revision}:{revision:string}){
    <progress aria-label="Progres evaluasi" className={s.progress} value={done.length} max={entries.length||120}/>
    <dl className={s.meta}><div><dt>Versi hasil</dt><dd>{run?.revision.slice(0,7)??'Belum ada evaluasi server'}</dd></div><div><dt>Pembaruan terakhir</dt><dd>{date(run?.updated_at)}</dd></div><div><dt>Worker terakhir merespons</dt><dd>{date(snapshot?.workerLastSeen)}</dd></div></dl>
   </div>
+  <p className={s.explanation}>Angka selesai menghitung kasus yang sudah mendapat hasil akhir, bukan jumlah percobaan.{nextCase&&` Kasus berikutnya: ${nextCase.id} (${entries.indexOf(nextCase)+1}/${entries.length}), sudah ${nextCase.attempts} percobaan.`}</p>
   <p className={s.explanation}>PASS hanya menilai rencana model pada skenario sintetis. Pengujian izin database, eksekusi CRUD, dan WhatsApp langsung dinilai terpisah. ERROR layanan bukan kegagalan memahami bahasa dan tidak dihitung sebagai PASS.</p>
   <p className={s.explanation}>{remaining} kasus belum selesai. Hasil PASS disimpan dan tidak dijalankan ulang saat melanjutkan. <label><input type="checkbox" checked={showPassed} onChange={event=>setShowPassed(event.target.checked)}/> Tampilkan hasil PASS yang tersimpan</label></p>
   <div className={s.tableWrap}><table className={s.table}><thead><tr><th>Kasus / role</th><th>Status</th><th>Percobaan</th><th>Hasil / keterangan</th></tr></thead><tbody>{visibleEntries.length?visibleEntries.map(entry=><tr key={entry.id}><td><strong>{entry.id}</strong><span className={s.sub}>{casesById.get(entry.id)?.roleName??''}</span></td><td><span className={s.badge}>{entry.result?.status??({pending:'Antrean',processing:'Memproses',retry:'Menunggu retry'}[entry.state]??entry.state)}</span></td><td>{entry.attempts}</td><td>{entry.result?<details><summary>{entry.result.reason}</summary><pre>{JSON.stringify(entry.result,null,2)}</pre></details>:entry.state==='processing'?'Batas kerja: '+date(entry.leaseUntil):'Menunggu giliran server'}</td></tr>):<tr><td colSpan={4} className={s.empty}>{entries.length?'Hasil PASS disembunyikan; tetap tersimpan dalam riwayat.':'Belum ada pekerjaan server. Klik Mulai evaluasi untuk menjalankan pengujian.'}</td></tr>}</tbody></table></div>

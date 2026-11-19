@@ -41,3 +41,19 @@ it('does not offer an automatic restart when all cases finished',async()=>{
  await screen.findByText('1/1');expect(screen.getByRole('button',{name:'Evaluasi selesai'}).hasAttribute('disabled')).toBe(true)
  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
 })
+
+it.each([
+ ['2030-01-01T00:59:00Z',false],
+ ['2030-01-01T01:01:00Z',false],
+ ['2030-01-01T01:04:00Z',true],
+])('warns only after the next scheduled retry is overdue: %s',async(serverTime,warn)=>{
+ vi.mocked(fetch).mockResolvedValue(Response.json({...snapshot,serverTime,workerLastSeen:'2030-01-01T00:00:00Z',run:{...snapshot.run,status:'waiting',next_at:'2030-01-01T01:00:00Z'}}))
+ render(<Runner revision={revision}/>);await screen.findByText('1/2')
+ expect(!!screen.queryByText(/Pekerja server belum merespons/)).toBe(warn)
+})
+it('distinguishes the next retried case from the finished-case count',async()=>{
+ const retry={...snapshot.results[1],state:'retry',attempts:4}
+ vi.mocked(fetch).mockResolvedValue(Response.json({...snapshot,results:[snapshot.results[0],retry]}))
+ render(<Runner revision={revision}/>);await screen.findByText('1/2')
+ expect(screen.getByText(/Kasus berikutnya: 01-R2.*2\/2.*4 percobaan/)).toBeTruthy()
+})
