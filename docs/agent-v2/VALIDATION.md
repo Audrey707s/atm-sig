@@ -71,3 +71,9 @@ Migration `20261119104401_agent_evaluation_preview_access` adds private headers 
 ### Hosted worker recovery
 
 Private-cookie server access passed Vercel protection. Actual PostgREST execution then exposed pg_safeupdate enforcement absent from the fixture runtime: the heartbeat UPDATE had no WHERE clause. Migration `20261119105036_agent_evaluation_safe_worker_heartbeat` scopes the heartbeat by its existing value without granting service access to worker secrets. The authenticated hosted worker callback subsequently returned HTTP 200 with the exact deployed revision and processed=0 while the run was paused. Safe stage/error-code diagnostics were added without logging credentials or conversation data. A final real-model run and autonomous cron progress remain required observations.
+
+### Autonomous progress verified
+
+The hosted run advanced from two to four completed real-model PASS cases on the next pg_cron invocation, with no browser start/resume action. Browser reload restored four results from the server. The full suite after access/proxy/heartbeat fixes passed 954 tests across 94 files; TypeScript passed. This is initial progress evidence, not a completed 120-case evaluation.
+
+A final scheduling adjustment uses a UTC calendar-minute bucket (two attempts per minute), avoiding unnecessary skipped cron rounds caused by a rolling 60-second boundary. Expiry remains enforced at the approved two-hour deadline; provider backoff can extend the run beyond that window, in which case it pauses with its saved progress.
