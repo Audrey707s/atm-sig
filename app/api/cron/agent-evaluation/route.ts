@@ -8,5 +8,5 @@ export async function POST(request:Request){
  if(!secret)return new Response('Worker unavailable',{status:503,headers})
  const supplied=Buffer.from(request.headers.get('authorization')??''),expected=Buffer.from('Bearer '+secret)
  if(supplied.length!==expected.length||!timingSafeEqual(supplied,expected))return new Response('Unauthorized',{status:401,headers})
- try{return Response.json(await processEvaluationQueue(),{headers})}catch{return Response.json({error:'Worker attempt failed; leases will recover.'},{status:503,headers})}
+ try{return Response.json(await processEvaluationQueue(),{headers})}catch(error){const message=error instanceof Error?error.message:'';const stage=message==='Evaluation revision unavailable'?'revision':message==='Assistant store unavailable'?'store':message==='Evaluation catalog unavailable'?'catalog':message==='Evaluation claim unavailable'?'claim':message==='Evaluation result persistence unavailable'?'save':'worker';console.error('[agent-evaluation-worker] unavailable',{stage});return Response.json({error:'Worker attempt failed; leases will recover.',stage},{status:503,headers})}
 }
