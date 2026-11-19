@@ -1,0 +1,14 @@
+{
+  "revision": "c575e3496a7a7920f4cf33bbda79f0ea321b0fb1",
+  "originalSha256": {
+    "lib/ai/agent-model.ts": "09d7fb04326934b38f16db930b97778f691c5d219fca59658495ba7ed19898c0",
+    "lib/ai/agent-policy.ts": "376444ad657a41c7f184e7d1d8cb6eaad1eed61622d556e4fd5572a0aabc727a",
+    "lib/ai/contracts.ts": "c9c02aa17f7a11aff37ef0ccc07772c1892a199595dd3eb33a31320874895526",
+    "lib/ai/role-policy.ts": "99840ae253d4040f8840c2ab5476c3e2f4c70a9761afb8a505e96922d6afd5e3",
+    "lib/tasks/chat-intents.ts": "8346c93a0a6189ec3d3bdd14a05fb48229d8913db7351df2a3bfd078383f3212",
+    "lib/ai/evaluation.ts": "3e203898db5a051a962fd53d3114af4d0ac2412ffc1f7f08786e448b0c2858f6",
+    "docs/agent-v2/conversation-uat.json": "12548b33994d15da0fac43d824b35f95d9728304b16db4a68180e39492b8e28c"
+  },
+  "adaptation": "The contracts chat-intents import is relocated and the original gpt-oss-20b model is pinned; planner/policy semantics otherwise match the original revision.",
+  "model": "openai/gpt-oss-20b"
+}
