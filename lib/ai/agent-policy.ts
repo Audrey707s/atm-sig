@@ -76,7 +76,8 @@ export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):P
  const current=fold(valueText).replace(/\b(?:bukan|jangan|tidak|gak|ga|nggak)\s+(?:jadi\s+)?(?:tinggi|sedang|rendah|high|medium|low)\b/g,''),pending=memory.pending?.find(p=>p.operation===plan.operation)?.data??{}
  for(const field of ['progres','prioritas','status']){
   const value=data[field];if(!value)continue
-  const normalized=field==='progres'?/^\d{1,3}\s*(?:%|persen)?$/i.exec(value.trim())?.[0].replace(/\s*(?:%|persen)$/i,''):value
+  const canonical:Record<string,string>=field==='status'?{'terhambat':'Blocked','tertunda':'Blocked','blocked':'Blocked','selesai':'Done','beres':'Done','kelar':'Done','done':'Done','berjalan':'In progress','dikerjakan':'In progress','in progress':'In progress','belum dimulai':'To do','to do':'To do','review':'Review','tinjau':'Review'}:field==='prioritas'?{high:'tinggi',medium:'sedang',low:'rendah'}:{}
+  const normalized=field==='progres'?/^\d{1,3}\s*(?:%|persen)?$/i.exec(value.trim())?.[0].replace(/\s*(?:%|persen)$/i,''):(canonical[value.trim().toLowerCase()]??value)
   const aliases:Record<string,string[]>={Blocked:['blocked','terhambat','tertunda'],Done:['done','selesai','beres','kelar'],'In progress':['in progress','berjalan','dikerjakan'],'To do':['to do','belum dimulai'],Review:['review','tinjau'],tinggi:['tinggi','high'],sedang:['sedang','medium'],rendah:['rendah','low']}
   const stated=normalized&&(field==='progres'?new RegExp('(?:^| )'+normalized+'(?: |$)').test(current):(aliases[normalized]??[normalized]).some(x=>new RegExp('(?:^| )'+fold(x)+'(?: |$)').test(current)))
   const replacement=field==='prioritas'&&['tinggi','sedang','rendah','high','medium','low'].some(x=>new RegExp('(?:^| )'+x+'(?: |$)').test(current))

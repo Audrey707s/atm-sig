@@ -105,3 +105,10 @@ it('does not turn a title that looks like a value into an invented update',()=>{
  expect(groundAgentFields({kind:'propose',operation:'task_progress',target:'70',data:{progres:'70'}},'ubah progres tugas "70"',{}).data).toEqual({})
  expect(groundAgentFields({kind:'propose',operation:'task_progress',target:'70',data:{progres:'80%'}},'ubah progres tugas "70" jadi 80 persen',{}).data?.progres).toBe('80')
 })
+
+ it.each([['Terhambat','Blocked'],['tertunda','Blocked'],['berjalan','In progress'],['selesai','Done'],['belum dimulai','To do']])('canonicalizes grounded model status %s to %s',(input,expected)=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_status',target:'Ada deh',data:{status:input}},`ubah status task Ada deh milik Sevtuari menjadi ${input}`,{}).data?.status).toBe(expected)
+ })
+ it('does not accept an Indonesian model status absent from the user request',()=>{
+ expect(groundAgentFields({kind:'propose',operation:'task_status',data:{status:'Terhambat'}},'ubah statusnya',{}).data).toEqual({})
+ })
