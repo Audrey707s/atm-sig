@@ -19,7 +19,7 @@ export default function Runner({revision}:{revision:string}){
  const refresh=useCallback(async(signal?:AbortSignal)=>{
   if(pending.current)return
   pending.current=true
-  try{const result=await readResponse(await fetch('/api/assistant/evaluation',{credentials:'same-origin',cache:'no-store',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)}));if(!signal?.aborted){setSnapshot(result);setError('')}}
+  try{const result=await readResponse(await fetch('/api/assistant/evaluation'+(new URL(window.location.href).searchParams.get('runId')?'?runId='+encodeURIComponent(new URL(window.location.href).searchParams.get('runId')!):''),{credentials:'same-origin',cache:'no-store',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)}));if(!signal?.aborted){setSnapshot(result);setError('')}}
   catch(error){if(!signal?.aborted)setError(error instanceof Error?error.message:'Gagal memuat progres.')}
   finally{pending.current=false;if(!signal?.aborted)setChecking(false)}
  },[])
@@ -44,7 +44,7 @@ export default function Runner({revision}:{revision:string}){
  const nextCase=entries.find(entry=>entry.state!=='done')
  const stale=active&&snapshot?.serverTime&&new Date(snapshot.serverTime).getTime()-Math.max(new Date(run!.next_at).getTime(),new Date(snapshot.workerLastSeen??run!.created_at).getTime())>180000
  return <section className={s.page}>
-  <header className={s.header}><span className={s.eyebrow}>PREVIEW · EVALUASI</span><h1>Evaluasi ATM Agent</h1><p>120 skenario sintetis untuk enam role. Proses berjalan di server; tab ini boleh ditutup dan dibuka kembali.</p></header>
+  <header className={s.header}><span className={s.eyebrow}>PREVIEW · EVALUASI</span><h1>Evaluasi ATM Agent</h1><p>{snapshot?.results.length||120} skenario sintetis untuk enam role. Proses berjalan di server; tab ini boleh ditutup dan dibuka kembali.</p></header>
   <div className={s.panel}>
    <div className={s.toolbar}><button className={s.primary} type="button" disabled={busy||checking||active||!!run&&remaining===0} onClick={()=>void command(run?'resume':'start')}>{busy?'Menyimpan…':active?'Berjalan di server':!run?'Mulai evaluasi':remaining===0?'Evaluasi selesai':`Lanjutkan ${remaining} kasus tersisa`}</button><button className={s.secondary} type="button" disabled={busy||!active} onClick={()=>void command('pause')}>Jeda evaluasi</button><button className={s.secondary} type="button" disabled={busy} onClick={()=>void refresh()}>Perbarui progres</button>{same&&!active&&(count('FAIL')+count('ERROR')>0)&&<button className={s.secondary} type="button" disabled={busy} onClick={()=>void command('retry')}>Uji ulang kasus gagal / error</button>}</div>
    <div role="status" className={s.status}><strong>{checking?'Memuat progres server…':run?labels[run.status]??run.status:'Siap memulai'}</strong><span>{run?.reason||'Pengujian ini tidak mengubah tugas, menjalankan CRUD, atau mengirim notifikasi.'}</span></div>
@@ -54,7 +54,7 @@ export default function Runner({revision}:{revision:string}){
    {!!run&&!same&&<p className={s.notice}>Evaluasi ini memakai versi {run.revision.slice(0,7)}. Lanjutkan antrean yang sama tanpa mengulang hasil selesai; hasilnya tidak digabungkan dengan pengujian versi lain.</p>}
    <div className={s.metrics}>{[['Selesai',done.length+'/'+(entries.length||120)],['PASS',count('PASS')],['FAIL',count('FAIL')],['REVIEW',count('REVIEW')],['ERROR layanan',count('ERROR')]].map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
    <progress aria-label="Progres evaluasi" className={s.progress} value={done.length} max={entries.length||120}/>
-   <dl className={s.meta}><div><dt>Versi hasil</dt><dd>{run?.revision.slice(0,7)??'Belum ada evaluasi server'}</dd></div><div><dt>Pembaruan terakhir</dt><dd>{date(run?.updated_at)}</dd></div><div><dt>Worker terakhir merespons</dt><dd>{date(snapshot?.workerLastSeen)}</dd></div></dl>
+   <dl className={s.meta}><div><dt>ID evaluasi terpisah</dt><dd>{run?.id??'Belum ada'}</dd></div><div><dt>Versi hasil</dt><dd>{run?.revision.slice(0,7)??'Belum ada evaluasi server'}</dd></div><div><dt>Pembaruan terakhir</dt><dd>{date(run?.updated_at)}</dd></div><div><dt>Worker terakhir merespons</dt><dd>{date(snapshot?.workerLastSeen)}</dd></div></dl>
   </div>
   <p className={s.explanation}>Angka selesai menghitung kasus yang sudah mendapat hasil akhir, bukan jumlah percobaan.{nextCase&&` Kasus berikutnya: ${nextCase.id} (${entries.indexOf(nextCase)+1}/${entries.length}), sudah ${nextCase.attempts} percobaan.`}</p>
   <p className={s.explanation}>PASS hanya menilai rencana model pada skenario sintetis. Pengujian izin database, eksekusi CRUD, dan WhatsApp langsung dinilai terpisah. ERROR layanan bukan kegagalan memahami bahasa dan tidak dihitung sebagai PASS.</p>

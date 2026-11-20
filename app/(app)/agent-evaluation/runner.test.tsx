@@ -57,3 +57,15 @@ it('distinguishes the next retried case from the finished-case count',async()=>{
  render(<Runner revision={revision}/>);await screen.findByText('1/2')
  expect(screen.getByText(/Kasus berikutnya: 01-R2.*2\/2.*4 percobaan/)).toBeTruthy()
 })
+
+it('pins progress and commands to the explicitly selected separate run',async()=>{
+ window.history.replaceState({},'', '/agent-evaluation?runId=recheck-run')
+ vi.mocked(fetch).mockResolvedValue(Response.json({...snapshot,run:{...snapshot.run,id:'recheck-run',status:'paused'}}))
+ render(<Runner revision={revision}/>);await screen.findByText('1/2')
+ expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/assistant/evaluation?runId=recheck-run')
+ expect(screen.getByText('recheck-run')).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'Lanjutkan 1 kasus tersisa'}))
+ await screen.findByText('Dijeda')
+ expect(JSON.parse(vi.mocked(fetch).mock.calls[1][1]!.body as string)).toEqual({action:'resume',runId:'recheck-run'})
+ window.history.replaceState({},'', '/')
+})
