@@ -2,10 +2,11 @@ import 'server-only'
 import {generateText,jsonSchema,tool,type JSONSchema7} from 'ai'
 import {createGroq} from '@ai-sdk/groq'
 import {aiRoleOperations,aiRolePolicy} from './role-policy'
-import {validateAgentPlan,groundAgentFields,type AgentMemory,type AgentPlan,type Candidate,memorySummary} from './agent-policy'
+import {validateAgentPlan,groundAgentFields,authorityBypassRequest,type AgentMemory,type AgentPlan,type Candidate,memorySummary} from './agent-policy'
 import type {Operation} from './contracts'
 export function modelConfigured(){return process.env.ATM_AI_FREE_PLAN_CONFIRMED==='true'&&!!process.env.GROQ_API_KEY}
 export async function modelPlan(message:string,level:number,catalog:Record<string,Operation>,memory:AgentMemory,candidates:Candidate[]):Promise<{plan:AgentPlan;usage:{input:number;output:number};model:string}>{
+ if(authorityBypassRequest(message))return {plan:{steps:[{kind:'clarify',question:'Saya tidak dapat melewati hak akses atau menaikkan role melalui chat. Belum ada perubahan.'}]},usage:{input:0,output:0},model:'policy-guard'}
  if(!modelConfigured())throw new Error('Model unavailable')
  const allowed=aiRoleOperations(level,catalog),model=process.env.ATM_AGENT_MODEL??'openai/gpt-oss-20b'
  // Bounded, allowlisted tools; JSON is internal only. No executable SQL, actor or role arguments.

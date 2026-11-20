@@ -93,3 +93,10 @@ export function incompleteAdditiveRequest(message:string,memory:AgentMemory):boo
  if(memory.pending?.length||memory.queued?.length)return false
  return /^(?:sekalian|sekaligus)\s+(?:untuk\s+)?(?:punya|milik)\s+dia(?:\s+juga)?[.!?]*$/i.test(message.trim())
 }
+
+/** Administrative access cannot be granted by conversational instructions. */
+export function authorityBypassRequest(message:string):boolean {
+ const text=message.replace(/["“][^"”]*["”]|'[^']*'/g,' ').replace(/\s+/g,' ').trim()
+ return /^(?:(?:tolong|mohon|please)\s+)?(?:abaikan|lewati|bypass|ignore)\b.{0,65}\b(?:hak akses|otorisasi|izin|aturan|permissions?|instructions?)\b/i.test(text)
+  || /\b(?:jadikan|ubah|ganti|naikkan|set|make)\s+(?:role\s+)?(?:saya|aku|gue|gw|me)\s+(?:(?:jadi|menjadi|sebagai|to|an?)\s+)?(?:super\s*admin|administrator|admin)\b/i.test(text)
+}

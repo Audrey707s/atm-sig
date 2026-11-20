@@ -4,7 +4,7 @@ import {assistantStore,dispatch,requestLegacyAssistant,type Turn} from './servic
 import {conversationPlan,type GuidedDraft} from './conversation'
 import {modelPlan,modelConfigured} from './agent-model'
 import {containsAssistantSecret,groundCreation,type Operation,type Plan,type AssistantReply} from './contracts'
-import {resolveTask,contextualTaskRead,incompleteAdditiveRequest,type AgentMemory,type Candidate} from './agent-policy'
+import {resolveTask,contextualTaskRead,incompleteAdditiveRequest,authorityBypassRequest,type AgentMemory,type Candidate} from './agent-policy'
 
 type StoredMemory=AgentMemory&{draft?:{operation?:string;target?:string;payload?:Record<string,unknown>};context?:{task_id?:string}}
 /** The provider only plans. All writes still pass through the existing authenticated SQL executor. */
@@ -21,6 +21,7 @@ export async function requestAgent(turn:Turn,message:string,token?:string,histor
  if(memory.draft?.operation)memory.pending=[{kind:'propose',operation:memory.draft.operation,target:memory.draft.target,data:(memory.draft.payload?.data??memory.draft.payload??{}) as Record<string,string>,field:memory.draft.payload?.field as string|undefined}]
  // Explicit confirmation/cancellation/selection are not interpreted by a probabilistic model.
  if(containsAssistantSecret(message)||/^(?:batal|ya|iya|konfirmasi|simpan(?: sekarang)?|oke simpan|(?:(?:pilih|nomor|no\.?|yang)\s+)?[1-9]\d?|lanjut|berikutnya|selanjutnya|halaman berikutnya|tampilkan berikutnya)$/i.test(message.trim()))return requestLegacyAssistant(trusted,message,token,history)
+ if(authorityBypassRequest(message)){trusted.agent!.model='policy-guard';return dispatch(trusted,'reply',{message:'Saya tidak dapat melewati hak akses atau menaikkan role melalui chat. Belum ada perubahan.'})}
  const draft=memory.draft
  if(draft?.operation&&draft.payload?.guided===true&&!['target','update'].includes(String(draft.payload.field??''))){
   const filled=conversationPlan(message,{operation:draft.operation,target:draft.target,payload:draft.payload} as GuidedDraft)

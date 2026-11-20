@@ -51,3 +51,19 @@ it('does not mistake a provider-reported malformed tool call for a temporary out
  await processEvaluationQueue()
  expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'FAIL',errorKind:'validation'})}))
 })
+
+it('does not retry a malformed tool call whose code is only in the HTTP response body',async()=>{
+ m.plan.mockRejectedValueOnce({name:'AI_APICallError',statusCode:400,responseBody:JSON.stringify({error:{code:'tool_use_failed'}})})
+ await processEvaluationQueue()
+ expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'FAIL',errorKind:'validation',providerStatus:400})}))
+})
+it('keeps a wrapped 429 as quota instead of consuming generic provider retries',async()=>{
+ m.plan.mockRejectedValueOnce({name:'AI_NoOutputGeneratedError',cause:{name:'AI_APICallError',statusCode:429,responseHeaders:{'retry-after':'120'}}})
+ await processEvaluationQueue()
+ expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:true,p_delay:120,p_result:expect.objectContaining({errorKind:'quota'})}))
+})
+it('does not repeatedly spend requests on an unclassified HTTP 400',async()=>{
+ m.plan.mockRejectedValueOnce({name:'AI_APICallError',statusCode:400})
+ await processEvaluationQueue()
+ expect(m.rpc).toHaveBeenCalledWith('atm_eval_finish',expect.objectContaining({p_retry:false,p_result:expect.objectContaining({status:'ERROR',providerStatus:400})}))
+})
