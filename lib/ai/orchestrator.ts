@@ -4,7 +4,7 @@ import {assistantStore,dispatch,requestLegacyAssistant,type Turn} from './servic
 import {conversationPlan,type GuidedDraft} from './conversation'
 import {modelPlan,modelConfigured} from './agent-model'
 import {containsAssistantSecret,groundCreation,type Operation,type Plan,type AssistantReply} from './contracts'
-import {resolveTask,contextualTaskRead,type AgentMemory,type Candidate} from './agent-policy'
+import {resolveTask,contextualTaskRead,incompleteAdditiveRequest,type AgentMemory,type Candidate} from './agent-policy'
 
 type StoredMemory=AgentMemory&{draft?:{operation?:string;target?:string;payload?:Record<string,unknown>};context?:{task_id?:string}}
 /** The provider only plans. All writes still pass through the existing authenticated SQL executor. */
@@ -29,6 +29,7 @@ export async function requestAgent(turn:Turn,message:string,token?:string,histor
    return requestLegacyAssistant(trusted,message,token,history,filled)
   }
  }
+ if(incompleteAdditiveRequest(message,memory)){trusted.agent!.model='deterministic-clarification';return dispatch(trusted,'reply',{message:memory.activePIC?`Apa yang ingin dilakukan untuk ${memory.activePIC}? Tindakannya belum disebutkan; belum ada perubahan.`:'Apa yang ingin dilakukan, dan untuk siapa? Belum ada perubahan.'})}
  const contextRead=contextualTaskRead(message,memory)
  if(contextRead){trusted.agent!.model='deterministic-context';return requestLegacyAssistant(trusted,message,token,history,contextRead)}
  if(!modelConfigured())return requestLegacyAssistant(trusted,message,token,history)

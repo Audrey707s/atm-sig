@@ -36,3 +36,7 @@ describe('ordinary Indonesian conversations',()=>{
  })
 
 })
+
+it.each(['aku butuh bantuan Audrey buat tugas rekonsiliasi','saya perlu support dari Audrey untuk task rekonsiliasi','minta bantuan Audrey di tugas rekonsiliasi'])('resolves an existing-task support request without model quota: %s',message=>{
+ expect(spokenPlan(message)).toMatchObject({kind:'propose',operation:'support_add',target:'rekonsiliasi',data:{penerima:'Audrey'}})
+})

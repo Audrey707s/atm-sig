@@ -87,3 +87,9 @@ export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):P
  const missingField=plan.field??(['prioritas','progres','status'].find(field=>Object.hasOwn(plan.data!,field)&&!data[field]&&new RegExp('\\b'+field+'(?:nya)?\\b','i').test(message)))
  return {...plan,...(missingField?{field:missingField}:{}),data}
 }
+
+/** An owner alone cannot specify what an additive follow-up should do. */
+export function incompleteAdditiveRequest(message:string,memory:AgentMemory):boolean {
+ if(memory.pending?.length||memory.queued?.length)return false
+ return /^(?:sekalian|sekaligus)\s+(?:untuk\s+)?(?:punya|milik)\s+dia(?:\s+juga)?[.!?]*$/i.test(message.trim())
+}

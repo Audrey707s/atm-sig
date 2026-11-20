@@ -39,7 +39,7 @@ export function spokenPlan(message:string):Plan|null {
  if(review){const value=review[2].split(/\s+karena\s+/i);return proposal('task_review',value[0],{keputusan:/revisi/i.test(review[1])?'revisi':'setuju',...(value[1]?{komentar:value.slice(1).join(' ')}:{})})}
  const category=/^(?:buat(?:kan)?|tambah(?:kan)?)\s+kategori\s+(.+?)(?:\s+di\s+seksi\s+(.+))?$/i.exec(text)
  if(category)return {kind:'propose',operation:'category_create',data:{nama:normalizeTaskReference(category[1]).text,...(category[2]?{seksi:normalizeTaskReference(category[2]).text}:{})}}
- const support=/^(?:minta|butuh)\s+(?:bantuan|support)\s+(.+?)\s+(?:untuk|di)\s+(?:tugas|task)\s+(.+)$/i.exec(text)
+ const support=/^(?:(?:aku|saya|gue|gw)\s+)?(?:minta|butuh|perlu)\s+(?:bantuan|support)\s+(?:dari\s+)?(.+?)\s+(?:untuk|buat|di)\s+(?:tugas|task)\s+(.+)$/i.exec(text)
  if(support)return proposal('support_add',support[2],{penerima:normalizeTaskReference(support[1]).text})
  const progress=/^(?:(?:ubah|update|perbarui)\s+)?(?:progress|progres)(?:-?nya)?\s+(.+)$/i.exec(text)
  const basic=localPlan(text)

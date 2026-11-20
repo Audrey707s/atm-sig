@@ -57,3 +57,15 @@ it('fills a known pending reason from everyday text without asking the model aga
  expect(m.plan).not.toHaveBeenCalled()
  expect(m.legacy).toHaveBeenCalledWith(expect.anything(),'karena pembagian tim',undefined,undefined,expect.objectContaining({operation:'task_reassign',target:'task-a',data:{pic:'Nata',alasan:expect.stringContaining('pembagian tim')}}))
 })
+
+it.each(['web','whatsapp'] as const)('does not guess an action from an owner-only follow-up on %s',async channel=>{
+ m.rpc.mockResolvedValueOnce({data:{lease:'lease',memory:{activePIC:'Audrey'}},error:null})
+ await requestAgent({...turn,channel},'sekalian untuk punya dia juga')
+ expect(m.plan).not.toHaveBeenCalled();expect(m.legacy).not.toHaveBeenCalled()
+ expect(m.dispatch).toHaveBeenCalledWith(expect.anything(),'reply',{message:expect.stringContaining('Apa yang ingin dilakukan untuk Audrey?')})
+})
+it('retains a pending action for an additive follow-up instead of discarding its context',async()=>{
+ m.rpc.mockResolvedValueOnce({data:{lease:'lease',memory:{activePIC:'Audrey',pending:[{kind:'propose',operation:'task_update',data:{prioritas:'tinggi'}}]}},error:null})
+ await requestAgent(turn,'sekalian untuk punya dia juga')
+ expect(m.plan).toHaveBeenCalled()
+})
