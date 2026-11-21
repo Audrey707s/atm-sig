@@ -2,6 +2,7 @@ import 'server-only'
 import {assistantStore} from './service'
 import {modelPlan} from './agent-model'
 import {assessPlan,evaluationCandidates,type EvaluationCase} from './evaluation'
+import {assessCurrentPlan} from './evaluation-v2'
 import fixtures from '@/docs/agent-v2/conversation-uat.json'
 export function evaluationRevision(){
  const value=process.env.VERCEL_GIT_COMMIT_SHA
@@ -13,7 +14,7 @@ export async function evaluationState(actor:string,action:string,runId?:string){
  if(error)throw new Error('Evaluation state unavailable')
  return data
 }
-export async function processEvaluationQueue(options?:{revision:string;planner:typeof modelPlan;runId?:string}){
+export async function processEvaluationQueue(options?:{revision:string;planner:typeof modelPlan;runId?:string;assessor?:typeof assessPlan}){
  const store=assistantStore(),revision=options?.revision??evaluationRevision(),started=Date.now();let processed=0
  const {data:catalog,error:catalogError}=await store.rpc('wa_operation_catalog').abortSignal(AbortSignal.timeout(10000))
  if(catalogError)throw new Error('Evaluation catalog unavailable')
@@ -26,7 +27,7 @@ export async function processEvaluationQueue(options?:{revision:string;planner:t
   try{
    if(!test)throw new Error('Unknown fixed fixture')
    const planned=await (options?.planner??modelPlan)(test.messages.join('\n'),test.role,catalog,test.memory,evaluationCandidates)
-   result={...assessPlan(test,planned.plan,catalog),actual:planned.plan,model:planned.model,usage:planned.usage,role:test.role,category:test.category}
+   result={...(options?.assessor??assessCurrentPlan)(test,planned.plan,catalog),actual:planned.plan,model:planned.model,usage:planned.usage,role:test.role,category:test.category}
   }catch(error){
    // SDK failures can wrap the actual HTTP/quota error in cause/lastError.
    let underlying=error

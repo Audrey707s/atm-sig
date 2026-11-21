@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto'
 import type {Plan,Operation} from './contracts'
 import {validatePlan} from './contracts'
+import {taskFieldPlan} from './task-fields'
 import {aiRoleOperations,aiRoleReadAllowed} from './role-policy'
 export type AgentMemory={activeTask?:string;activePIC?:string;filters?:Record<string,string>;pending?:Plan[];queued?:Plan[];pendingToken?:string;summary?:string;recent?:Array<{role:string;text:string}>;verified?:Array<{operation:string;id?:string}>}
 export type Candidate={id:string;title:string;pic:string;reviewer?:string;organization?:string;status:string;due?:string;priority?:string;score?:number}
@@ -64,6 +65,9 @@ export function contextualTaskRead(message:string,memory:AgentMemory):Plan|null 
 /** Free-text audit fields must come from user text, not a model's plausible filler. */
 export function groundAgentFields(plan:Plan,message:string,memory:AgentMemory):Plan {
  if(plan.kind!=='propose'||!plan.data)return plan
+ // Recover only an explicit priority attached to the same literal task/owner.
+ const literal=taskFieldPlan(message.trim(),()=>undefined)
+ if(plan.operation==='task_update'&&!plan.data.prioritas&&literal?.operation==='task_update'&&literal.data?.prioritas&&literal.target&&plan.target&&fold(literal.target)===fold(plan.target)&&(!plan.pic||!literal.pic||fold(plan.pic)===fold(literal.pic)))plan={...plan,data:{...plan.data,prioritas:literal.data.prioritas}}
  const source=fold([...(memory.recent??[]).filter(m=>m.role==='user').map(m=>m.text),message].join(' ')),data={...plan.data}
  for(const field of ['alasan','komentar','deskripsi','judul','nama']){
   const value=data[field];if(!value)continue

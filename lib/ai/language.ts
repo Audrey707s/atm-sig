@@ -7,7 +7,7 @@ export function requestLanguage(message:string):string {
   .replace(/^(?:(?:eh|nah|dong|tolong|mohon|bantu|coba|bisa|boleh|loh|oh|oke|silakan|silahkan)(?:\s+(?:saya|kamu|anda))?\s+|(?:saya\s+)?(?:mau|ingin|pengen)\s+)+/i,'')
   .replace(/\s+(?:ya|dong|deh|please|tolong)(?:[.!?]*)$/i,'').replace(/[.!?]+$/,'').trim()
  // Only the initial command is normalized. Unquoted titles/names remain literal too.
- const aliases:Record<string,string>={ngeliat:'lihat',ngeliatin:'lihat',lihatin:'lihat',liatin:'lihat',tengok:'lihat',tunjukin:'lihat',tunjukkin:'lihat',bukain:'lihat',bikinin:'buatkan',buatin:'buatkan',bikin:'buatkan',membuat:'buatkan',menambahkan:'tambahkan',nambahin:'tambahkan',hapuskan:'hapus',hapusin:'hapus',apusin:'hapus',deletein:'hapus',hilangkan:'hapus',menghapus:'hapus',gantiin:'ubah',ubahin:'ubah',editin:'ubah',ngubah:'ubah',mengubah:'ubah',pindahin:'pindahkan',geserin:'pindahkan',geser:'pindahkan',pindah:'pindahkan',memindahkan:'pindahkan'}
+ const aliases:Record<string,string>={naikin:'naikkan',turunin:'turunkan',ngeliat:'lihat',ngeliatin:'lihat',lihatin:'lihat',liatin:'lihat',tengok:'lihat',tunjukin:'lihat',tunjukkin:'lihat',bukain:'lihat',bikinin:'buatkan',buatin:'buatkan',bikin:'buatkan',membuat:'buatkan',menambahkan:'tambahkan',nambahin:'tambahkan',hapuskan:'hapus',hapusin:'hapus',apusin:'hapus',deletein:'hapus',hilangkan:'hapus',menghapus:'hapus',gantiin:'ubah',ubahin:'ubah',editin:'ubah',ngubah:'ubah',mengubah:'ubah',pindahin:'pindahkan',geserin:'pindahkan',geser:'pindahkan',pindah:'pindahkan',memindahkan:'pindahkan'}
  return text.replace(/^([^\s]+)\b/,word=>aliases[word.toLowerCase()]??word)
 }
 function named(text:string){return normalizeTaskReference(text).text}

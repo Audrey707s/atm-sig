@@ -1,0 +1,10 @@
+{
+  "revision": "dd1b6d004102546d7b2274475e1627bc64e20b39",
+  "originalSha256": {
+    "lib/ai/agent-model.ts": "d06f997f2ba741709cdfb4bbcacbc09a49c2a41c0e3fd76317c0c71baa9d6301",
+    "lib/ai/agent-policy.ts": "eecdb1c0ea7ecca99d51499641cbfe320d38dbcca61c4b12b68e3255c8586de2",
+    "lib/ai/contracts.ts": "c9c02aa17f7a11aff37ef0ccc07772c1892a199595dd3eb33a31320874895526",
+    "lib/ai/role-policy.ts": "99840ae253d4040f8840c2ab5476c3e2f4c70a9761afb8a505e96922d6afd5e3",
+    "lib/tasks/chat-intents.ts": "e0313c80a5a9b3f9cf5ac873e1439e2f1338e75644248e36666b66e31574fdc6"
+  }
+}
