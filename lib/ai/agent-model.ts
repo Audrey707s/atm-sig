@@ -12,7 +12,7 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
  const allowed=aiRoleOperations(level,catalog)
  const contextual=memory.activeTask?message.replace(/^(?:yang tadi|tugas tadi|task tadi)\s+/i,''):message
  const correctionMatch=/^(?:eh\s+)?bukan\s+(?:tinggi|sedang|rendah)\s*,?\s*(tinggi|sedang|rendah)(?:\s+aja)?[.!?]*$/i.exec(message.trim())
- const correction=memory.pending?.length===1&&correctionMatch?{...memory.pending[0],data:{...(memory.pending[0].data??{}),prioritas:correctionMatch[1].toLowerCase()}}:null
+ const correction:AgentPlan['steps'][number]|null=memory.pending?.length===1&&correctionMatch?{...memory.pending[0],data:{...(memory.pending[0].data??{}),prioritas:correctionMatch[1].toLowerCase()}}:null
  const recognized=spokenPlan(contextual)??correction
  if(recognized?.kind==='propose'&&!Object.hasOwn(allowed,recognized.operation??''))return {plan:{steps:[{kind:'clarify',question:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'}]},usage:{input:0,output:0},model:'policy-guard'}
  // Explicit supported intents use the same validated backend without model drift/quota.
