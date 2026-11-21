@@ -28,3 +28,9 @@ it('dispatches the reported passive priority sentence with separate title, PIC a
  await requestAssistant({actor:'actor',level:6,channel:'web'},'tugas "mengerjakan paper" milik PIC nata tolong diubah prioritasnya menjadi tinggi')
  expect(mocks.rpc).toHaveBeenLastCalledWith('atm_ai_turn',expect.objectContaining({p_kind:'propose',p_payload:expect.objectContaining({operation:'task_update',target:'mengerjakan paper',pic:'nata',field:'prioritas',data:{prioritas:'tinggi'}})}))
 })
+
+it.each(['web','whatsapp'] as const)('scopes a personal report to the authenticated actor on %s',async channel=>{
+ mocks.stored=null
+ await requestAssistant({actor:'actor',level:6,channel},'ringkasin kerjaan saya dong')
+ expect(mocks.rpc).toHaveBeenLastCalledWith('atm_ai_turn',expect.objectContaining({p_kind:'read',p_actor:'actor',p_payload:expect.objectContaining({entity:'tasks',mode:'report',pic:'actor'})}))
+})

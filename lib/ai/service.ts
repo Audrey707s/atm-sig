@@ -69,5 +69,6 @@ export async function requestLegacyAssistant(turn:Turn,message:string,token?:str
  if(plan.kind==='propose') return dispatch(turn,'propose',{operation:plan.operation,field:plan.field,target:plan.target,exact:plan.exact,pic:plan.pic,context:plan.context,data:plan.data})
  if(!preparedPlan&&plan.entity==='tasks'&&plan.mode==='mine'&&!/termasuk\s+(?:yang\s+)?selesai|sudah selesai|semua status/i.test(message))plan.mode='mine_open'
  if(plan.entity==='tasks'&&plan.mode==='calendar'&&/\b(saya|pribadi|milikku)\b/i.test(message))plan.mode='mine_calendar'
+ if(plan.entity==='tasks'&&plan.mode==='report'&&!plan.pic&&/\b(?:saya|aku|pribadi)\b/i.test(message.replace(/["“][^"”]*["”]|'[^']*'/g,' ')))plan.pic=turn.actor
  return dispatch(turn,'read',{entity:plan.entity,query:plan.query,mode:plan.mode,task:plan.task,page:plan.page,pic:plan.pic})
 }
