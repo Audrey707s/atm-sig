@@ -24,5 +24,14 @@ it.each(ids)('regresses observed FAIL %s with unchanged role limits and explicit
  m.generate.mockResolvedValue({toolCalls:[{toolName:'plan_atm',input:{steps:[step]}}],usage:{}})
  const result=await modelPlan(test.messages.join('\n'),test.role,catalog,test.memory,[])
  expect(assessCurrentPlan(test,result.plan,catalog).status).toBe('PASS')
- if(!['02-R6','03-R4','08-R3','08-R4'].includes(id)){expect(m.generate).not.toHaveBeenCalled();expect(result.model).toBe('policy-guard')}
+ expect(m.generate).not.toHaveBeenCalled()
+})
+
+it.each(['08-R5','09-R1','10-R1','10-R3','10-R6','11-R2','11-R4','12-R1'])('resolves later observed FAIL %s without any provider quota',async id=>{
+ const test=fixtures.find(c=>c.id===id)! as EvaluationCase
+ const fullCatalog={...catalog,task_delete:{label:'Hapus',entity:'tasks',minimumRole:3,fields:{},required:[],task:true},task_status:{label:'Status',entity:'tasks',minimumRole:2,fields:{status:'value'},required:['status'],task:true}}
+ vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','false');vi.stubEnv('GROQ_API_KEY','')
+ const result=await modelPlan(test.messages.join('\n'),test.role,fullCatalog,test.memory,[])
+ expect(assessCurrentPlan(test,result.plan,fullCatalog).status).toBe('PASS')
+ expect(m.generate).not.toHaveBeenCalled()
 })

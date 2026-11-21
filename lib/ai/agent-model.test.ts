@@ -15,10 +15,7 @@ it.each([
  for(const role of [1,2,3,4,5,6]){
   expect((await modelPlan(message,role,{}, {},[])).plan.steps[0]).toMatchObject({kind:'read',mode})
  }
- const request=mock.generate.mock.calls[0][0]
- expect(request.prompt).toBe(message)
- expect(request.system).toContain(message)
- expect(request.system).toContain('Reading a review queue does not grant permission to approve')
+ expect(mock.generate).not.toHaveBeenCalled()
 })
 it('normalizes the observed Indonesian status at the model boundary',async()=>{
  vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','true');vi.stubEnv('GROQ_API_KEY','test-only')

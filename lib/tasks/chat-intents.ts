@@ -1,7 +1,10 @@
 /** Common read requests do not depend on a model or its quota. */
-export function taskReadIntent(message: string): {mode:'list'|'mine'|'review'|'mine_open'|'open';query:string;page?:string;pic?:string} | null {
+export function taskReadIntent(message: string): {mode:'list'|'mine'|'review'|'mine_open'|'open'|'report'|'calendar';query:string;page?:string;pic?:string} | null {
   const text=message.trim().replace(/\s+(?:apa saja|apasaja|saja|dong|ya)$/i,'').replace(/[.!?]+$/,'').replace(/\s+/g,' ')
     .replace(/^(?:tolong|mohon|boleh|bisa)(?:\s+(?:kamu|anda))?\s+/i,'')
+  if(/^(?:(?:lihat|liat|tampilkan|tunjukkan|cek|buka)\s+)?(?:yang\s+)?(?:perlu|harus|untuk)\s+saya\s+(?:tinjau|review|ditinjau|direview)$/i.test(text))return {mode:'review',query:''}
+  if(/^(?:ringkas(?:kan|in)?|rekap(?:kan)?|rangkum(?:kan)?|laporan)\s+(?:tugas|task|kerjaan|pekerjaan)\s+(?:saya|aku)$/i.test(text))return {mode:'report',query:''}
+  if(/^(?:(?:apa aja|apa saja|apa)\s+)?(?:tenggat|deadline)(?:\s+(?:tugas|task))?\s+(?:minggu ini|7 hari(?: ke depan)?)(?:\s+(?:saya|aku))?$/i.test(text))return {mode:'calendar',query:''}
   const paged=/^(.*?)\s+(?:halaman|page)\s+([1-9]\d{0,3})$/i.exec(text)
   if(paged){const intent=taskReadIntent(paged[1]);return intent?{...intent,page:paged[2]}:null}
   const open=/\s+(?:yang\s+)?(?:masih\s+)?(?:open|aktif|belum selesai|belum beres|belum kelar)$/i.exec(text)

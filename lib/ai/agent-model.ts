@@ -5,6 +5,7 @@ import {aiRoleOperations,aiRolePolicy} from './role-policy'
 import {validateAgentPlan,groundAgentFields,authorityBypassRequest,type AgentMemory,type AgentPlan,type Candidate,memorySummary} from './agent-policy'
 import type {Operation} from './contracts'
 import {spokenPlan} from './conversation'
+import {taskReadIntent} from '@/lib/tasks/chat-intents'
 export function modelConfigured(){return process.env.ATM_AI_FREE_PLAN_CONFIRMED==='true'&&!!process.env.GROQ_API_KEY}
 export async function modelPlan(message:string,level:number,catalog:Record<string,Operation>,memory:AgentMemory,candidates:Candidate[]):Promise<{plan:AgentPlan;usage:{input:number;output:number};model:string}>{
  if(authorityBypassRequest(message))return {plan:{steps:[{kind:'clarify',question:'Saya tidak dapat melewati hak akses atau menaikkan role melalui chat. Belum ada perubahan.'}]},usage:{input:0,output:0},model:'policy-guard'}
@@ -13,6 +14,11 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
  const correction=memory.pending?.length===1&&/^(?:eh\s+)?bukan\s+(?:tinggi|sedang|rendah)\s*,?\s*(?:tinggi|sedang|rendah)(?:\s+aja)?[.!?]*$/i.test(message.trim())?memory.pending[0]:null
  const recognized=spokenPlan(contextual)??correction
  if(recognized?.kind==='propose'&&!Object.hasOwn(allowed,recognized.operation??''))return {plan:{steps:[{kind:'clarify',question:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'}]},usage:{input:0,output:0},model:'policy-guard'}
+ // Explicit supported intents use the same validated backend without model drift/quota.
+ const read=taskReadIntent(message)
+ const multiple=/\b(?:sekalian|lalu|kemudian)\b/i.test(message.replace(/["“][^"”]*["”]|'[^']*'/g,' '))
+ const fixed=read&&['review','report','calendar'].includes(read.mode)?{kind:'read' as const,entity:'tasks',...read}:!multiple&&recognized?.kind==='propose'&&((recognized.operation==='task_status'&&!!recognized.data?.status)||(recognized.operation==='task_update'&&recognized.field==='prioritas'&&!!recognized.target)||(recognized.operation==='template_create'&&!recognized.data?.judul&&!!recognized.data?.pic))?recognized:null
+ if(fixed)return {plan:validateAgentPlan({steps:[fixed]},level,catalog,message),usage:{input:0,output:0},model:'deterministic-intent'}
  if(!modelConfigured())throw new Error('Model unavailable')
  const model=process.env.ATM_AGENT_MODEL??'openai/gpt-oss-20b'
  // Bounded, allowlisted tools; JSON is internal only. No executable SQL, actor or role arguments.
