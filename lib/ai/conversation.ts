@@ -53,7 +53,7 @@ export function spokenPlan(message:string):Plan|null {
  const statusChange=/^(?:ubah|update|ganti|set|tandai)\s+(?:status\s+)?(?:tugas|task)\s+(.+?)\s+(?:(?:menjadi|jadi|ke)\s+)(selesai|beres|done|berjalan|in progress|terhambat|tertunda|blocked|review|belum dimulai|to do)$/i.exec(text)
  if(statusChange){const reference=ref(statusChange[1]);const value=statusValue(statusChange[2])??({terhambat:'Blocked',tertunda:'Blocked','in progress':'In progress','to do':'To do'} as Record<string,string>)[statusChange[2].toLowerCase()];return {kind:'propose',operation:'task_status',...reference,target:reference.target,data:{status:value??'Blocked'}}}
  const wbs=/^(?:tambahkan|tambah|buat(?:kan)?)\s+wbs\s+(.+?)\s+(?:ke|pada|di)\s+(?:tugas|task)\s+(.+)$/i.exec(text)
- if(wbs)return proposal('wbs_add',wbs[2],{nama:wbs[1]})
+ if(wbs)return proposal('wbs_add',wbs[2],{judul:wbs[1]})
  const support=/^(?:(?:aku|saya|gue|gw)\s+)?(?:minta|butuh|perlu)\s+(?:bantuan|support)\s+(?:dari\s+)?(.+?)\s+(?:untuk|buat|di)\s+(?:tugas|task)\s+(.+)$/i.exec(text)
  if(support)return proposal('support_add',support[2],{penerima:normalizeTaskReference(support[1]).text})
  const progress=/^(?:(?:ubah|update|perbarui)\s+)?(?:progress|progres)(?:-?nya)?\s+(.+)$/i.exec(text)
