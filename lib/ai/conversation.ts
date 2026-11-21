@@ -39,6 +39,19 @@ export function spokenPlan(message:string):Plan|null {
  if(review){const value=review[2].split(/\s+karena\s+/i);return proposal('task_review',value[0],{keputusan:/revisi/i.test(review[1])?'revisi':'setuju',...(value[1]?{komentar:value.slice(1).join(' ')}:{})})}
  const category=/^(?:buat(?:kan)?|tambah(?:kan)?)\s+kategori\s+(.+?)(?:\s+di\s+seksi\s+(.+))?$/i.exec(text)
  if(category)return {kind:'propose',operation:'category_create',data:{nama:normalizeTaskReference(category[1]).text,...(category[2]?{seksi:normalizeTaskReference(category[2]).text}:{})}}
+ // Explicit everyday Indonesian mutations are parsed locally to avoid provider schema drift.
+ const passivePriority=/^(?:mengubah|ubah|naikkan|naikin|turunkan|set|ganti)\s+prioritas(?:\s+(?:tugas|task))?\s+(.+?)(?:\s+(?:milik|punya)\s+(?:pic\s+)?(.+?))?\s+(?:(?:menjadi|jadi|ke|jd)\s+(rendah|sedang|tinggi))$/i.exec(text)
+ if(passivePriority){const owner=passivePriority[2]?normalizeTaskReference(passivePriority[2]).text:undefined;const target=passivePriority[1].trim();return {kind:'propose',operation:'task_update',target,...(owner?{pic:owner}:{}),data:{prioritas:passivePriority[3].toLowerCase()}}}
+ const missingPriority=/^(?:mengubah|ubah|edit|update)\s+prioritas(?:\s+(?:tugas|task))?\s+(.+)$/i.exec(text)
+ if(missingPriority){const target=ref(missingPriority[1]);return {kind:'propose',operation:'task_update',...target,target:target.target,field:'prioritas',data:{}}}
+ const informalProgress=/^(?:naikin|naikkan|ubah|update|set|ganti)\s+(?:progres|progress)(?:nya)?\s+(.+?)\s+(?:(?:jd|jadi|ke|menjadi)\\s*)(\\d{1,3})\\s*(?:%|persen)?$/i.exec(text)
+ if(informalProgress){const target=ref(informalProgress[1]);return {kind:'propose',operation:'task_progress',...target,target:target.target,data:{progres:informalProgress[2]}}}
+ const contextualReassign=/^(?:yang tadi|tugas tadi|task tadi)\\s+(?:ganti|ubah|pindahkan)\\s+(?:pic|penanggung jawab)(?:\\s*-?\\s*nya)?\\s+(?:ke|jadi|menjadi)\\s+(.+)$/i.exec(text)
+ if(contextualReassign)return {kind:'propose',operation:'task_reassign',context:true,data:{pic:normalizeTaskReference(contextualReassign[1]).text}}
+ const statusChange=/^(?:ubah|update|ganti|set|tandai)\\s+(?:status\\s+)?(?:tugas|task)\\s+(.+?)\\s+(?:(?:menjadi|jadi|ke)\\s+)(selesai|beres|done|berjalan|in progress|terhambat|tertunda|blocked|review|belum dimulai|to do)$/i.exec(text)
+ if(statusChange){const reference=ref(statusChange[1]);const value=statusValue(statusChange[2])??({terhambat:'Blocked',tertunda:'Blocked','in progress':'In progress','to do':'To do'} as Record<string,string>)[statusChange[2].toLowerCase()];return {kind:'propose',operation:'task_status',...reference,target:reference.target,data:{status:value??'Blocked'}}}
+ const wbs=/^(?:tambahkan|tambah|buat(?:kan)?)\\s+wbs\\s+(.+?)\\s+(?:ke|pada|di)\\s+(?:tugas|task)\\s+(.+)$/i.exec(text)
+ if(wbs)return proposal('wbs_add',wbs[2],{nama:wbs[1]})
  const support=/^(?:(?:aku|saya|gue|gw)\s+)?(?:minta|butuh|perlu)\s+(?:bantuan|support)\s+(?:dari\s+)?(.+?)\s+(?:untuk|buat|di)\s+(?:tugas|task)\s+(.+)$/i.exec(text)
  if(support)return proposal('support_add',support[2],{penerima:normalizeTaskReference(support[1]).text})
  const progress=/^(?:(?:ubah|update|perbarui)\s+)?(?:progress|progres)(?:-?nya)?\s+(.+)$/i.exec(text)
