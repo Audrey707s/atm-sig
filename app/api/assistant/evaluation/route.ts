@@ -4,7 +4,7 @@ import {evaluationState} from '@/lib/ai/evaluation-jobs'
 import {isValidUuid} from '@/lib/tasks/validation'
 const headers={'Cache-Control':'no-store'}
 async function identity(request:Request,write:boolean){
- if(process.env.VERCEL_ENV!=='preview'||process.env.ATM_AGENT_V2!=='on')return new Response('Not found',{status:404,headers})
+ if(process.env.VERCEL_ENV!=='production'&&(process.env.VERCEL_ENV!=='preview'||process.env.ATM_AGENT_V2!=='on'))return new Response('Not found',{status:404,headers})
  if(write&&request.headers.get('origin')!==new URL(request.url).origin)return new Response('Forbidden',{status:403,headers})
  const db=await createClient(),{data:{user}}=await db.auth.getUser()
  if(!user)return new Response('Unauthorized',{status:401,headers})
