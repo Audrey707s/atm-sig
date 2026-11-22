@@ -5,6 +5,26 @@ vi.mock('ai',()=>({generateText:mock.generate,jsonSchema:(x:unknown)=>x,tool:(x:
 vi.mock('@ai-sdk/groq',()=>({createGroq:()=>()=>({})}))
 import {modelPlan} from './agent-model'
 afterEach(()=>{vi.unstubAllEnvs();vi.clearAllMocks()})
+it('plans WBS additions locally when the task target follows “ke tugas”',async()=>{
+ vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','false');vi.stubEnv('GROQ_API_KEY','')
+ const catalog={wbs_add:{label:'Tambah WBS',entity:'wbs',minimumRole:2,fields:{judul:'value'},required:['judul'],task:true}}
+ const result=await modelPlan('tambahkan WBS verifikasi bukti ke tugas paper',3,catalog,{},[])
+ expect(result.plan.steps[0]).toMatchObject({kind:'propose',operation:'wbs_add',target:'paper',data:{judul:'verifikasi bukti'}})
+ expect(result.model).toBe('deterministic-intent');expect(mock.generate).not.toHaveBeenCalled()
+})
+it('plans the observed ordered priority-and-comment request locally',async()=>{
+ vi.stubEnv('ATM_AI_FREE_PLAN_CONFIRMED','false');vi.stubEnv('GROQ_API_KEY','')
+ const catalog={
+  task_update:{label:'Ubah prioritas',entity:'tasks',minimumRole:3,fields:{prioritas:'value'},required:[],task:true},
+  task_comment:{label:'Tambah komentar',entity:'comments',minimumRole:2,fields:{komentar:'value'},required:['komentar'],task:true},
+ }
+ const result=await modelPlan('ubah prioritas paper jadi tinggi sekalian tambahkan komentar sudah dicek',6,catalog,{},[])
+ expect(result.plan.steps).toMatchObject([
+  {kind:'propose',operation:'task_update',target:'paper',data:{prioritas:'tinggi'}},
+  {kind:'propose',operation:'task_comment',target:'paper',data:{komentar:'sudah dicek'}},
+ ])
+ expect(result.model).toBe('deterministic-intent');expect(mock.generate).not.toHaveBeenCalled()
+})
 it.each([
  ['tolong tampilkan yang perlu saya tinjau','review'],
  ['ringkasin kerjaan saya dong','report'],

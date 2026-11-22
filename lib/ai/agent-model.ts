@@ -6,10 +6,23 @@ import {validateAgentPlan,groundAgentFields,authorityBypassRequest,resolveTask,i
 import type {Operation} from './contracts'
 import {spokenPlan} from './conversation'
 import {taskReadIntent} from '@/lib/tasks/chat-intents'
+import {requestLanguage} from './language'
 export function modelConfigured(){return process.env.ATM_AI_FREE_PLAN_CONFIRMED==='true'&&!!process.env.GROQ_API_KEY}
 export async function modelPlan(message:string,level:number,catalog:Record<string,Operation>,memory:AgentMemory,candidates:Candidate[]):Promise<{plan:AgentPlan;usage:{input:number;output:number};model:string}>{
  if(authorityBypassRequest(message))return {plan:{steps:[{kind:'clarify',question:'Saya tidak dapat melewati hak akses atau menaikkan role melalui chat. Belum ada perubahan.'}]},usage:{input:0,output:0},model:'policy-guard'}
  const allowed=aiRoleOperations(level,catalog)
+ // Known two-action priority + comment requests are parsed locally. This avoids
+ // provider tool-schema 400s while preserving order and the caller's role limits.
+ const normalized=requestLanguage(message)
+ const priorityComment=/^(?:ubah|ganti|set)\s+prioritas\s+(.+?)\s+(?:jadi|menjadi|ke)\s+(rendah|sedang|tinggi)\s+sekalian\s+(?:tambahkan|tambah|buat(?:kan)?)\s+komentar\s+(.+)$/i.exec(normalized)
+ if(priorityComment){
+  const steps:AgentPlan['steps']=[
+   {kind:'propose',operation:'task_update',target:priorityComment[1].trim(),data:{prioritas:priorityComment[2].toLowerCase()}},
+   {kind:'propose',operation:'task_comment',target:priorityComment[1].trim(),data:{komentar:priorityComment[3].trim()}}
+  ]
+  const plan=validateAgentPlan({steps},level,catalog,message)
+  return {plan,usage:{input:0,output:0},model:'deterministic-intent'}
+ }
  const contextual=memory.activeTask?message.replace(/^(?:yang tadi|tugas tadi|task tadi)\s+/i,''):message
  const correctionMatch=/^(?:eh\s+)?bukan\s+(?:tinggi|sedang|rendah)\s*,?\s*(tinggi|sedang|rendah)(?:\s+aja)?[.!?]*$/i.exec(message.trim())
  const correction:AgentPlan['steps'][number]|null=memory.pending?.length===1&&correctionMatch?{...memory.pending[0],data:{...(memory.pending[0].data??{}),prioritas:correctionMatch[1].toLowerCase()}}:null
@@ -29,7 +42,7 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
  // Explicit supported intents use the same validated backend without model drift/quota.
  const read=taskReadIntent(message)
  const multiple=/\b(?:sekalian|lalu|kemudian)\b/i.test(message.replace(/["“][^"”]*["”]|'[^']*'/g,' '))
- const fixed=read&&['review','report','calendar'].includes(read.mode)?{kind:'read' as const,entity:'tasks',...read}:!multiple&&recognized?.kind==='propose'&&((recognized.operation==='task_status'&&!!recognized.data?.status)||(recognized.operation==='task_update'&&!!recognized.target&&(!recognized.field||recognized.field==='prioritas'))||(recognized.operation==='task_progress'&&!!recognized.data?.progres)||(recognized.operation==='task_reassign'&&!!recognized.data?.pic)||(recognized.operation==='template_create'&&!recognized.data?.judul&&!!recognized.data?.pic))?recognized:null
+ const fixed=read&&['review','report','calendar'].includes(read.mode)?{kind:'read' as const,entity:'tasks',...read}:!multiple&&recognized?.kind==='propose'&&((recognized.operation==='task_status'&&!!recognized.data?.status)||(recognized.operation==='task_update'&&!!recognized.target&&(!recognized.field||recognized.field==='prioritas'))||(recognized.operation==='task_progress'&&!!recognized.data?.progres)||(recognized.operation==='task_reassign'&&!!recognized.data?.pic)||(recognized.operation==='template_create'&&!recognized.data?.judul&&!!recognized.data?.pic)||(recognized.operation==='wbs_add'&&!!recognized.target&&!!recognized.data?.judul))?recognized:null
  if(fixed)return {plan:validateAgentPlan({steps:[fixed]},level,catalog,message),usage:{input:0,output:0},model:'deterministic-intent'}
  if(!modelConfigured())throw new Error('Model unavailable')
  const model=process.env.ATM_AGENT_MODEL??'openai/gpt-oss-20b'
