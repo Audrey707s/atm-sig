@@ -44,6 +44,12 @@ it('rejects a recheck from another deployed revision instead of mixing results',
  expect(m.queue).not.toHaveBeenCalled()
 })
 
+it('resumes an explicitly bound fix run using its stored semantic revision after unrelated deployment commits',async()=>{
+ vi.stubEnv('ATM_EVALUATION_FIX_RUN_ID','33333333-3333-4333-8333-333333333333')
+ m.read.mockResolvedValueOnce({data:{status:'queued',revision:'c'.repeat(40)},error:null})
+ await processBoundEvaluation()
+ expect(m.queue).toHaveBeenCalledWith({runId:'33333333-3333-4333-8333-333333333333',revision:'c'.repeat(40),planner:m.current})
+})
 it('binds the new fix run to the current planner without rewriting either previous run',async()=>{
  vi.stubEnv('ATM_EVALUATION_FIX_RUN_ID','33333333-3333-4333-8333-333333333333')
  vi.setSystemTime(new Date('2026-11-20T12:02:00Z'))
