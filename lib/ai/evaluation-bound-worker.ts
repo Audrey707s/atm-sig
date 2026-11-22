@@ -12,7 +12,6 @@ export async function processBoundEvaluation(){
  // Do not alternate with completed/canceled historical runs: doing so starves the
  // active queue and makes the worker heartbeat appear dead for multiple minutes.
  const runId=fix||primary
- const revision=fix?evaluationRevision():source.revision
  const planner=fix?currentModelPlan:modelPlan
  if(!runId||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(runId))throw new Error('Evaluation run binding unavailable')
  const {data,error}=await assistantStore().from('atm_eval_runs').select('status,revision').eq('id',runId).abortSignal(AbortSignal.timeout(10000)).maybeSingle()
