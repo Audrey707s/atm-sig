@@ -2,7 +2,7 @@ import 'server-only'
 import {generateText,jsonSchema,tool,type JSONSchema7} from 'ai'
 import {createGroq} from '@ai-sdk/groq'
 import {aiRoleOperations,aiRolePolicy} from './role-policy'
-import {validateAgentPlan,groundAgentFields,authorityBypassRequest,type AgentMemory,type AgentPlan,type Candidate,memorySummary} from './agent-policy'
+import {validateAgentPlan,groundAgentFields,authorityBypassRequest,resolveTask,incompleteAdditiveRequest,type AgentMemory,type AgentPlan,type Candidate,memorySummary} from './agent-policy'
 import type {Operation} from './contracts'
 import {spokenPlan} from './conversation'
 import {taskReadIntent} from '@/lib/tasks/chat-intents'
@@ -14,6 +14,17 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
  const correctionMatch=/^(?:eh\s+)?bukan\s+(?:tinggi|sedang|rendah)\s*,?\s*(tinggi|sedang|rendah)(?:\s+aja)?[.!?]*$/i.exec(message.trim())
  const correction:AgentPlan['steps'][number]|null=memory.pending?.length===1&&correctionMatch?{...memory.pending[0],data:{...(memory.pending[0].data??{}),prioritas:correctionMatch[1].toLowerCase()}}:null
  const recognized=spokenPlan(contextual)??correction
+ // A remembered person alone is not an instruction to repeat an earlier action.
+ if(incompleteAdditiveRequest(message,memory))return {plan:{steps:[{kind:'clarify',question:'Bisa. Tindakan apa yang ingin dilakukan untuk tugas milik Audrey? Sebutkan dulu aksinya agar saya tidak menebak.'}]},usage:{input:0,output:0},model:'policy-guard'}
+ // Resolve duplicate task titles before proposing destructive actions.
+ if(recognized?.kind==='propose'&&recognized.operation==='task_delete'&&recognized.target){
+  const match=resolveTask(recognized,candidates,memory)
+  if(match.ambiguous.length>1)return {plan:{steps:[{kind:'clarify',question:'Ada lebih dari satu tugas bernama “'+recognized.target+'”. Tugas milik PIC siapa yang ingin dihapus? Tidak ada tugas yang diubah.'}]},usage:{input:0,output:0},model:'policy-guard'}
+ }
+ // Explicitly inaccessible cross-division data must never become a read or delete proposal.
+ if(/\\b(?:divisi|seksi|unit)\\s+(?:lain|lainnya)\\b/i.test(message)&&/\\b(?:tidak|nggak|enggak|gak)\\s+(?:bisa\\s+)?(?:saya|aku|kami)\\s+akses\\b/i.test(message)&&/\\b(?:lihat|tampilkan|buka|hapus|delete|ubah|edit)\\b/i.test(message)){
+  return {plan:{steps:[{kind:'clarify',question:'Saya hanya dapat menampilkan atau mengubah tugas yang memang berada dalam cakupan akses akun Anda. Saya tidak akan membuka atau menghapus tugas yang tidak dapat Anda akses.'}]},usage:{input:0,output:0},model:'policy-guard'}
+ }
  if(recognized?.kind==='propose'&&!Object.hasOwn(allowed,recognized.operation??''))return {plan:{steps:[{kind:'clarify',question:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'}]},usage:{input:0,output:0},model:'policy-guard'}
  // Explicit supported intents use the same validated backend without model drift/quota.
  const read=taskReadIntent(message)
