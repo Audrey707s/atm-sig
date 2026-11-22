@@ -23,6 +23,13 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
   const plan=validateAgentPlan({steps},level,catalog,message)
   return {plan,usage:{input:0,output:0},model:'deterministic-intent'}
  }
+ // A task-history request is a read of the audit timeline, not a task mutation.
+ // Resolve "tugas itu" only from the already selected task in verified memory.
+ const historyRequest=/^(?:tunjukin|tunjukkan|lihat(?:kan)?|liat(?:in)?|buka|cek|tampilkan)\s+(?:riwayat|history)\s+(?:perubahan|aktivitas)(?:\s+(?:dari|pada|untuk))?\s+(?:tugas|task)\s+(?:itu|tersebut|tadi)$/i.test(normalized)
+ if(historyRequest&&memory.activeTask){
+  const plan=validateAgentPlan({steps:[{kind:'read',entity:'audit',mode:'list',query:memory.activeTask}]},level,catalog,message)
+  return {plan,usage:{input:0,output:0},model:'deterministic-intent'}
+ }
  const contextual=memory.activeTask?message.replace(/^(?:yang tadi|tugas tadi|task tadi)\s+/i,''):message
  const correctionMatch=/^(?:eh\s+)?bukan\s+(?:tinggi|sedang|rendah)\s*,?\s*(tinggi|sedang|rendah)(?:\s+aja)?[.!?]*$/i.exec(message.trim())
  const correction:AgentPlan['steps'][number]|null=memory.pending?.length===1&&correctionMatch?{...memory.pending[0],data:{...(memory.pending[0].data??{}),prioritas:correctionMatch[1].toLowerCase()}}:null
