@@ -22,7 +22,7 @@ export async function modelPlan(message:string,level:number,catalog:Record<strin
   if(match.ambiguous.length>1)return {plan:{steps:[{kind:'clarify',question:'Ada lebih dari satu tugas bernama “'+recognized.target+'”. Tugas milik PIC siapa yang ingin dihapus? Tidak ada tugas yang diubah.'}]},usage:{input:0,output:0},model:'policy-guard'}
  }
  // Explicitly inaccessible cross-division data must never become a read or delete proposal.
- if(/\\b(?:divisi|seksi|unit)\\s+(?:lain|lainnya)\\b/i.test(message)&&/\\b(?:tidak|nggak|enggak|gak)\\s+(?:bisa\\s+)?(?:saya|aku|kami)\\s+akses\\b/i.test(message)&&/\\b(?:lihat|tampilkan|buka|hapus|delete|ubah|edit)\\b/i.test(message)){
+ if(/\b(?:divisi|seksi|unit)\s+(?:lain|lainnya)\b/i.test(message)&&/\b(?:tidak|nggak|enggak|gak)\s+(?:bisa\s+)?(?:saya|aku|kami)\s+akses\b/i.test(message)&&/\b(?:lihat|tampilkan|buka|hapus|delete|ubah|edit)\b/i.test(message)){
   return {plan:{steps:[{kind:'clarify',question:'Saya hanya dapat menampilkan atau mengubah tugas yang memang berada dalam cakupan akses akun Anda. Saya tidak akan membuka atau menghapus tugas yang tidak dapat Anda akses.'}]},usage:{input:0,output:0},model:'policy-guard'}
  }
  if(recognized?.kind==='propose'&&!Object.hasOwn(allowed,recognized.operation??''))return {plan:{steps:[{kind:'clarify',question:'Role akun Anda tidak memiliki izin untuk aksi tersebut.'}]},usage:{input:0,output:0},model:'policy-guard'}
