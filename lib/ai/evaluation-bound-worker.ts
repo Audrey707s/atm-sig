@@ -15,7 +15,11 @@ export async function processBoundEvaluation(){
  const planner=fix?currentModelPlan:modelPlan
  if(!runId||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(runId))throw new Error('Evaluation run binding unavailable')
  const {data,error}=await assistantStore().from('atm_eval_runs').select('status,revision').eq('id',runId).abortSignal(AbortSignal.timeout(10000)).maybeSingle()
- if(error||!data||data.revision!==revision)throw new Error('Evaluation run binding unavailable')
+ // The explicit fix-run ID binds this worker to a stored semantic evaluation
+ // revision. Unrelated deployment commits must not strand its pending cases.
+ // Baseline runs remain pinned to their immutable baseline revision.
+ if(error||!data||(!fix&&data.revision!==source.revision))throw new Error('Evaluation run binding unavailable')
+ const revision=data.revision
  if(!['queued','running','waiting'].includes(data.status))return {processed:0,revision,status:data.status}
  return processEvaluationQueue({revision,planner,runId,...(fix?{}:{assessor:assessPlan})})
 }
