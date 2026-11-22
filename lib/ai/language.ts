@@ -52,7 +52,7 @@ export function featurePlan(text:string):Plan|null {
  if(m)return mutate('task_update',m[1],{judul:named(m[2])})
  m=/^(?:duplikasi|duplikasikan|salin|copy|gandakan)\s+(?:(?:tugas|task)\s+)?(.*?)(?:\s+(?:dengan judul|jadi|menjadi)\s+(.+))?$/i.exec(text)
  if(m)return mutate('task_duplicate',m[1],m[2]?{judul:named(m[2])}:{})
- m=/^(?:tambah(?:kan)?|buat(?:kan)?)\s+(?:wbs|subtugas|subtask)\s*(.*?)(?:\s+(?:untuk|di|pada)\s+(?:tugas|task)\s+(.+))?$/i.exec(text)
+ m=/^(?:tambah(?:kan)?|buat(?:kan)?)\s+(?:wbs|subtugas|subtask)\s*(.*?)(?:\s+(?:untuk|ke|di|pada)\s+(?:tugas|task)\s+(.+))?$/i.exec(text)
  if(m)return mutate('wbs_add',m[2]??'',m[1]?{judul:named(m[1])}:{})
  m=/^(?:tandai|ubah|selesaikan|centang|buka kembali)\s+wbs\s+(.+?)(?:\s+(?:jadi|menjadi)\s+(selesai|belum selesai))?$/i.exec(text)
  if(m)return mutate('wbs_toggle',m[1],{selesai:/belum selesai|buka kembali/i.test(text)?'tidak':'ya'})
